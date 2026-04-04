@@ -1,0 +1,61 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h2 class="mb-4">Invite a User</h2>
+
+<div class="content-section mb-4">
+    <form method="POST">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <small class="form-text text-muted mb-3">
+            All invited users are created with the same application rights: <strong>member</strong>.
+            Only the Super Admin keeps extended permissions.
+        </small>
+        <button type="submit" class="btn btn-primary mt-2">Create Invitation</button>
+    </form>
+</div>
+
+<h4>Sent Invitations</h4>
+<table class="table table-bordered">
+    <thead class="thead-light">
+        <tr>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Access</th>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Invite Link</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for inv in invitations %}
+    <tr>
+        <td>{{ inv.email }}</td>
+        <td><code>{{ inv.username }}</code></td>
+        <td>
+            <span class="badge badge-secondary">
+                {{ inv.get_role_assigned_display }}
+            </span>
+        </td>
+        <td>{{ inv.project.name|default:"— (site access)" }}</td>
+        <td>
+            {% if inv.used %}
+                <span class="badge badge-success">Used</span>
+            {% else %}
+                <span class="badge badge-warning">Pending</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if not inv.used %}
+                <code style="font-size:.75rem;">{{ request.scheme }}://{{ request.get_host }}{% url 'register' %}?token={{ inv.token }}</code>
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-muted">No invitations yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

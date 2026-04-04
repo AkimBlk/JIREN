@@ -1,0 +1,49 @@
+<div class="card shadow-sm mb-2 border-0 kanban-card"
+     data-ticket-id="{{ ticket.id }}"
+     style="border-radius: 12px; overflow: hidden; border: 1px solid #e9ecef; background: #ffffff;">
+    <div style="height: 8px; background: {% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}#dc3545{% elif ticket.issue_type == 'STORY' %}#28a745{% elif ticket.issue_type == 'TASK' %}#6c757d{% else %}#17a2b8{% endif %};"></div>
+
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                {% if ticket.issue_type == 'STORY' %}
+                    <span class="badge badge-success mr-1">STORY</span>
+                {% elif ticket.issue_type == 'BUG' %}
+                    <span class="badge badge-danger mr-1">BUG</span>
+                {% elif ticket.issue_type == 'TASK' %}
+                    <span class="badge badge-secondary mr-1">TASK</span>
+                {% elif ticket.issue_type == 'EPIC' %}
+                    <span class="badge mr-1" style="background-color: {{ ticket.display_color }}; color: #fff;">EPIC</span>
+                {% endif %}
+                <small class="text-muted ml-1">#{{ ticket.id }}</small>
+            </div>
+
+            <span class="badge badge-light border">{{ ticket.get_status_display }}</span>
+        </div>
+
+        <div class="mb-2" style="font-size: 17px; font-weight: 700; line-height: 1.3;">
+            <a href="{% url 'ticket-detail' ticket.id %}" class="text-dark text-decoration-none">{{ ticket.title }}</a>
+        </div>
+
+        {% if ticket.epic %}
+            <div class="small mb-2 px-2 py-1 rounded"
+                 style="background: rgba(0,0,0,0.04); color: {{ ticket.epic.display_color }};">
+                Epic: {{ ticket.epic.title }}
+            </div>
+        {% endif %}
+
+        {% include "blog/ticket_tags.html" %}
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted">{{ ticket.get_priority_display }}</small>
+            {% if ticket.assignee %}
+                <img class="rounded-circle border"
+                     style="width:28px;height:28px;object-fit:cover;"
+                     src="{{ ticket.assignee.profile.image.url }}"
+                     title="Assigned to: {{ ticket.assignee.username }}">
+            {% else %}
+                <small class="text-muted">Unassigned</small>
+            {% endif %}
+        </div>
+    </div>
+</div>

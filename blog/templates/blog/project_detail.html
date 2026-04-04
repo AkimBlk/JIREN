@@ -1,0 +1,160 @@
+{% extends "blog/base.html" %}
+{% block content %}
+
+<div class="project-header-card mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
+        <div class="mb-3 mb-md-0">
+            <h2 class="mb-1">{{ project.name }}</h2>
+
+            {% if project.code_prefix %}
+                <div class="project-code mb-2">{{ project.code_prefix }}</div>
+            {% endif %}
+
+            <p class="text-muted mb-0">
+                Manager: {{ project.manager.username }} · {{ project.date_created|date:"d M Y" }}
+            </p>
+        </div>
+
+        <div class="project-header-actions">
+            {% if user_can_manage_sprints %}
+                <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-sm btn-outline-primary mb-2">Sprints</a>
+            {% endif %}
+
+            {% if user_is_admin %}
+                <a href="{% url 'project-update' project.pk %}" class="btn btn-sm btn-warning mb-2">Edit</a>
+                <a href="{% url 'project-delete' project.pk %}" class="btn btn-sm btn-danger mb-2">Delete</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="project-info-card mb-4">
+    <h5 class="section-title">Description</h5>
+    <p class="mb-4">{{ project.description|default:"No description." }}</p>
+
+    <h5 class="section-title">Project settings</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Start date:</strong> {{ project.start_date|date:"d M Y" }}</p>
+            <p><strong>End date:</strong> {{ project.end_date|date:"d M Y" }}</p>
+            <p><strong>Workload unit:</strong> {{ project.get_workload_unit_display }}</p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Sprint duration:</strong> {{ project.sprint_duration_days }} days</p>
+            <p><strong>Capacity mode:</strong> {{ project.get_capacity_mode_display }}</p>
+            {% if project.global_capacity %}
+                <p><strong>Global capacity:</strong> {{ project.global_capacity }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="mb-4">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'project-backlog' project.pk %}">View backlog</a>
+    <a class="btn btn-outline-info btn-sm" href="{% url 'ticket-create' %}?project={{ project.pk }}">Create ticket</a>
+    {% if active_sprint %}
+        <a class="btn btn-primary btn-sm" href="{% url 'project-active-sprint' project.pk %}">Active sprint</a>
+    {% else %}
+        <button type="button" class="btn btn-outline-secondary btn-sm" disabled>No active sprint</button>
+    {% endif %}
+</div>
+
+<h5 class="mb-3">Members</h5>
+<div class="project-table-card mb-4">
+    <table class="table table-sm mb-0">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in members %}
+            <tr>
+                <td>{{ m.user.username }}</td>
+                <td>
+                    {% if m.user == project.manager or m.role == 'admin' %}
+                        <span class="badge badge-danger">admin</span>
+                    {% else %}
+                        <span class="badge badge-secondary">member</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="text-muted">No members yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h5 class="mb-0">Tickets</h5>
+    <form method="get" class="form-inline mt-2 mt-md-0">
+        <label for="tag" class="mr-2 text-muted small">Tag</label>
+        <select name="tag" id="tag" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+            <option value="">All tags</option>
+            {% for tag in available_tags %}
+                <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+            {% endfor %}
+        </select>
+        {% if selected_tag %}
+            <a href="{% url 'project-detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Clear tag</a>
+        {% endif %}
+        <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
+    </form>
+</div>
+
+{% if selected_tag %}
+<div class="alert alert-light border">
+    Filtering project tickets by tag <strong>#{{ selected_tag.name }}</strong>.
+</div>
+{% endif %}
+
+{% for ticket in project_tickets %}
+<div class="ticket-row-card mb-2" style="border-left: 5px solid {% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}#dc3545{% elif ticket.issue_type == 'STORY' %}#28a745{% else %}#6c757d{% endif %}; padding-left: 1rem;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div class="mb-2 mb-md-0">
+            <div class="mb-1">
+                {% if ticket.issue_type == 'EPIC' %}
+                    <span class="badge" style="background-color: {{ ticket.display_color }}; color: #fff;">EPIC</span>
+                {% elif ticket.issue_type == 'STORY' %}
+                    <span class="badge badge-success">STORY</span>
+                {% elif ticket.issue_type == 'BUG' %}
+                    <span class="badge badge-danger">BUG</span>
+                {% elif ticket.issue_type == 'TASK' %}
+                    <span class="badge badge-secondary">TASK</span>
+                {% endif %}
+            </div>
+
+            <a href="{% url 'ticket-detail' ticket.pk %}" class="ticket-title-link">{{ ticket.title }}</a>
+
+            {% if ticket.epic %}
+                <span class="small ml-2" style="color: {{ ticket.epic.display_color }};">Epic: {{ ticket.epic.title }}</span>
+            {% endif %}
+
+            {% if ticket.sprint %}
+                <span class="text-muted small ml-2">Sprint: {{ ticket.sprint.name }}</span>
+            {% endif %}
+
+            {% include "blog/ticket_tags.html" %}
+
+            {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}
+                <div class="text-muted small mt-1">
+                    Load: {{ ticket.completed_load }}/{{ ticket.initial_load }} completed · Remaining: {{ ticket.remaining_load }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div>
+            <span class="badge badge-info">{{ ticket.status }}</span>
+            <span class="badge badge-warning ml-1">{{ ticket.priority }}</span>
+        </div>
+    </div>
+</div>
+{% empty %}
+<p class="text-muted">No tickets yet.</p>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,1059 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+  .rich-editor-source--enhanced {
+    display: none;
+  }
+
+  .rich-editor-shell {
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+
+  .rich-editor-shell.is-focused {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+  }
+
+  .rich-editor-shell.is-invalid {
+    border-color: #dc3545;
+  }
+
+  .rich-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+  }
+
+  .rich-editor-toolbar button {
+    min-width: 2.25rem;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #d6dbe1;
+    border-radius: 0.35rem;
+    background: #fff;
+    color: #343a40;
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .rich-editor-toolbar button:hover {
+    background: #eef6ff;
+    border-color: #b8d8ff;
+  }
+
+  .rich-editor-surface {
+    min-height: 260px;
+    padding: 1rem;
+    outline: none;
+    line-height: 1.6;
+  }
+
+  .rich-editor-surface:empty:before {
+    content: attr(data-placeholder);
+    color: #6c757d;
+  }
+
+  .rich-editor-surface img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+  }
+
+  .link-selector-panel {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+  }
+
+  .link-selector-options {
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .link-selector-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #d6dbe1;
+    border-radius: 999px;
+    background: #f8f9fa;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .link-selector-chip button {
+    border: 0;
+    background: transparent;
+    color: #6c757d;
+    margin-left: 0.5rem;
+    padding: 0;
+    line-height: 1;
+    font-size: 1rem;
+  }
+
+  .link-selector-chip button:hover {
+    color: #343a40;
+  }
+</style>
+
+<div class="row justify-content-center mt-4 mb-5">
+  <div class="col-md-8 col-lg-7">
+    <div class="card shadow border-0" style="border-radius: 5px;">
+      <div class="card-body p-4 p-md-5">
+        <h4 class="font-weight-bold border-bottom pb-3 mb-4">
+          {% if object %}
+            Edit ticket: Ticket #{{ object.id }}
+          {% else %}
+            Create a new ticket
+          {% endif %}
+        </h4>
+
+        {% if not object %}
+          <div class="alert alert-info mb-3">
+            <strong>Status:</strong> To Do
+          </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              <strong>Error:</strong>
+              {{ form.non_field_errors }}
+              <ul class="mb-0">
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <p class="text-muted small">
+            Leave Sprint empty to keep the ticket in backlog.
+          </p>
+
+          {{ form.issue_type|as_crispy_field }}
+          {{ form.title|as_crispy_field }}
+
+          {% if form.project %}
+            {{ form.project|as_crispy_field }}
+          {% endif %}
+
+          {{ form.description|as_crispy_field }}
+          <p class="text-muted small mt-n2 mb-4">
+            Format the description and insert images directly into the content.
+          </p>
+
+          {{ form.tags_input|as_crispy_field }}
+
+          <div id="div_id_sprint_wrapper">
+            {{ form.sprint|as_crispy_field }}
+          </div>
+
+          <div class="form-group" id="div_id_epic_wrapper">
+            <label for="epicDropdownButton">{{ form.epic.label }}</label>
+            <div class="dropdown w-100">
+              <button
+                class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
+                type="button"
+                id="epicDropdownButton"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <span id="epicDropdownLabel">Choose an epic</span>
+              </button>
+              <div
+                class="dropdown-menu w-100 p-3"
+                aria-labelledby="epicDropdownButton"
+                id="epicDropdownMenu"
+                style="max-height: 260px; overflow-y: auto;"
+              >
+                <div id="epicDropdownOptions"></div>
+              </div>
+            </div>
+            <div class="d-none">
+              {{ form.epic }}
+            </div>
+            {% if form.epic.help_text %}
+              <small class="form-text text-muted">{{ form.epic.help_text }}</small>
+            {% endif %}
+            {% if form.epic.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.epic.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div id="div_id_color_wrapper">
+            {{ form.color|as_crispy_field }}
+          </div>
+
+          <div class="form-group">
+            <label for="assigneeDropdownButton">{{ form.assignee.label }}</label>
+            <div class="dropdown w-100">
+              <button
+                class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
+                type="button"
+                id="assigneeDropdownButton"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <span id="assigneeDropdownLabel">Choose a member</span>
+              </button>
+              <div
+                class="dropdown-menu w-100 p-3"
+                aria-labelledby="assigneeDropdownButton"
+                id="assigneeDropdownMenu"
+                style="max-height: 260px; overflow-y: auto;"
+              >
+                <div id="assigneeDropdownOptions"></div>
+              </div>
+            </div>
+            <div class="d-none">
+              {{ form.assignee }}
+            </div>
+            {% if form.assignee.help_text %}
+              <small class="form-text text-muted">{{ form.assignee.help_text }}</small>
+            {% endif %}
+            {% if form.assignee.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.assignee.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="mb-0" for="id_blocked_by_tickets">{{ form.blocked_by_tickets.label }}</label>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-info"
+                id="blockedByToggleButton"
+                aria-controls="blockedByPanel"
+                aria-expanded="false"
+              >
+                Add link
+              </button>
+            </div>
+            <small class="form-text text-muted mb-2">{{ form.blocked_by_tickets.help_text }}</small>
+            <div class="d-none">
+              {{ form.blocked_by_tickets }}
+            </div>
+            <div class="link-selector-panel px-3 py-3">
+              <div id="blockedBySelected"></div>
+              <p id="blockedByEmptyState" class="text-muted small mb-0">No blocking ticket selected.</p>
+              <div id="blockedByPanel" class="mt-3 pt-3 border-top d-none">
+                <div id="blockedByOptions" class="link-selector-options"></div>
+              </div>
+            </div>
+            {% if form.blocked_by_tickets.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.blocked_by_tickets.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="mb-0" for="id_relates_to_tickets">{{ form.relates_to_tickets.label }}</label>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-info"
+                id="relatesToToggleButton"
+                aria-controls="relatesToPanel"
+                aria-expanded="false"
+              >
+                Add link
+              </button>
+            </div>
+            <small class="form-text text-muted mb-2">{{ form.relates_to_tickets.help_text }}</small>
+            <div class="d-none">
+              {{ form.relates_to_tickets }}
+            </div>
+            <div class="link-selector-panel px-3 py-3">
+              <div id="relatesToSelected"></div>
+              <p id="relatesToEmptyState" class="text-muted small mb-0">No related ticket selected.</p>
+              <div id="relatesToPanel" class="mt-3 pt-3 border-top d-none">
+                <div id="relatesToOptions" class="link-selector-options"></div>
+              </div>
+            </div>
+            {% if form.relates_to_tickets.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.relates_to_tickets.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          {% if existing_attachments %}
+          <div class="form-group">
+            <label>Existing attachments</label>
+            {% for attachment in existing_attachments %}
+              <div class="d-flex align-items-center justify-content-between border rounded px-2 py-2 mb-2">
+                <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name|cut:"attachments/" }}</a>
+                <button type="submit" class="btn btn-sm btn-outline-danger ml-3" formaction="{% url 'ticket-attachment-delete' attachment.pk %}" formmethod="post" formnovalidate>Delete</button>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if object %}
+            <div class="form-group">
+              <label for="id_attachments">Attachments</label>
+              <input
+                type="file"
+                class="form-control-file"
+                id="id_attachments"
+                name="attachments"
+                multiple
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+              />
+              <small class="form-text text-muted">You can attach multiple images (max 5&nbsp;MB each).</small>
+            </div>
+          {% endif %}
+
+          {% if object %}
+            {{ form.status|as_crispy_field }}
+          {% endif %}
+
+          {{ form.priority|as_crispy_field }}
+
+          <div id="div_id_story_points_wrapper">
+            {{ form.story_points|as_crispy_field }}
+          </div>
+
+          <div id="div_id_initial_load_wrapper">
+            {{ form.initial_load|as_crispy_field }}
+            {% if object %}
+              <small class="form-text text-muted">
+                Initial load is locked after ticket creation.
+              </small>
+            {% endif %}
+          </div>
+
+          <div id="div_id_remaining_load_wrapper">
+            {{ form.remaining_load|as_crispy_field }}
+          </div>
+
+          <div class="form-group mt-4 pt-3 border-top d-flex justify-content-end align-items-center">
+            <a class="text-muted mr-4 text-decoration-none" href="{% url 'blog-home' %}">Cancel</a>
+            <button class="btn btn-outline-info" style="border-radius: 3px;" type="submit">
+              {% if object %}Update{% else %}Create ticket{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if ticket_project_data %}
+  {{ ticket_project_data|json_script:"ticketProjectData" }}
+{% endif %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    function setupRichTextEditor() {
+      const textarea = document.getElementById("id_description");
+
+      if (!textarea) {
+        return;
+      }
+
+      const fieldWrapper = textarea.closest(".form-group");
+      if (!fieldWrapper) {
+        return;
+      }
+
+      const shell = document.createElement("div");
+      shell.className = "rich-editor-shell";
+
+      if (textarea.classList.contains("is-invalid")) {
+        shell.classList.add("is-invalid");
+      }
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "rich-editor-toolbar";
+
+      const editor = document.createElement("div");
+      editor.className = "rich-editor-surface";
+      editor.contentEditable = "true";
+      editor.setAttribute("role", "textbox");
+      editor.setAttribute("aria-multiline", "true");
+      editor.setAttribute("data-placeholder", "Describe the ticket...");
+
+      const imageInput = document.createElement("input");
+      imageInput.type = "file";
+      imageInput.accept = "image/png,image/jpeg,image/jpg,image/gif,image/webp";
+      imageInput.multiple = true;
+      imageInput.className = "d-none";
+
+      let savedRange = null;
+
+      function saveSelection() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        if (editor.contains(range.commonAncestorContainer)) {
+          savedRange = range.cloneRange();
+        }
+      }
+
+      function restoreSelection() {
+        if (!savedRange) {
+          return;
+        }
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+
+      function hasEditorContent() {
+        const textContent = editor.textContent.replace(/\u00a0/g, " ").trim();
+        return Boolean(textContent || editor.querySelector("img, ul, ol, li, blockquote, pre"));
+      }
+
+      function syncTextarea() {
+        const html = editor.innerHTML.trim();
+        textarea.value = hasEditorContent() ? html : "";
+      }
+
+      function focusEditor() {
+        editor.focus();
+        restoreSelection();
+      }
+
+      function runCommand(command, value) {
+        focusEditor();
+        document.execCommand(command, false, value);
+        syncTextarea();
+        saveSelection();
+      }
+
+      function createToolbarButton(label, title, handler) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.title = title;
+        button.setAttribute("aria-label", title);
+        button.addEventListener("click", handler);
+        toolbar.appendChild(button);
+      }
+
+      function insertNodeAtCursor(node) {
+        focusEditor();
+
+        const selection = window.getSelection();
+        let range = null;
+
+        if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
+          range = selection.getRangeAt(0);
+        }
+
+        if (!range) {
+          range = document.createRange();
+          range.selectNodeContents(editor);
+          range.collapse(false);
+        }
+
+        range.deleteContents();
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        saveSelection();
+        syncTextarea();
+      }
+
+      function insertImage(dataUrl, fileName) {
+        const image = document.createElement("img");
+        image.src = dataUrl;
+        image.alt = fileName || "Inserted image";
+        insertNodeAtCursor(image);
+      }
+
+      createToolbarButton("B", "Bold", function () {
+        runCommand("bold");
+      });
+      createToolbarButton("I", "Italic", function () {
+        runCommand("italic");
+      });
+      createToolbarButton("U", "Underline", function () {
+        runCommand("underline");
+      });
+      createToolbarButton("UL", "Bulleted list", function () {
+        runCommand("insertUnorderedList");
+      });
+      createToolbarButton("OL", "Numbered list", function () {
+        runCommand("insertOrderedList");
+      });
+      createToolbarButton("Link", "Insert link", function () {
+        const url = window.prompt("Enter a link URL");
+        if (!url) {
+          return;
+        }
+        runCommand("createLink", url);
+      });
+      createToolbarButton("Image", "Insert image", function () {
+        imageInput.click();
+      });
+
+      imageInput.addEventListener("change", function () {
+        Array.from(imageInput.files || []).forEach(function (file) {
+          if (!file.type.startsWith("image/")) {
+            return;
+          }
+
+          if (file.size > 5 * 1024 * 1024) {
+            window.alert("Each inserted image must be 5 MB or smaller.");
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.addEventListener("load", function () {
+            insertImage(reader.result, file.name);
+          });
+          reader.readAsDataURL(file);
+        });
+
+        imageInput.value = "";
+      });
+
+      try {
+        document.execCommand("defaultParagraphSeparator", false, "p");
+      } catch (error) {
+      }
+
+      editor.innerHTML = textarea.value || "";
+      textarea.classList.add("rich-editor-source--enhanced");
+      textarea.setAttribute("aria-hidden", "true");
+      textarea.insertAdjacentElement("afterend", shell);
+
+      shell.appendChild(toolbar);
+      shell.appendChild(editor);
+      shell.appendChild(imageInput);
+
+      editor.addEventListener("input", syncTextarea);
+      editor.addEventListener("focus", function () {
+        shell.classList.add("is-focused");
+        saveSelection();
+      });
+      editor.addEventListener("blur", function () {
+        syncTextarea();
+        saveSelection();
+        shell.classList.remove("is-focused");
+      });
+      ["keyup", "mouseup", "touchend"].forEach(function (eventName) {
+        editor.addEventListener(eventName, saveSelection);
+      });
+      editor.addEventListener("paste", function () {
+        window.setTimeout(function () {
+          syncTextarea();
+          saveSelection();
+        }, 0);
+      });
+
+      if (textarea.form) {
+        textarea.form.addEventListener("submit", syncTextarea);
+      }
+
+      syncTextarea();
+    }
+
+    function setupSingleSelectDropdown(config) {
+      const select = document.getElementById(config.selectId);
+      const button = document.getElementById(config.buttonId);
+      const optionsContainer = document.getElementById(config.optionsContainerId);
+      const label = document.getElementById(config.labelId);
+      const menu = document.getElementById(config.menuId);
+
+      if (!select || !button || !optionsContainer || !label || !menu) {
+        return {
+          render: function () {},
+        };
+      }
+
+      function realOptions() {
+        return Array.from(select.options).filter(function (option) {
+          return option.value;
+        });
+      }
+
+      function updateLabel() {
+        const selectedOption = select.options[select.selectedIndex];
+        const hasOptions = realOptions().length > 0;
+
+        if (selectedOption && selectedOption.value) {
+          label.textContent = selectedOption.text;
+        } else if (!hasOptions) {
+          label.textContent = config.emptyStateLabel;
+        } else {
+          label.textContent = config.placeholder;
+        }
+
+        button.disabled = select.disabled || !hasOptions;
+      }
+
+      function renderRadio(option, index) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "custom-control custom-radio mb-2";
+
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.className = "custom-control-input";
+        radio.name = config.selectId + "-dropdown";
+        radio.id = config.selectId + "-option-" + index;
+        radio.checked = option.selected;
+
+        const radioLabel = document.createElement("label");
+        radioLabel.className = "custom-control-label";
+        radioLabel.setAttribute("for", radio.id);
+        radioLabel.textContent = option.value ? option.text : config.emptyLabel;
+
+        radio.addEventListener("change", function () {
+          select.value = option.value;
+          select.dispatchEvent(new Event("change"));
+          updateLabel();
+        });
+
+        wrapper.appendChild(radio);
+        wrapper.appendChild(radioLabel);
+        optionsContainer.appendChild(wrapper);
+      }
+
+      function render() {
+        const options = Array.from(select.options);
+        optionsContainer.innerHTML = "";
+
+        if (!realOptions().length) {
+          const emptyMessage = document.createElement("p");
+          emptyMessage.className = "text-muted small mb-0";
+          emptyMessage.textContent = config.noOptionsLabel;
+          optionsContainer.appendChild(emptyMessage);
+          updateLabel();
+          return;
+        }
+
+        options.forEach(function (option, index) {
+          renderRadio(option, index);
+        });
+
+        updateLabel();
+      }
+
+      menu.addEventListener("click", function (event) {
+        event.stopPropagation();
+      });
+
+      select.addEventListener("change", updateLabel);
+      render();
+
+      return { render: render };
+    }
+
+    function replaceOptions(select, items, emptyLabel) {
+      if (!select) {
+        return;
+      }
+
+      const previousValue = select.value;
+      select.innerHTML = "";
+
+      const blankOption = document.createElement("option");
+      blankOption.value = "";
+      blankOption.text = emptyLabel;
+      select.appendChild(blankOption);
+
+      items.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.text = item.label;
+        select.appendChild(option);
+      });
+
+      const hasPreviousValue = items.some(function (item) {
+        return item.value === previousValue;
+      });
+      select.value = hasPreviousValue ? previousValue : "";
+      select.dispatchEvent(new Event("change"));
+    }
+
+    function replaceMultiOptions(select, items) {
+      if (!select) {
+        return;
+      }
+
+      const previousValues = Array.from(select.selectedOptions).map(function (option) {
+        return option.value;
+      });
+
+      select.innerHTML = "";
+
+      items.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.text = item.label;
+        option.selected = previousValues.includes(item.value);
+        select.appendChild(option);
+      });
+
+      select.disabled = items.length === 0;
+      select.dispatchEvent(new Event("change"));
+    }
+
+    function setupLinkSelector(config) {
+      const select = document.getElementById(config.selectId);
+      const toggleButton = document.getElementById(config.toggleButtonId);
+      const panel = document.getElementById(config.panelId);
+      const optionsContainer = document.getElementById(config.optionsContainerId);
+      const selectedContainer = document.getElementById(config.selectedContainerId);
+      const emptyState = document.getElementById(config.emptyStateId);
+
+      if (!select || !toggleButton || !panel || !optionsContainer || !selectedContainer || !emptyState) {
+        return {
+          render: function () {},
+        };
+      }
+
+      function realOptions() {
+        return Array.from(select.options).filter(function (option) {
+          return option.value;
+        });
+      }
+
+      function selectedOptions() {
+        return realOptions().filter(function (option) {
+          return option.selected;
+        });
+      }
+
+      function updateToggleButton() {
+        const hasOptions = realOptions().length > 0;
+        const isOpen = !panel.classList.contains("d-none");
+
+        if (!hasOptions) {
+          panel.classList.add("d-none");
+        }
+
+        toggleButton.disabled = select.disabled || !hasOptions;
+        toggleButton.textContent = !hasOptions ? config.addLabel : (isOpen ? "Close" : config.addLabel);
+        toggleButton.setAttribute("aria-expanded", hasOptions && isOpen ? "true" : "false");
+      }
+
+      function setValueSelected(value, isSelected) {
+        const option = Array.from(select.options).find(function (item) {
+          return item.value === value;
+        });
+
+        if (!option) {
+          return;
+        }
+
+        option.selected = isSelected;
+        select.dispatchEvent(new Event("change"));
+      }
+
+      function renderSummary() {
+        const selected = selectedOptions();
+        selectedContainer.innerHTML = "";
+        emptyState.style.display = selected.length ? "none" : "";
+
+        selected.forEach(function (option) {
+          const chip = document.createElement("span");
+          chip.className = "link-selector-chip";
+
+          const label = document.createElement("span");
+          label.textContent = option.text;
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.setAttribute("aria-label", "Remove " + option.text);
+          removeButton.textContent = "×";
+          removeButton.addEventListener("click", function () {
+            setValueSelected(option.value, false);
+          });
+
+          chip.appendChild(label);
+          chip.appendChild(removeButton);
+          selectedContainer.appendChild(chip);
+        });
+      }
+
+      function renderOptions() {
+        const options = realOptions();
+        optionsContainer.innerHTML = "";
+
+        if (!options.length) {
+          const emptyMessage = document.createElement("p");
+          emptyMessage.className = "text-muted small mb-0";
+          emptyMessage.textContent = config.noOptionsLabel;
+          optionsContainer.appendChild(emptyMessage);
+          return;
+        }
+
+        options.forEach(function (option, index) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "custom-control custom-checkbox mb-2";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "custom-control-input";
+          checkbox.id = config.selectId + "-checkbox-" + index;
+          checkbox.checked = option.selected;
+
+          const checkboxLabel = document.createElement("label");
+          checkboxLabel.className = "custom-control-label";
+          checkboxLabel.setAttribute("for", checkbox.id);
+          checkboxLabel.textContent = option.text;
+
+          checkbox.addEventListener("change", function () {
+            setValueSelected(option.value, checkbox.checked);
+          });
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(checkboxLabel);
+          optionsContainer.appendChild(wrapper);
+        });
+      }
+
+      function render() {
+        renderSummary();
+        renderOptions();
+        updateToggleButton();
+      }
+
+      toggleButton.addEventListener("click", function () {
+        if (toggleButton.disabled) {
+          return;
+        }
+
+        panel.classList.toggle("d-none");
+        updateToggleButton();
+      });
+
+      select.addEventListener("change", render);
+      render();
+
+      return { render: render };
+    }
+
+    const epicDropdown = setupSingleSelectDropdown({
+      selectId: "id_epic",
+      buttonId: "epicDropdownButton",
+      optionsContainerId: "epicDropdownOptions",
+      labelId: "epicDropdownLabel",
+      menuId: "epicDropdownMenu",
+      placeholder: "Choose an epic",
+      emptyLabel: "No epic",
+      emptyStateLabel: "No epic available",
+      noOptionsLabel: "No epic available for this project.",
+    });
+
+    const assigneeDropdown = setupSingleSelectDropdown({
+      selectId: "id_assignee",
+      buttonId: "assigneeDropdownButton",
+      optionsContainerId: "assigneeDropdownOptions",
+      labelId: "assigneeDropdownLabel",
+      menuId: "assigneeDropdownMenu",
+      placeholder: "Choose a member",
+      emptyLabel: "Unassigned",
+      emptyStateLabel: "No member available",
+      noOptionsLabel: "No member available for this project.",
+    });
+
+    const blockedBySelector = setupLinkSelector({
+      selectId: "id_blocked_by_tickets",
+      toggleButtonId: "blockedByToggleButton",
+      panelId: "blockedByPanel",
+      optionsContainerId: "blockedByOptions",
+      selectedContainerId: "blockedBySelected",
+      emptyStateId: "blockedByEmptyState",
+      addLabel: "Add link",
+      noOptionsLabel: "No ticket available for this project.",
+    });
+
+    const relatesToSelector = setupLinkSelector({
+      selectId: "id_relates_to_tickets",
+      toggleButtonId: "relatesToToggleButton",
+      panelId: "relatesToPanel",
+      optionsContainerId: "relatesToOptions",
+      selectedContainerId: "relatesToSelected",
+      emptyStateId: "relatesToEmptyState",
+      addLabel: "Add link",
+      noOptionsLabel: "No ticket available for this project.",
+    });
+
+    const projectSelect = document.getElementById("id_project");
+    const sprintSelect = document.getElementById("id_sprint");
+    const epicSelect = document.getElementById("id_epic");
+    const assigneeSelect = document.getElementById("id_assignee");
+    const blockedBySelect = document.getElementById("id_blocked_by_tickets");
+    const relatesToSelect = document.getElementById("id_relates_to_tickets");
+    const issueTypeSelect = document.getElementById("id_issue_type");
+    const projectDataElement = document.getElementById("ticketProjectData");
+    const projectData = projectDataElement ? JSON.parse(projectDataElement.textContent) : {};
+
+    const sprintWrapper = document.getElementById("div_id_sprint_wrapper");
+    const epicWrapper = document.getElementById("div_id_epic_wrapper");
+    const storyPointsWrapper = document.getElementById("div_id_story_points_wrapper");
+    const initialLoadWrapper = document.getElementById("div_id_initial_load_wrapper");
+    const remainingLoadWrapper = document.getElementById("div_id_remaining_load_wrapper");
+    const storyPointsInput = document.getElementById("id_story_points");
+    const initialLoadInput = document.getElementById("id_initial_load");
+    const remainingLoadInput = document.getElementById("id_remaining_load");
+    const colorInput = document.getElementById("id_color");
+    const colorWrapper = document.getElementById("div_id_color_wrapper");
+
+    setupRichTextEditor();
+
+    function syncIssueTypeRestrictions() {
+      if (!issueTypeSelect) {
+        return;
+      }
+
+      const type = issueTypeSelect.value;
+      const isEpic = type === "EPIC";
+      const isTask = type === "TASK";
+      const supportsStoryPoints = type === "STORY" || type === "BUG";
+      const supportsLoad = type === "STORY" || type === "BUG" || type === "TASK";
+
+      if (sprintSelect) {
+        if (isEpic) {
+          sprintSelect.value = "";
+        }
+        sprintSelect.disabled = isEpic;
+      }
+
+      if (epicSelect) {
+        if (isEpic) {
+          epicSelect.value = "";
+        }
+        epicSelect.disabled = isEpic;
+      }
+
+      if (sprintWrapper) {
+        sprintWrapper.style.display = isEpic ? "none" : "";
+      }
+
+      if (epicWrapper) {
+        epicWrapper.style.display = isEpic ? "none" : "";
+      }
+
+      if (storyPointsWrapper) {
+        storyPointsWrapper.style.display = supportsStoryPoints ? "" : "none";
+      }
+
+      if (initialLoadWrapper) {
+        initialLoadWrapper.style.display = supportsLoad ? "" : "none";
+      }
+
+      if (remainingLoadWrapper) {
+        remainingLoadWrapper.style.display = supportsLoad ? "" : "none";
+      }
+
+      if (colorInput) {
+        if (isEpic) {
+          colorInput.disabled = false;
+        } else {
+          colorInput.value = "";
+          colorInput.disabled = true;
+        }
+      }
+
+      if (colorWrapper) {
+        colorWrapper.style.display = isEpic ? "" : "none";
+      }
+
+      if (!supportsStoryPoints && storyPointsInput) {
+        storyPointsInput.value = 0;
+      }
+
+      if (!supportsLoad) {
+        if (initialLoadInput) {
+          initialLoadInput.value = 0;
+        }
+        if (remainingLoadInput) {
+          remainingLoadInput.value = 0;
+        }
+      }
+
+      if (isTask && storyPointsInput) {
+        storyPointsInput.value = 0;
+      }
+
+      epicDropdown.render();
+    }
+
+    function syncProjectOptions() {
+      if (!projectSelect || !projectDataElement) {
+        syncIssueTypeRestrictions();
+        assigneeDropdown.render();
+        blockedBySelector.render();
+        relatesToSelector.render();
+        return;
+      }
+
+      const projectOptions = projectData[projectSelect.value] || {
+        sprints: [],
+        epics: [],
+        assignees: [],
+        linkables: [],
+      };
+
+      replaceOptions(sprintSelect, projectOptions.sprints, "Backlog");
+      replaceOptions(epicSelect, projectOptions.epics, "No epic");
+      replaceOptions(assigneeSelect, projectOptions.assignees, "Unassigned");
+      replaceMultiOptions(blockedBySelect, projectOptions.linkables);
+      replaceMultiOptions(relatesToSelect, projectOptions.linkables);
+
+      epicDropdown.render();
+      assigneeDropdown.render();
+      blockedBySelector.render();
+      relatesToSelector.render();
+      syncIssueTypeRestrictions();
+    }
+
+    if (projectSelect && projectDataElement) {
+      projectSelect.addEventListener("change", syncProjectOptions);
+      syncProjectOptions();
+    } else {
+      syncIssueTypeRestrictions();
+      assigneeDropdown.render();
+      blockedBySelector.render();
+      relatesToSelector.render();
+    }
+
+    if (issueTypeSelect) {
+      issueTypeSelect.addEventListener("change", syncIssueTypeRestrictions);
+      syncIssueTypeRestrictions();
+    }
+  });
+</script>
+{% endblock content %}

@@ -1,0 +1,215 @@
+{% extends "blog/base.html" %}
+{% load ticket_extras %}
+
+{% block content %}
+<style>
+  .ticket-description {
+    line-height: 1.6;
+  }
+
+  .ticket-description img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+  }
+
+  .ticket-description p:last-child,
+  .ticket-description ul:last-child,
+  .ticket-description ol:last-child,
+  .ticket-description blockquote:last-child,
+  .ticket-description pre:last-child {
+    margin-bottom: 0;
+  }
+</style>
+
+<div class="content-section">
+  <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-4">
+    <div>
+      <h2 class="article-title mb-0">{{ object.title }}</h2>
+      <p class="text-muted mb-0">Ticket #{{ object.id }} • created on {{ object.date_posted|date:"d F Y" }}</p>
+    </div>
+    <div class="text-right">
+      <span class="badge badge-pill badge-dark px-3 py-2">{{ object.get_status_display }}</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <h5>Description</h5>
+      <div class="article-content ticket-description">{{ object.description|render_ticket_description }}</div>
+
+      {% if blocked_by_tickets or blocks_tickets or related_tickets %}
+        <h5 class="mt-4">Linked tickets</h5>
+
+        <div class="mb-4">
+          <h6 class="text-muted text-uppercase small mb-2">Blocked by</h6>
+          <ul class="list-group shadow-sm mb-3">
+            {% for ticket in blocked_by_tickets %}
+              <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                <a href="{% url 'ticket-detail' ticket.id %}" class="text-dark">#{{ ticket.id }} - {{ ticket.title }}</a>
+                <span class="badge badge-light border">{{ ticket.get_status_display }}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted p-2">No blocking ticket.</li>
+            {% endfor %}
+          </ul>
+
+          <h6 class="text-muted text-uppercase small mb-2">Blocks</h6>
+          <ul class="list-group shadow-sm mb-3">
+            {% for ticket in blocks_tickets %}
+              <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                <a href="{% url 'ticket-detail' ticket.id %}" class="text-dark">#{{ ticket.id }} - {{ ticket.title }}</a>
+                <span class="badge badge-light border">{{ ticket.get_status_display }}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted p-2">No dependent ticket.</li>
+            {% endfor %}
+          </ul>
+
+          <h6 class="text-muted text-uppercase small mb-2">Relates to</h6>
+          <ul class="list-group shadow-sm">
+            {% for ticket in related_tickets %}
+              <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                <a href="{% url 'ticket-detail' ticket.id %}" class="text-dark">#{{ ticket.id }} - {{ ticket.title }}</a>
+                <span class="badge badge-light border">{{ ticket.get_status_display }}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted p-2">No related ticket.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if object.attachments.exists %}
+        <h5 class="mt-4">Attachments</h5>
+        <div class="mb-3">
+          {% for att in object.attachments.all %}
+            <div class="mb-3">
+              <a href="{{ att.file.url }}" target="_blank">
+                <img src="{{ att.file.url }}" alt="Attachment" class="img-thumbnail" style="max-width: 220px; max-height: 220px;">
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if object.issue_type == 'EPIC' %}
+        <h5 class="mt-5 mb-3">Stories / bugs in this epic</h5>
+        <ul class="list-group shadow-sm">
+          {% for child in object.stories.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+              <div>
+                {% if child.issue_type == 'STORY' %}
+                  <span class="badge badge-success mr-2">STORY</span>
+                {% elif child.issue_type == 'BUG' %}
+                  <span class="badge badge-danger mr-2">BUG</span>
+                {% elif child.issue_type == 'TASK' %}
+                  <span class="badge badge-secondary mr-2">TASK</span>
+                {% endif %}
+                <a href="{% url 'ticket-detail' child.id %}" class="text-dark">{{ child.title }}</a>
+              </div>
+              <span class="badge badge-light border">{{ child.get_status_display }}</span>
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted p-2">No linked ticket yet.</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="col-md-4 border-left">
+      <div class="pl-3">
+        <h6 class="text-muted text-uppercase small">Details</h6>
+
+        <p>
+          <strong>Type:</strong>
+          {% if object.issue_type == 'EPIC' %}
+            <span class="badge" style="background-color: {{ object.display_color }}; color: #fff;">Epic</span>
+          {% elif object.issue_type == 'STORY' %}
+            <span class="badge badge-success">Story</span>
+          {% elif object.issue_type == 'BUG' %}
+            <span class="badge badge-danger">Bug</span>
+          {% elif object.issue_type == 'TASK' %}
+            <span class="badge badge-secondary">Task</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Project:</strong>
+          <a href="{% url 'project-detail' object.project.pk %}">{{ object.project.name }}</a>
+        </p>
+
+        <p>
+          <strong>Sprint:</strong>
+          {% if object.sprint %}
+            <a href="{% url 'sprint-admin' object.project.pk %}">{{ object.sprint.name }}</a>
+          {% else %}
+            No sprint
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Epic link:</strong>
+          {% if object.epic %}
+            <a href="{% url 'ticket-detail' object.epic.id %}" style="color: {{ object.epic.display_color }};">{{ object.epic.title }}</a>
+          {% else %}
+            <span>None</span>
+          {% endif %}
+        </p>
+
+        <p><strong>Priority:</strong> {{ object.get_priority_display }}</p>
+
+        <div class="mb-3">
+          <strong>Tags:</strong>
+          {% if object.tags.all %}
+            {% include "blog/ticket_tags.html" with ticket=object %}
+          {% else %}
+            <span class="text-muted">No tags</span>
+          {% endif %}
+        </div>
+
+        <p><strong>Story points:</strong> {{ object.story_points }}</p>
+
+        {% if object.issue_type == 'STORY' or object.issue_type == 'BUG' or object.issue_type == 'TASK' %}
+          <p><strong>Initial load:</strong> {{ object.initial_load }}</p>
+
+          {% if can_update_remaining_load %}
+            <div class="mb-3">
+              <strong class="d-block mb-2">Remaining load:</strong>
+              <form method="post" action="{% url 'ticket-update-remaining-load' object.pk %}" class="d-flex align-items-start">
+                {% csrf_token %}
+                <div class="mr-2" style="min-width: 120px;">
+                  {{ remaining_load_form.remaining_load }}
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+              </form>
+            </div>
+          {% else %}
+            <p><strong>Remaining load:</strong> {{ object.remaining_load }}</p>
+          {% endif %}
+
+          <p><strong>Completed load:</strong> {{ object.completed_load }}</p>
+        {% endif %}
+
+        <p><strong>Author:</strong> {{ object.author.username }}</p>
+        <p><strong>Assigned:</strong> {{ object.assignee.username|default:"Unassigned" }}</p>
+
+        {% if object.issue_type == 'EPIC' and object.color %}
+          <p>
+            <strong>Color:</strong>
+            <span style="display:inline-block;width:20px;height:12px;background-color:{{ object.color }};border:1px solid #ddd;border-radius:2px;vertical-align:middle;"></span>
+          </p>
+        {% endif %}
+
+        {% if can_edit_ticket %}
+          <hr>
+          <a class="btn btn-secondary btn-sm btn-block" href="{% url 'ticket-update' object.id %}">Edit</a>
+          <a class="btn btn-danger btn-sm btn-block mt-2" href="{% url 'ticket-delete' object.id %}">Delete</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

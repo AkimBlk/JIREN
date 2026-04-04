@@ -1,0 +1,33 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="content-section">
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ token }}">
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Create Account</legend>
+            <div class="form-group">
+                <label for="invitation-username">Username</label>
+                <input
+                    id="invitation-username"
+                    type="text"
+                    class="form-control"
+                    value="{{ invitation_username }}"
+                    readonly
+                >
+                <small class="form-text text-muted">
+                    This username was assigned by your Super Admin and cannot be changed here.
+                </small>
+            </div>
+            {{ form|crispy }}
+        </fieldset>
+        <div class="form-group">
+            <button class="btn btn-outline-info" type="submit">Register</button>
+        </div>
+    </form>
+    <div class="border-top pt-3">
+        <small class="text-muted">Already have an account? <a href="{% url 'login' %}">Log In</a></small>
+    </div>
+</div>
+{% endblock %}

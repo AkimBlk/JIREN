@@ -1,0 +1,148 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mt-4 mb-5">
+  <div class="col-md-8 col-lg-7">
+    <div class="card shadow border-0" style="border-radius: 5px;">
+      <div class="card-body p-4 p-md-5">
+
+        <h4 class="font-weight-bold border-bottom pb-3 mb-4">
+          {% if object %}
+            Edit project
+          {% else %}
+            Create a new project
+          {% endif %}
+        </h4>
+
+        <form method="POST">
+          {% csrf_token %}
+          {# This section depends on a future team assignment screen. #}
+          <div class="alert alert-light small border mb-3">
+            In "capacity per user" mode, the per-user details depend on a team assignment screen that is not connected yet.
+          </div>
+          <div class="alert alert-light small border mb-3">
+            La liste des membres pilote la visibilite du projet pour les utilisateurs non admin.
+          </div>
+          {{ form.code_prefix|as_crispy_field }}
+          {{ form.name|as_crispy_field }}
+          {{ form.description|as_crispy_field }}
+          {{ form.start_date|as_crispy_field }}
+          {{ form.end_date|as_crispy_field }}
+          {{ form.workload_unit|as_crispy_field }}
+          {{ form.sprint_duration_days|as_crispy_field }}
+          {{ form.capacity_mode|as_crispy_field }}
+          {{ form.global_capacity|as_crispy_field }}
+
+          <div class="form-group">
+            <label for="membersDropdownButton">{{ form.members.label }}</label>
+            <div class="dropdown w-100">
+              <button
+                class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
+                type="button"
+                id="membersDropdownButton"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <span id="membersDropdownLabel">Choose members</span>
+              </button>
+              <div
+                class="dropdown-menu w-100 p-3"
+                aria-labelledby="membersDropdownButton"
+                id="membersDropdownMenu"
+                style="max-height: 260px; overflow-y: auto;"
+              >
+                <div id="membersDropdownOptions"></div>
+              </div>
+            </div>
+            <div class="d-none">
+              {{ form.members }}
+            </div>
+            {% if form.members.help_text %}
+              <small class="form-text text-muted">{{ form.members.help_text }}</small>
+            {% endif %}
+            {% if form.members.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.members.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group mt-4 pt-3 border-top d-flex justify-content-end align-items-center">
+            <a class="text-muted mr-4 text-decoration-none" href="{% url 'blog-home' %}">Cancel</a>
+            <button class="btn btn-outline-info" type="submit">
+              {% if object %}Update{% else %}Create project{% endif %}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("id_members");
+    const optionsContainer = document.getElementById("membersDropdownOptions");
+    const label = document.getElementById("membersDropdownLabel");
+    const menu = document.getElementById("membersDropdownMenu");
+
+    if (!select || !optionsContainer || !label) {
+      return;
+    }
+
+    function updateLabel() {
+      const selected = Array.from(select.selectedOptions).map(function (option) {
+        return option.text;
+      });
+
+      if (!selected.length) {
+        label.textContent = "Choose members";
+        return;
+      }
+
+      if (selected.length <= 2) {
+        label.textContent = selected.join(", ");
+        return;
+      }
+
+      label.textContent = selected.length + " selected members";
+    }
+
+    Array.from(select.options).forEach(function (option) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "custom-control custom-checkbox mb-2";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "custom-control-input";
+      checkbox.id = "member-option-" + option.value;
+      checkbox.checked = option.selected;
+
+      const checkboxLabel = document.createElement("label");
+      checkboxLabel.className = "custom-control-label";
+      checkboxLabel.setAttribute("for", checkbox.id);
+      checkboxLabel.textContent = option.text;
+
+      checkbox.addEventListener("change", function () {
+        option.selected = checkbox.checked;
+        updateLabel();
+      });
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(checkboxLabel);
+      optionsContainer.appendChild(wrapper);
+    });
+
+    menu.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+
+    updateLabel();
+  });
+</script>
+{% endblock content %}

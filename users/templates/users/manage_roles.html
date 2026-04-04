@@ -1,0 +1,19 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<h2 class="mb-4">Manage User Roles</h2>
+<table class="table table-bordered">
+    <thead class="thead-light">
+        <tr><th>Username</th><th>Email</th><th>Role</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% for profile in profiles %}
+    <tr>
+        <td>{{ profile.user.username }}</td>
+        <td>{{ profile.user.email }}</td>
+        <td><span class="badge badge-{% if profile.role == 'admin' %}danger{% elif profile.role == 'contributeur' %}primary{% else %}secondary{% endif %}">{{ profile.role }}</span></td>
+        <td><a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-secondary">Change Role</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

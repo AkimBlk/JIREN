@@ -1,0 +1,132 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  .tag-management-container {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+
+  .tag-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    background-color: #f9f9f9;
+  }
+
+  .tag-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  .tag-item-name {
+    font-weight: 500;
+  }
+
+  .btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .create-tag-form {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .alert-message {
+    margin-bottom: 1rem;
+  }
+
+  .tags-list-empty {
+    padding: 2rem;
+    text-align: center;
+    color: #999;
+  }
+</style>
+
+<div class="tag-management-container" data-project-id="{{ project.id }}">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Project Tags</h2>
+    <a href="{% url 'project-detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Back to Project</a>
+  </div>
+
+  {# Alert messages #}
+  <div id="alert-container"></div>
+
+  {# Tags list #}
+  <h5 class="mb-3">Existing Tags (<span id="tag-count">0</span>)</h5>
+  <div id="tags-list" class="tags-list-empty">
+    Loading tags...
+  </div>
+</div>
+
+<script>
+// Load tags on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('[data-project-id]');
+  const projectId = container ? container.dataset.projectId : null;
+  
+  if (!projectId) {
+    console.error('Project ID not found in data attribute');
+    return;
+  }
+  
+  loadTags(projectId);
+});
+
+function loadTags(projectId) {
+  fetch(`/api/projects/${projectId}/tags/`, {
+    credentials: 'include'  // Include session cookies
+  })
+    .then(response => response.json())
+    .then(tags => {
+      const listDiv = document.getElementById('tags-list');
+      const countSpan = document.getElementById('tag-count');
+      
+      countSpan.textContent = tags.length;
+      
+      if (tags.length === 0) {
+        listDiv.innerHTML = '<div class="tags-list-empty">No tags yet.</div>';
+        return;
+      }
+      
+      let html = '';
+      tags.forEach(tag => {
+        html += `
+          <div class="tag-item">
+            <span class="tag-item-name">#${tag.name}</span>
+          </div>
+        `;
+      });
+      
+      listDiv.innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Error loading tags:', error);
+      document.getElementById('tags-list').innerHTML = 
+        '<div class="alert alert-danger">Error loading tags</div>';
+    });
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+</script>
+{% endblock %}

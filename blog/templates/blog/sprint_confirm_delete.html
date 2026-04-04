@@ -1,0 +1,13 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<div class="content-section">
+    <h2>Delete sprint</h2>
+    <p>Are you sure you want to delete the sprint <strong>{{ sprint.name }}</strong>?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'sprint-admin' sprint.project.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock content %}

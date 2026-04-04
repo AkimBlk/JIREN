@@ -1,0 +1,366 @@
+{# Tags display and management component for tickets #}
+{% load static %}
+
+<div class="ticket-tags-container mt-2" id="ticket-tags-{{ ticket.id }}">
+  
+  {# Display existing tags #}
+  <div class="tags-display" id="tags-display-{{ ticket.id }}">
+    {% if ticket.tags.all %}
+      {% for tag in ticket.tags.all %}
+        <span class="badge badge-info mr-2 mb-2 d-inline-flex align-items-center">
+          #{{ tag.name }}
+          <button 
+            type="button" 
+            class="remove-tag-btn"
+            data-ticket-id="{{ ticket.id }}"
+            data-tag-id="{{ tag.id }}"
+            data-tag-name="{{ tag.name }}"
+            title="Remove tag"
+            style="background: none; border: none; color: white; font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
+            ×
+          </button>
+        </span>
+      {% endfor %}
+    {% else %}
+      <span class="text-muted small">No tags yet</span>
+    {% endif %}
+  </div>
+
+  {# Add tag section #}
+  <div class="mt-2">
+    <button 
+      type="button" 
+      class="btn btn-sm btn-outline-secondary toggle-tag-form-btn"
+      id="add-tag-btn-{{ ticket.id }}"
+      data-ticket-id="{{ ticket.id }}">
+      ➕ Add tag
+    </button>
+
+    {# Hidden form for adding tags with dropdown #}
+    <div id="add-tag-form-{{ ticket.id }}" style="display: none; margin-top: 0.5rem;" class="border bg-light p-3 rounded">
+      <div class="form-group">
+        <label for="tag-select-{{ ticket.id }}" class="small font-weight-bold">Select tag or create new:</label>
+        <div class="input-group">
+          <select 
+            class="custom-select custom-select-sm"
+            id="tag-select-{{ ticket.id }}"
+            data-ticket-id="{{ ticket.id }}"
+            data-project-id="{{ ticket.project.id }}">
+            <option value="">-- Available tags --</option>
+          </select>
+          <div class="input-group-append">
+            <button 
+              class="btn btn-sm btn-primary add-tag-btn" 
+              type="button"
+              data-ticket-id="{{ ticket.id }}"
+              data-project-id="{{ ticket.project.id }}">
+              Add
+            </button>
+            <button 
+              class="btn btn-sm btn-secondary close-tag-form-btn" 
+              type="button"
+              data-ticket-id="{{ ticket.id }}">
+              Cancel
+            </button>
+          </div>
+        </div>
+        <small class="form-text text-muted d-block mt-1">Or type to create a new tag:</small>
+        <input 
+          type="text" 
+          class="form-control form-control-sm mt-2" 
+          id="tag-input-{{ ticket.id }}" 
+          placeholder="New tag name..."
+          data-ticket-id="{{ ticket.id }}"
+          data-project-id="{{ ticket.project.id }}"
+          autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  {# Status messages #}
+  <div id="tag-messages-{{ ticket.id }}" class="mt-2"></div>
+</div>
+
+<script>
+// Tag management functions
+
+function toggleTagForm(ticketId, show) {
+  const form = document.getElementById(`add-tag-form-${ticketId}`);
+  const btn = document.getElementById(`add-tag-btn-${ticketId}`);
+  
+  if (show) {
+    form.style.display = 'block';
+    btn.style.display = 'none';
+    loadTagsDropdown(ticketId);
+    document.getElementById(`tag-input-${ticketId}`).focus();
+  } else {
+    form.style.display = 'none';
+    btn.style.display = 'inline-block';
+    document.getElementById(`tag-input-${ticketId}`).value = '';
+    document.getElementById(`tag-select-${ticketId}`).value = '';
+  }
+}
+
+let tagCache = {};
+
+async function fetchProjectTags(projectId) {
+  if (tagCache[projectId]) {
+    return tagCache[projectId];
+  }
+  
+  try {
+    const response = await fetch(`/api/projects/${projectId}/tags/`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+    
+    const tags = await response.json();
+    tagCache[projectId] = tags;
+    return tags;
+  } catch (error) {
+    console.error('Error fetching tags:', error);
+    return [];
+  }
+}
+
+async function loadTagsDropdown(ticketId) {
+  const select = document.getElementById(`tag-select-${ticketId}`);
+  const projectId = document.getElementById(`tag-input-${ticketId}`).dataset.projectId;
+  
+  try {
+    const tags = await fetchProjectTags(projectId);
+    
+    // Clear existing options except the first placeholder
+    while (select.children.length > 1) {
+      select.removeChild(select.lastChild);
+    }
+    
+    // Add tag options
+    tags.forEach(tag => {
+      const option = document.createElement('option');
+      option.value = tag.id;
+      option.textContent = `#${tag.name}`;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading dropdown:', error);
+    showMessage(ticketId, 'Error loading tags', 'danger');
+  }
+}
+
+async function addTagFromSelect(ticketId, projectId) {
+  const select = document.getElementById(`tag-select-${ticketId}`);
+  const input = document.getElementById(`tag-input-${ticketId}`);
+  
+  let tagName = '';
+  
+  if (select.value) {
+    // Get selected option text
+    tagName = select.options[select.selectedIndex].text.replace('#', '');
+  } else if (input.value.trim()) {
+    // Use typed name
+    tagName = input.value.trim();
+  } else {
+    showMessage(ticketId, 'Please select or enter a tag name', 'danger');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/tickets/${ticketId}/tags/add/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      credentials: 'include',
+      body: JSON.stringify({ tag_name: tagName }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      updateTagsDisplay(ticketId, data.tags);
+      showMessage(ticketId, `Tag "${tagName}" added successfully!`, 'success');
+      toggleTagForm(ticketId, false);
+      delete tagCache[projectId];
+    } else {
+      showMessage(ticketId, data.detail || 'Error adding tag', 'danger');
+    }
+  } catch (error) {
+    console.error('Error adding tag:', error);
+    showMessage(ticketId, 'Error adding tag', 'danger');
+  }
+}
+
+async function removeTag(ticketId, projectId, tagId) {
+  try {
+    const response = await fetch(`/api/tickets/${ticketId}/tags/remove/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      credentials: 'include',
+      body: JSON.stringify({ tag_id: tagId }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      updateTagsDisplay(ticketId, data.tags);
+      showMessage(ticketId, data.detail, 'success');
+      delete tagCache[projectId];
+    } else {
+      showMessage(ticketId, data.detail || 'Error removing tag', 'danger');
+    }
+  } catch (error) {
+    console.error('Error removing tag:', error);
+    showMessage(ticketId, 'Error removing tag', 'danger');
+  }
+}
+
+function updateTagsDisplay(ticketId, tags) {
+  const display = document.getElementById(`tags-display-${ticketId}`);
+  
+  if (tags.length === 0) {
+    display.innerHTML = '<span class="text-muted small">No tags yet</span>';
+    return;
+  }
+
+  let html = '';
+  tags.forEach(tag => {
+    html += `
+      <span class="badge badge-info mr-2 mb-2 d-inline-flex align-items-center">
+        #${tag.name}
+        <button 
+          type="button" 
+          class="remove-tag-btn"
+          data-ticket-id="${ticketId}"
+          data-tag-id="${tag.id}"
+          data-project-id="{{ ticket.project.id }}"
+          title="Remove tag"
+          style="background: none; border: none; color: white; font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
+          ×
+        </button>
+      </span>
+    `;
+  });
+  display.innerHTML = html;
+  
+  // Rebind remove buttons
+  attachRemoveTagListeners(ticketId);
+}
+
+function attachRemoveTagListeners(ticketId) {
+  const removeButtons = document.querySelectorAll(`#tags-display-${ticketId} .remove-tag-btn`);
+  removeButtons.forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      const tagId = this.dataset.tagId;
+      const projectId = this.dataset.projectId;
+      await removeTag(ticketId, projectId, tagId);
+    });
+  });
+}
+
+function showMessage(ticketId, message, type) {
+  const msgDiv = document.getElementById(`tag-messages-${ticketId}`);
+  const alertClass = `alert alert-${type}`;
+  msgDiv.innerHTML = `<div class="${alertClass} alert-dismissible fade show" role="alert">
+    ${message}
+    <button type="button" class="close" data-dismiss="alert">
+      <span>&times;</span>
+    </button>
+  </div>`;
+  
+  setTimeout(() => {
+    msgDiv.innerHTML = '';
+  }, 4000);
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Attach remove tag listeners
+  const tickets = new Set();
+  document.querySelectorAll('[id^="ticket-tags-"]').forEach(el => {
+    const ticketId = el.id.replace('ticket-tags-', '');
+    tickets.add(ticketId);
+  });
+  
+  tickets.forEach(ticketId => {
+    attachRemoveTagListeners(ticketId);
+  });
+
+  // Attach toggle form button listeners
+  document.querySelectorAll('.toggle-tag-form-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const ticketId = this.dataset.ticketId;
+      toggleTagForm(ticketId, true);
+    });
+  });
+
+  // Attach close form button listeners
+  document.querySelectorAll('.close-tag-form-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const ticketId = this.dataset.ticketId;
+      toggleTagForm(ticketId, false);
+    });
+  });
+
+  // Attach add tag button listeners
+  document.querySelectorAll('.add-tag-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const ticketId = this.dataset.ticketId;
+      const projectId = this.dataset.projectId;
+      addTagFromSelect(ticketId, projectId);
+    });
+  });
+});
+</script>
+
+<style>
+.ticket-tags-container {
+  padding: 0.5rem 0;
+}
+
+.tags-display {
+  min-height: 24px;
+  margin-bottom: 0.5rem;
+}
+
+.badge-info {
+  background-color: #17a2b8 !important;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.remove-tag-btn:hover {
+  opacity: 0.8;
+}
+
+.custom-select-sm {
+  min-height: calc(1.5rem + 2px);
+  padding: 0.25rem 1.75rem 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+</style>

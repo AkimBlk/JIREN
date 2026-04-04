@@ -1,0 +1,135 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h2 class="mb-1">Sprint administration</h2>
+      <p class="text-muted mb-0">
+        Project : <strong>{{ project.name }}</strong>
+        {% if project.code_prefix %}
+          <span class="badge badge-info ml-2">{{ project.code_prefix }}</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="text-right">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'project-detail' project.pk %}">Back to project</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'project-backlog' project.pk %}">View backlog</a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-7 mb-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Existing sprints</h5>
+
+          {% if sprints %}
+            <div class="list-group">
+              {% for sprint, status_form in sprints %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                      <strong>{{ sprint.name }}</strong>
+                      <span class="badge badge-light border ml-2">{{ sprint.get_status_display }}</span>
+
+                      <p class="text-muted small mb-0 mt-1">{{ sprint.start_date|date:"d M Y" }} - {{ sprint.end_date|date:"d M Y" }}</p>
+                      {% if sprint.objective %}<p class="text-muted small mb-0 mt-1">{{ sprint.objective }}</p>{% endif %}
+                      <p class="text-muted small mb-0 mt-1"><strong>Ticket template:</strong> {{ sprint.get_ticket_template_display }}</p>
+                      <p class="text-muted small mb-0 mt-1"><strong>Capacity mode:</strong> {{ sprint.get_capacity_mode_display }}</p>
+
+                      {% if sprint.capacity_mode == 'GLOBAL' %}
+                        <p class="text-muted small mb-0 mt-1"><strong>Story points:</strong> {{ sprint.total_story_points }}/{{ sprint.capacity }}</p>
+                      {% else %}
+                        <p class="text-muted small mb-0 mt-1"><strong>Story points:</strong> {{ sprint.total_story_points }}/{{ sprint.configured_capacity }}</p>
+                        <div class="mt-2">
+                          {% for item in sprint.user_capacities.all %}
+                            <span class="badge badge-light border mr-1 mb-1">{{ item.user.username }}: {{ item.capacity }} SP</span>
+                          {% empty %}
+                            <span class="text-muted small">No per-user capacity configured.</span>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <form method="post" action="{% url 'sprint-update-status' sprint.pk %}" class="form-inline mt-3 mt-md-0">
+                      {% csrf_token %}
+                      <label for="id_status_{{ sprint.pk }}" class="mr-2 small text-muted mb-0">Status</label>
+                      <select class="form-control form-control-sm mr-2" id="id_status_{{ sprint.pk }}" name="{{ status_form.status.html_name }}">
+                        {% for value, label in status_form.fields.status.choices %}
+                          <option value="{{ value }}"{% if status_form.initial.status == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button class="btn btn-sm btn-outline-primary mr-2" type="submit">Update</button>
+                      <a href="{% url 'sprint-update' sprint.pk %}" class="btn btn-sm btn-outline-primary mr-2">Edit</a>
+                      <a href="{% url 'sprint-delete' sprint.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">No sprint for this project yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Create a sprint</h5>
+          <p class="text-muted small">Choose one ticket card template for the whole sprint.</p>
+          <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div id="perUserCapacityBlock" class="mt-3">
+              <h6 class="mb-2">Per-user capacity</h6>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr><th>User</th><th>Capacity (SP)</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in capacity_rows %}
+                      <tr>
+                        <td>{{ row.user.username }}</td>
+                        <td><input type="number" min="1" class="form-control form-control-sm" name="{{ row.input_name }}" value="{{ row.value }}"></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-muted small mb-0">Fill only the users that should receive sprint capacity.</p>
+            </div>
+            <div class="mt-3 d-flex justify-content-end">
+              <button class="btn btn-primary" type="submit">Create sprint</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modeField = document.getElementById("id_capacity_mode");
+    const capacityFieldWrapper = document.getElementById("div_id_capacity");
+    const perUserBlock = document.getElementById("perUserCapacityBlock");
+
+    function toggleCapacityMode() {
+      if (!modeField) return;
+      const isPerUser = modeField.value === "PER_USER";
+      if (capacityFieldWrapper) capacityFieldWrapper.style.display = isPerUser ? "none" : "";
+      if (perUserBlock) perUserBlock.style.display = isPerUser ? "" : "none";
+    }
+
+    if (modeField) {
+      modeField.addEventListener("change", toggleCapacityMode);
+      toggleCapacityMode();
+    }
+  });
+</script>
+{% endblock content %}

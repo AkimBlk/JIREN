@@ -1,0 +1,150 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="content-section">
+    <div class="media">
+        <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
+        <div class="media-body">
+            <h2 class="account-heading">{{ user.username }}</h2>
+            <p class="text-secondary mb-1">{{ user.email }}</p>
+            <p class="text-muted mb-0">
+                Access level :
+                {% if is_platform_admin %}
+                    Super Admin
+                {% else %}
+                    Member
+                {% endif %}
+            </p>
+            <small class="text-muted">Username is managed by your Super Admin.</small>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="mt-4">
+        {% csrf_token %}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Profile Picture</legend>
+            {{ p_form|crispy }}
+        </fieldset>
+        <div class="form-group">
+            <button class="btn btn-outline-info" type="submit">Update</button>
+            <a href="{% url 'password_change' %}" class="btn btn-outline-warning ml-2">
+                Change password
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="content-section">
+    <h4 class="border-bottom pb-2 mb-3">Teams / Related projects</h4>
+
+    {% if managed_projects %}
+        <div class="mb-3">
+            <h5>Managed projects</h5>
+            <ul class="list-group">
+                {% for project in managed_projects %}
+                    <li class="list-group-item">
+                        <a href="{% url 'project-detail' project.pk %}">{{ project.name }}</a>
+                        <span class="badge badge-primary ml-2">Manager</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div>
+        <h5>Project memberships</h5>
+        {% if memberships %}
+            <ul class="list-group">
+                {% for membership in memberships %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{% url 'project-detail' membership.project.pk %}">
+                            {{ membership.project.name }}
+                        </a>
+                        <span class="badge badge-light border">
+                            {% if membership.role == 'admin' %}
+                                Admin
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted mb-0">No related project.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="content-section">
+    <h4 class="border-bottom pb-2 mb-3">User-related tickets</h4>
+
+    <h5>Assigned tickets</h5>
+    {% if assigned_tickets %}
+        <ul class="list-group mb-4">
+            {% for ticket in assigned_tickets %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if ticket.issue_type == 'EPIC' %}
+                                <span class="badge badge-primary mr-2">EPIC</span>
+                            {% elif ticket.issue_type == 'STORY' %}
+                                <span class="badge badge-success mr-2">STORY</span>
+                            {% elif ticket.issue_type == 'BUG' %}
+                                <span class="badge badge-danger mr-2">BUG</span>
+                            {% endif %}
+
+                            <a href="{% url 'ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
+                            <div class="small text-muted mt-1">
+                                Project : {{ ticket.project.name }}
+                                {% if ticket.epic %}
+                                    • Epic :
+                                    <a href="{% url 'ticket-detail' ticket.epic.pk %}">{{ ticket.epic.title }}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-light border mr-2">{{ ticket.get_status_display }}</span>
+                            <span class="badge badge-light border">{{ ticket.get_priority_display }}</span>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No assigned ticket.</p>
+    {% endif %}
+
+    {% if user.is_superuser or user.is_staff %}
+    <h5>Latest created tickets</h5>
+    {% if created_tickets %}
+        <ul class="list-group">
+            {% for ticket in created_tickets %}
+                <li class="list-group-item">
+                    {% if ticket.issue_type == 'EPIC' %}
+                        <span class="badge badge-primary mr-2">EPIC</span>
+                    {% elif ticket.issue_type == 'STORY' %}
+                        <span class="badge badge-success mr-2">STORY</span>
+                    {% elif ticket.issue_type == 'BUG' %}
+                        <span class="badge badge-danger mr-2">BUG</span>
+                    {% endif %}
+
+                    <a href="{% url 'ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
+
+                    <div class="small text-muted mt-1">
+                        Project : {{ ticket.project.name }}
+                        {% if ticket.epic %}
+                            • Epic :
+                            <a href="{% url 'ticket-detail' ticket.epic.pk %}">{{ ticket.epic.title }}</a>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No recently created ticket.</p>
+    {% endif %}
+{% endif %}
+</div>
+{% endblock content %}

@@ -1,0 +1,16 @@
+# Environnements virtuels
+venv/
+env/
+
+# Fichiers compilés Python
+__pycache__/
+*.pyc
+
+# Base de données locale
+db.sqlite3
+
+# Variables d'environnement
+.env
+
+*.bat
+

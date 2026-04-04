@@ -1,0 +1,151 @@
+body {
+  background: #fafafa;
+  color: #333333;
+  margin-top: 5rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #444444;
+}
+
+ul {
+  margin: 0;
+}
+
+.bg-steel {
+  background-color: #5f788a;
+}
+
+.site-header .navbar-nav .nav-link {
+  color: #cbd5db;
+}
+
+.site-header .navbar-nav .nav-link:hover {
+  color: #ffffff;
+}
+
+.site-header .navbar-nav .nav-link.active {
+  font-weight: 500;
+}
+
+.content-section {
+  background: #ffffff;
+  padding: 10px 20px;
+  border: 1px solid #dddddd;
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+
+.article-title {
+  color: #444444;
+}
+
+a.article-title:hover {
+  color: #428bca;
+  text-decoration: none;
+}
+
+.article-content {
+  white-space: pre-line;
+}
+
+.article-img {
+  height: 65px;
+  width: 65px;
+  margin-right: 16px;
+}
+
+.article-metadata {
+  padding-bottom: 1px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e3e3e3
+}
+
+.article-metadata a:hover {
+  color: #333;
+  text-decoration: none;
+}
+
+.article-svg {
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
+}
+
+.account-img {
+  height: 125px;
+  width: 125px;
+  margin-right: 20px;
+  margin-bottom: 16px;
+}
+
+.account-heading {
+  font-size: 2.5rem;
+}
+
+.project-header-card,
+.project-info-card,
+.project-table-card,
+.ticket-row-card {
+  background: #ffffff;
+  border: 1px solid #e3e7eb;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.project-header-card,
+.project-info-card,
+.project-table-card {
+  padding: 22px 24px;
+}
+
+.ticket-row-card {
+  padding: 14px 18px;
+}
+
+.project-code {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #5f788a;
+  background: #eef4f8;
+  border: 1px solid #d8e3ea;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.project-header-actions .btn {
+  min-width: 88px;
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.project-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.project-table-card .table {
+  margin-bottom: 0;
+}
+
+.project-table-card thead th {
+  border-top: 0;
+  background: #f8f9fa;
+}
+
+.ticket-title-link {
+  font-weight: 600;
+  color: #2f4858;
+  text-decoration: none;
+}
+
+.ticket-title-link:hover {
+  text-decoration: none;
+  color: #1d2f3a;
+}
