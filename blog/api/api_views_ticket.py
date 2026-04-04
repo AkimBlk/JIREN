@@ -38,11 +38,10 @@ class TicketTagViewSet(viewsets.ViewSet):
         tag_name = validated_data.get("tag_name")
         if tag_id:
             return get_object_or_404(Tag.objects.filter(project=ticket.project), id=tag_id)
-        # Create tag if it doesn't exist (use get_or_create, not get_object_or_404)
-        tag, _ = Tag.objects.get_or_create(
-            name=tag_name,
-            project=ticket.project,
-        )
+        normalized = normalize_tag_name(tag_name)
+        tag = Tag.objects.filter(project=ticket.project, normalized_name=normalized).first()
+        if not tag:
+            tag = Tag.objects.create(name=tag_name, project=ticket.project)
         return tag
 
     def add_tag(self, request, ticket_id=None):

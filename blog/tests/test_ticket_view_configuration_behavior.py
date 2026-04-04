@@ -5,7 +5,7 @@ from django.test import RequestFactory, TestCase
 
 from blog.models import Project, ProjectMember, Sprint, SprintUserCapacity, Ticket
 from blog.views import TicketCreateView, TicketListView
-from blog.views.views_queries import save_sprint_user_capacities as _save_sprint_user_capacities
+from blog.views.queries import save_sprint_user_capacities as _save_sprint_user_capacities
 
 
 class TicketViewConfigurationBehaviorTests(TestCase):
