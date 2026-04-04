@@ -44,7 +44,7 @@ class ProjectForm(forms.ModelForm):
             selected_users.append(manager)
         selected_ids = {user.id for user in selected_users}
         project.members.exclude(user=manager).exclude(user_id__in=selected_ids).delete()
-        for user in selected_users:
+        for user in selected_users:   
             role = "admin" if user == manager else "member"
             ProjectMember.objects.update_or_create(project=project, user=user, defaults={"role": role})
 
