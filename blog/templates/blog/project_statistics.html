@@ -1,0 +1,73 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+
+<h2>{{ project.name }} Statistics</h2>
+
+<h3>Velocity</h3>
+<canvas id="velocityChart"></canvas>
+
+<h3>Capacity Consumption (%)</h3>
+<canvas id="consumptionChart"></canvas>
+
+<h3>Burndown Chart ({{ selected_sprint.name }})</h3>
+<canvas id="burndownChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const velocityLabels = {{ velocity_labels|safe }};
+const velocityValues = {{ velocity_values|safe }};
+const consumptionValues = {{ consumption_values|safe }};
+
+new Chart(document.getElementById("velocityChart"), {
+    type: "bar",
+    data: {
+        labels: velocityLabels,
+        datasets: [{
+            label: "Story points completed",
+            data: velocityValues
+        }]
+    }
+});
+
+new Chart(document.getElementById("consumptionChart"), {
+    type: "bar",
+    data: {
+        labels: velocityLabels,
+        datasets: [{
+            label: "Capacity consumption %",
+            data: consumptionValues
+        }]
+    }
+});
+
+{% if burndown %}
+
+const burndownLabels = {{ burndown.labels|safe }};
+const burndownIdeal = {{ burndown.ideal|safe }};
+const burndownActual = {{ burndown.actual|safe }};
+
+new Chart(document.getElementById("burndownChart"), {
+    type: "line",
+    data: {
+        labels: burndownLabels,
+        datasets: [
+            {
+                label: "Ideal",
+                data: burndownIdeal
+            },
+            {
+                label: "Actual",
+                data: burndownActual
+            }
+        ]
+    }
+});
+
+{% endif %}
+
+</script>
+
+{% endblock %}

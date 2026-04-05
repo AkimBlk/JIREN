@@ -73,6 +73,9 @@
                 <a class="btn btn-sm btn-primary" href="{% url 'project-backlog' project.pk %}">
                     <span class="material-symbols-outlined" style="font-size:16px;">reorder</span> View backlog
                 </a>
+                <a class="btn btn-sm btn-secondary" href="{% url 'project-statistics' project.pk %}">
+                    View Statistics
+                </a>
                 <a class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:white; border:none;" href="{% url 'ticket-create' %}?project={{ project.pk }}">
                     <span class="material-symbols-outlined" style="font-size:16px;">add</span> Create ticket
                 </a>

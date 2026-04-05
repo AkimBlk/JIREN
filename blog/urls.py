@@ -1,4 +1,5 @@
 from django.urls import path
+from .views.statistics import ProjectStatisticsView
 
 from . import views
 from .views import (
@@ -70,4 +71,5 @@ urlpatterns = [
     path("sprints/<int:pk>/delete/", views.delete_sprint, name="sprint-delete"),
     path("sprints/<int:pk>/edit/", views.SprintUpdateView.as_view(), name="sprint-update"),
     path("projects/delete/", views.delete_projects, name="project-delete-multiple"),
+    path("project/<int:pk>/statistics/", ProjectStatisticsView.as_view(), name="project-statistics"),
 ]
