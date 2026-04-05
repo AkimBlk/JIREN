@@ -2,6 +2,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <script>
+    (function () {
+        const storageKey = "jiren-theme";
+        const storedTheme = localStorage.getItem(storageKey);
+        const preferredTheme = storedTheme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", preferredTheme);
+        }());
+    </script>
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
@@ -29,6 +39,10 @@
         </div>
     </div>
     <div class="helb-nav-links d-flex align-items-center">
+        <button type="button" class="helb-theme-toggle" id="themeToggleButton" aria-label="Switch color theme">
+            <span class="material-symbols-outlined" id="themeToggleIcon">dark_mode</span>
+            <span class="d-none d-lg-inline" id="themeToggleLabel">Dark mode</span>
+        </button>
         {% if user.is_authenticated %}
             {% if user.is_staff or user.is_superuser %}
                 <a href="{% url 'project-create' %}" title="New Project">
@@ -121,5 +135,41 @@
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const storageKey = "jiren-theme";
+        const toggleButton = document.getElementById("themeToggleButton");
+        const toggleIcon = document.getElementById("themeToggleIcon");
+        const toggleLabel = document.getElementById("themeToggleLabel");
+
+        function getTheme() {
+            return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        }
+
+        function updateToggle(theme) {
+            if (!toggleButton || !toggleIcon || !toggleLabel) {
+                return;
+            }
+
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            toggleIcon.textContent = theme === "dark" ? "light_mode" : "dark_mode";
+            toggleLabel.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+            toggleButton.setAttribute("aria-label", "Switch to " + nextTheme + " mode");
+        }
+
+        if (!toggleButton) {
+            return;
+        }
+
+        updateToggle(getTheme());
+
+        toggleButton.addEventListener("click", function () {
+            const nextTheme = getTheme() === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", nextTheme);
+            localStorage.setItem(storageKey, nextTheme);
+            updateToggle(nextTheme);
+        });
+    });
+</script>
 </body>
 </html>

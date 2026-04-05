@@ -9,6 +9,20 @@ from ..models.tag import normalize_tag_name
 from ..rich_text import sanitize_rich_text
 
 
+DEFAULT_DESCRIPTION_TEMPLATE = """En tant qu’utilisateur :
+-
+
+Description développeur :
+-
+
+Règles métier :
+-
+
+Done quand :
+- 
+"""
+
+
 class TicketForm(forms.ModelForm):
     tags_input = forms.CharField(
         label="Tags",
@@ -38,6 +52,7 @@ class TicketForm(forms.ModelForm):
             "relates_to_tickets", "story_points", "initial_load", "remaining_load", "color",
         ]
         widgets = {
+            "issue_type": forms.RadioSelect(),
             "description": RichTextTextarea(attrs={"rows": 10, "data-rich-text-source": "true"}),
         }
 
@@ -45,6 +60,9 @@ class TicketForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["blocked_by_tickets"].label_from_instance = self._ticket_label
         self.fields["relates_to_tickets"].label_from_instance = self._ticket_label
+
+        if not self.instance.pk and not self.is_bound:
+            self.fields["description"].initial = DEFAULT_DESCRIPTION_TEMPLATE
 
         if self.instance.pk:
             self._init_tags_field()
@@ -103,21 +121,20 @@ class TicketForm(forms.ModelForm):
     def clean_story_points(self):
         story_points = self.cleaned_data.get("story_points")
         project = self.cleaned_data.get("project")
-        
+
         if not story_points or not project:
             return story_points
-        
-        # Get or create default scheme (Fibonacci) for project
+
         from ..models import StoryPointsScheme
         scheme, _ = StoryPointsScheme.objects.get_or_create(project=project)
-        
+
         if not scheme.is_valid(story_points):
             allowed = scheme.get_allowed_values()
             raise forms.ValidationError(
                 f"Story points must be one of: {allowed}. "
                 f"Current scheme: {scheme.scheme_type}"
             )
-        
+
         return story_points
 
     def save(self, commit=True):

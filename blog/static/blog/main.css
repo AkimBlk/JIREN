@@ -1024,3 +1024,191 @@ a.article-title:hover {
     gap: 0.25rem;
   }
 }
+
+/* ============================================================
+   Dark Theme
+   ============================================================ */
+
+html[data-theme="dark"] {
+  --helb-primary: #ffcf85;
+  --helb-on-primary: #2d1b00;
+  --helb-primary-container: #5c3a00;
+  --helb-on-primary-container: #ffdca8;
+  --helb-secondary: #9ecaff;
+  --helb-on-secondary: #06284a;
+  --helb-secondary-container: #244874;
+  --helb-on-secondary-container: #d4e3ff;
+  --helb-tertiary: #9add72;
+  --helb-on-tertiary: #133000;
+  --helb-tertiary-container: #225100;
+  --helb-on-tertiary-container: #c1ff9f;
+  --helb-surface: #0f1724;
+  --helb-on-surface: #edf3ff;
+  --helb-surface-variant: #1d2a3d;
+  --helb-on-surface-variant: #b4c1d6;
+  --helb-surface-container-lowest: #111b29;
+  --helb-surface-container-low: #162233;
+  --helb-surface-container: #1d2a3d;
+  --helb-surface-container-high: #243246;
+  --helb-surface-container-highest: #2b3a51;
+  --helb-surface-bright: #243246;
+  --helb-surface-dim: #0d1520;
+  --helb-surface-tint: #ffb94f;
+  --helb-inverse-surface: #edf3ff;
+  --helb-inverse-on-surface: #0f1724;
+  --helb-outline: #90a0b7;
+  --helb-outline-variant: #34445c;
+  --helb-error: #ffb4ab;
+  --helb-on-error: #690005;
+  --helb-error-container: #93000a;
+  --helb-on-error-container: #ffdad6;
+  --helb-shadow-sm: 0px 4px 12px rgba(0, 0, 0, 0.28);
+  --helb-shadow-md: 0px 20px 40px rgba(0, 0, 0, 0.32);
+  --helb-shadow-lg: 0px 20px 40px rgba(0, 0, 0, 0.40);
+}
+
+.helb-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+body,
+.dropdown-menu,
+.list-group-item,
+.modal-content,
+.table,
+.form-control,
+.custom-select,
+.custom-file-label,
+.custom-control-label,
+.btn-outline-secondary,
+.btn-outline-info,
+.alert {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.form-control,
+.custom-select,
+.custom-file-label {
+  background: var(--helb-surface-container-lowest);
+  color: var(--helb-on-surface);
+  border: 1px solid var(--helb-outline-variant);
+}
+
+.form-control:focus,
+.custom-select:focus {
+  background: var(--helb-surface-container-lowest);
+  color: var(--helb-on-surface);
+  border-color: var(--helb-secondary);
+  box-shadow: 0 0 0 0.2rem rgba(62, 96, 141, 0.18);
+}
+
+.form-control:disabled,
+.custom-select:disabled {
+  background: var(--helb-surface-container-low);
+  color: var(--helb-outline);
+}
+
+.dropdown-menu {
+  background: var(--helb-surface-container-lowest);
+  border-color: var(--helb-outline-variant);
+  color: var(--helb-on-surface);
+}
+
+.dropdown-item,
+.text-muted,
+small,
+.form-text {
+  color: var(--helb-outline) !important;
+}
+
+.btn-outline-secondary {
+  color: var(--helb-on-surface);
+  border-color: var(--helb-outline-variant);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-info:hover {
+  color: var(--helb-on-surface);
+  background: var(--helb-surface-container);
+}
+
+.btn-outline-info {
+  color: var(--helb-secondary);
+  border-color: var(--helb-secondary);
+}
+
+.alert-info {
+  background: var(--helb-surface-container);
+  border-color: var(--helb-secondary-container);
+  color: var(--helb-on-surface);
+}
+
+.alert-danger {
+  background: var(--helb-error-container);
+  border-color: var(--helb-error);
+  color: var(--helb-on-error-container);
+}
+
+html[data-theme="dark"] .btn,
+html[data-theme="dark"] button,
+html[data-theme="dark"] input[type="submit"],
+html[data-theme="dark"] input[type="button"] {
+  color: var(--helb-on-surface);
+}
+
+html[data-theme="dark"] .btn-info,
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-outline-info:hover,
+html[data-theme="dark"] .btn-outline-primary:hover {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .btn-outline-info,
+html[data-theme="dark"] .btn-outline-primary,
+html[data-theme="dark"] .btn-outline-secondary {
+  color: var(--helb-on-surface) !important;
+}
+
+html[data-theme="dark"] .btn:disabled,
+html[data-theme="dark"] .btn.disabled,
+html[data-theme="dark"] button:disabled,
+html[data-theme="dark"] input[type="submit"]:disabled,
+html[data-theme="dark"] input[type="button"]:disabled {
+  color: rgba(255, 255, 255, 0.75) !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .btn-light,
+html[data-theme="dark"] .btn-warning {
+  color: #1a1a1a !important;
+}
+
+html[data-theme="dark"] .btn-outline-info:hover {
+  background-color: #7ab8ff;
+  border-color: #7ab8ff;
+  color: #ffffff !important;
+}
+
+
+html[data-theme="dark"] .btn:disabled,
+html[data-theme="dark"] .btn.disabled {
+  background-color: #2b3a51 !important;
+  border-color: #3b4d66 !important;
+  color: #c7d4e5 !important;
+}
+
+/*Delete ici quand il y aura les 4 couleurs du logo !!! */
+html[data-theme="dark"] .helb-arc-bg,
+html[data-theme="dark"] .helb-arc-bg-2 {
+  opacity: 0.08;
+}
+
+.border,
+.border-top,
+.border-bottom,
+.rounded {
+  border-color: var(--helb-outline-variant) !important;
+  
+}

@@ -8,10 +8,13 @@
   }
 
   .rich-editor-shell {
-    background: #fff;
-    border: 1px solid #ced4da;
+    background: var(--helb-surface-container-lowest);
+    border: 1px solid var(--helb-outline-variant);
     border-radius: 0.25rem;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    resize: vertical;
+    overflow: auto;
+    min-height: 320px;
   }
 
   .rich-editor-shell.is-focused {
@@ -28,36 +31,38 @@
     flex-wrap: wrap;
     gap: 0.35rem;
     padding: 0.75rem;
-    border-bottom: 1px solid #e9ecef;
-    background: #f8f9fa;
+    border-bottom: 1px solid var(--helb-outline-variant);
+    background: var(--helb-surface-container-low);
   }
 
   .rich-editor-toolbar button {
     min-width: 2.25rem;
     padding: 0.35rem 0.65rem;
-    border: 1px solid #d6dbe1;
+    border: 1px solid var(--helb-outline-variant);
     border-radius: 0.35rem;
-    background: #fff;
-    color: #343a40;
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
     font-size: 0.95rem;
     line-height: 1.2;
   }
 
   .rich-editor-toolbar button:hover {
-    background: #eef6ff;
-    border-color: #b8d8ff;
+    background: var(--helb-surface-container);
+    border-color: var(--helb-secondary-container);
   }
 
   .rich-editor-surface {
     min-height: 260px;
+    height: 100%;
     padding: 1rem;
     outline: none;
     line-height: 1.6;
+    color: var(--helb-on-surface);
   }
 
   .rich-editor-surface:empty:before {
     content: attr(data-placeholder);
-    color: #6c757d;
+    color: var(--helb-outline);
   }
 
   .rich-editor-surface img {
@@ -69,8 +74,8 @@
   }
 
   .link-selector-panel {
-    background: #fff;
-    border: 1px solid #dee2e6;
+    background: var(--helb-surface-container-lowest);
+    border: 1px solid var(--helb-outline-variant);
     border-radius: 0.25rem;
   }
 
@@ -83,9 +88,9 @@
     display: inline-flex;
     align-items: center;
     padding: 0.45rem 0.75rem;
-    border: 1px solid #d6dbe1;
+    border: 1px solid var(--helb-outline-variant);
     border-radius: 999px;
-    background: #f8f9fa;
+    background: var(--helb-surface-container-low);
     margin-right: 0.5rem;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
@@ -94,7 +99,7 @@
   .link-selector-chip button {
     border: 0;
     background: transparent;
-    color: #6c757d;
+    color: var(--helb-outline);
     margin-left: 0.5rem;
     padding: 0;
     line-height: 1;
@@ -102,7 +107,7 @@
   }
 
   .link-selector-chip button:hover {
-    color: #343a40;
+    color: var(--helb-on-surface);
   }
 </style>
 
@@ -916,7 +921,7 @@
     const assigneeSelect = document.getElementById("id_assignee");
     const blockedBySelect = document.getElementById("id_blocked_by_tickets");
     const relatesToSelect = document.getElementById("id_relates_to_tickets");
-    const issueTypeSelect = document.getElementById("id_issue_type");
+    const issueTypeInputs = document.querySelectorAll('input[name="issue_type"]');
     const projectDataElement = document.getElementById("ticketProjectData");
     const projectData = projectDataElement ? JSON.parse(projectDataElement.textContent) : {};
 
@@ -933,12 +938,17 @@
 
     setupRichTextEditor();
 
+    function getSelectedIssueType() {
+      const selectedInput = document.querySelector('input[name="issue_type"]:checked');
+      return selectedInput ? selectedInput.value : "";
+    }
+
     function syncIssueTypeRestrictions() {
-      if (!issueTypeSelect) {
+      const type = getSelectedIssueType();
+      if (!type) {
         return;
       }
 
-      const type = issueTypeSelect.value;
       const isEpic = type === "EPIC";
       const isTask = type === "TASK";
       const supportsStoryPoints = type === "STORY" || type === "BUG";
@@ -1050,8 +1060,10 @@
       relatesToSelector.render();
     }
 
-    if (issueTypeSelect) {
-      issueTypeSelect.addEventListener("change", syncIssueTypeRestrictions);
+    if (issueTypeInputs.length) {
+      issueTypeInputs.forEach(function (input) {
+        input.addEventListener("change", syncIssueTypeRestrictions);
+      });
       syncIssueTypeRestrictions();
     }
   });
