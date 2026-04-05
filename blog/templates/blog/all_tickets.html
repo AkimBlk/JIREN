@@ -1,85 +1,92 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
-<div class="mt-4">
+<div class="mb-4">
   <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
-    <h3 class="mb-0 font-weight-bold">All tickets</h3>
-    <form method="get" class="form-inline mt-2 mt-md-0">
-      <label for="tag" class="mr-2 text-muted small">Tag</label>
-      <select name="tag" id="tag" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+    <h2 class="mb-0" style="font-weight:800;">
+      <span class="material-symbols-outlined" style="font-size:28px; color:var(--helb-on-primary-container); vertical-align:-4px;">confirmation_number</span>
+      All Tickets
+    </h2>
+    <form method="get" class="d-flex align-items-center mt-2 mt-md-0" style="gap:0.5rem;">
+      <select name="tag" id="tag" class="form-control form-control-sm" style="width:auto;" onchange="this.form.submit()">
         <option value="">All tags</option>
         {% for tag in available_tags %}
           <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
         {% endfor %}
       </select>
       {% if selected_tag %}
-        <a href="{% url 'all-tickets' %}" class="btn btn-sm btn-outline-secondary">Clear tag</a>
+        <a href="{% url 'all-tickets' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
       {% endif %}
       <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
     </form>
   </div>
 
   {% if selected_tag %}
-    <div class="alert alert-light border">
+    <div class="alert alert-light mb-3">
+      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:-3px;">filter_alt</span>
       Filtering tickets by tag <strong>#{{ selected_tag.name }}</strong>.
     </div>
   {% endif %}
 
-  <div class="bg-white rounded shadow-sm border">
+  <div class="helb-card-sm" style="overflow-x:auto; padding:0;">
     <table class="table table-hover mb-0">
-      <thead class="bg-light text-muted small text-uppercase">
+      <thead>
         <tr>
-          <th scope="col" class="border-top-0">ID</th>
-          <th scope="col" class="border-top-0">Type</th>
-          <th scope="col" class="border-top-0">Title</th>
-          <th scope="col" class="border-top-0">Assigned</th>
-          <th scope="col" class="border-top-0">Status</th>
-          <th scope="col" class="border-top-0">Project</th>
-          <th scope="col" class="border-top-0">Tags</th>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Title</th>
+          <th>Assigned</th>
+          <th>Status</th>
+          <th>Project</th>
+          <th>Tags</th>
         </tr>
       </thead>
       <tbody>
         {% for ticket in tickets %}
           <tr>
-            <td class="align-middle text-muted">Ticket #{{ ticket.id }}</td>
-            <td class="align-middle">
+            <td class="text-muted" style="font-weight:600;">
+              <span class="material-symbols-outlined" style="font-size:14px;">tag</span>
+              {{ ticket.id }}
+            </td>
+            <td>
               {% if ticket.issue_type == 'EPIC' %}
                 <span class="badge" style="background-color: #604dcc; color: white;">Epic</span>
               {% elif ticket.issue_type == 'BUG' %}
                 <span class="badge badge-danger">Bug</span>
-              {% else %}
+              {% elif ticket.issue_type == 'STORY' %}
                 <span class="badge badge-success">Story</span>
+              {% elif ticket.issue_type == 'TASK' %}
+                <span class="badge badge-secondary">Task</span>
               {% endif %}
             </td>
-            <td class="align-middle">
-              <a href="{% url 'ticket-detail' ticket.id %}">{{ ticket.title }}</a>
+            <td>
+              <a href="{% url 'ticket-detail' ticket.id %}" style="font-weight:600;">{{ ticket.title }}</a>
             </td>
-            <td class="align-middle">
+            <td>
               {% if ticket.assignee %}
-                <img class="rounded-circle mr-1" style="width: 20px; height: 20px; object-fit: cover;" src="{{ ticket.assignee.profile.image.url }}">
-                <small>{{ ticket.assignee.username }}</small>
+                <div class="d-flex align-items-center" style="gap:0.35rem;">
+                  <img class="rounded-circle" style="width:22px; height:22px; object-fit:cover;" src="{{ ticket.assignee.profile.image.url }}">
+                  <small>{{ ticket.assignee.username }}</small>
+                </div>
               {% else %}
                 <small class="text-muted">Unassigned</small>
               {% endif %}
             </td>
-            <td class="align-middle">
-              <span class="badge" style="font-size: 14px;">{{ ticket.get_status_display }}</span>
-            </td>
-            <td class="align-middle">
+            <td><span class="badge badge-light">{{ ticket.get_status_display }}</span></td>
+            <td>
               <small class="text-muted">
                 {{ ticket.project.name }}
-                {% if ticket.sprint %}
-                  <br>{{ ticket.sprint.name }}
-                {% endif %}
+                {% if ticket.sprint %}<br>{{ ticket.sprint.name }}{% endif %}
               </small>
             </td>
-            <td class="align-middle">
-              {% include "blog/ticket_tags.html" %}
-            </td>
+            <td>{% include "blog/ticket_tags.html" %}</td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center py-4 text-muted">No tickets yet.</td>
+            <td colspan="7" class="text-center py-4 text-muted">
+              <span class="material-symbols-outlined" style="font-size:36px;">search_off</span>
+              <p class="mt-2 mb-0">No tickets yet.</p>
+            </td>
           </tr>
         {% endfor %}
       </tbody>

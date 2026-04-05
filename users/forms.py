@@ -48,6 +48,14 @@ class ProfileUpdateForm(forms.ModelForm):
         fields = ["image"]
 
 
+class RoleUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ["role"]
+        widgets = {
+            "role": forms.Select(choices=Profile.ROLE_CHOICES)
+        }
+
 class InvitationForm(forms.ModelForm):
     class Meta:
         model = Invitation

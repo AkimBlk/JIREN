@@ -1,14 +1,28 @@
 {% extends "blog/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-<div class="content-section">
-    <h3>Change role for <strong>{{ target.user.username }}</strong></h3>
-    <p class="text-muted">Current role: <span class="badge badge-secondary">{{ target.role }}</span></p>
-    <form method="POST">
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{% url 'manage-roles' %}" class="btn btn-secondary ml-2">Cancel</a>
-    </form>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="helb-card">
+            <h3 class="mb-3" style="font-weight:800;">
+                <span class="material-symbols-outlined" style="font-size:24px; color:var(--helb-on-primary-container); vertical-align:-4px;">badge</span>
+                Change Role
+            </h3>
+            <p class="text-muted mb-3">
+                User: <strong>{{ target.user.username }}</strong> &bull;
+                Current role: <span class="badge badge-secondary">{{ target.role }}</span>
+            </p>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="d-flex justify-content-end mt-3" style="gap:0.75rem;">
+                    <a href="{% url 'manage-roles' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-outlined" style="font-size:16px;">save</span> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

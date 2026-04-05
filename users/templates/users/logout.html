@@ -1,9 +1,15 @@
 {% extends "blog/base.html" %}
 {% block content %}
-    <h2>You have been logout </h2>
-    <div class="border-top pt-3">
-        <small class="text-muted"> 
-            <a href="{% url 'login' %}">  Log In Again </a>
-        </small>
+<div class="row justify-content-center" style="min-height:50vh; align-items:center;">
+    <div class="col-md-5 col-lg-4">
+        <div class="helb-card" style="text-align:center;">
+            <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-outline-variant); margin-bottom:1rem;">waving_hand</span>
+            <h3 style="font-weight:800;">You have been logged out</h3>
+            <p class="text-muted mt-2 mb-3">See you next time!</p>
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <span class="material-symbols-outlined" style="font-size:16px;">login</span> Log In Again
+            </a>
+        </div>
     </div>
+</div>
 {% endblock content %}

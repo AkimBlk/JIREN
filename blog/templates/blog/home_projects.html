@@ -1,45 +1,65 @@
 {% extends "blog/base.html" %}
 {% block content %}
-<div class="mt-4" id="projects">
+<div class="mb-4" id="projects">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Projects</h2>
+        <div>
+            <h2 style="font-weight:800;">
+                <span class="material-symbols-outlined" style="font-size:28px; color:var(--helb-on-primary-container); vertical-align:-4px;">admin_panel_settings</span>
+                Admin Dashboard
+            </h2>
+            <p class="text-muted small mt-1">All projects on the platform</p>
+        </div>
         {% if user_can_create_projects %}
-            <a href="{% url 'project-create' %}" class="btn btn-success">+ New Project</a>
+            <a href="{% url 'project-create' %}" class="btn btn-primary btn-sm">
+                <span class="material-symbols-outlined" style="font-size:16px;">add</span> New Project
+            </a>
         {% endif %}
     </div>
 
     {% for project in projects %}
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h5 class="card-title mb-1">
-                        <a href="{% url 'project-detail' project.pk %}">{{ project.name }}</a>
-                        {% if project.code_prefix %}
-                            <span class="badge badge-info ml-1">{{ project.code_prefix }}</span>
-                        {% endif %}
-                    </h5>
-                    <p class="card-text text-muted mb-1">{{ project.description|truncatechars:120 }}</p>
-                    <small class="text-muted d-block">Manager: {{ project.manager.username }} &middot; {{ project.date_created|date:"d M Y" }}</small>
-                    <small class="text-muted d-block">Start: {{ project.start_date|date:"d M Y"|default:"-" }} &middot; End: {{ project.end_date|date:"d M Y"|default:"-" }}</small>
-                    <small class="text-muted d-block mt-1">
-                        Members:
-                        {% for membership in project.members.all %}
-                            {{ membership.user.username }}{% if not forloop.last %}, {% endif %}
-                        {% empty %}
-                            No members yet.
-                        {% endfor %}
-                    </small>
+    <div class="helb-card-sm mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div style="flex:1;">
+                <h5 class="mb-1" style="font-weight:700;">
+                    <a href="{% url 'project-detail' project.pk %}">{{ project.name }}</a>
+                    {% if project.code_prefix %}
+                        <span class="badge badge-info ml-1">{{ project.code_prefix }}</span>
+                    {% endif %}
+                </h5>
+                <p class="text-muted small mb-1">{{ project.description|truncatechars:120 }}</p>
+                <div class="text-muted small">
+                    <span class="material-symbols-outlined" style="font-size:13px;">person</span>
+                    Manager: {{ project.manager.username }} &middot; {{ project.date_created|date:"d M Y" }}
                 </div>
-                <div class="text-right ml-3">
-                    <a class="btn btn-outline-info btn-sm mb-2" href="{% url 'project-detail' project.pk %}">Open</a>
-                    <a class="btn btn-outline-secondary btn-sm d-block" href="{% url 'project-backlog' project.pk %}">Backlog</a>
+                <div class="text-muted small">
+                    <span class="material-symbols-outlined" style="font-size:13px;">event</span>
+                    Start: {{ project.start_date|date:"d M Y"|default:"-" }} &middot; End: {{ project.end_date|date:"d M Y"|default:"-" }}
                 </div>
+                <div class="text-muted small mt-1">
+                    <span class="material-symbols-outlined" style="font-size:13px;">group</span>
+                    Members:
+                    {% for membership in project.members.all %}
+                        {{ membership.user.username }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No members yet.
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="d-flex flex-column ml-3" style="gap:0.5rem;">
+                <a class="btn btn-primary btn-sm" href="{% url 'project-detail' project.pk %}">
+                    <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span> Open
+                </a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'project-backlog' project.pk %}">
+                    <span class="material-symbols-outlined" style="font-size:14px;">reorder</span> Backlog
+                </a>
             </div>
         </div>
     </div>
     {% empty %}
-    <p class="text-muted">No projects yet.</p>
+    <div class="helb-card" style="text-align:center; padding:3rem;">
+        <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-outline-variant);">folder_off</span>
+        <p class="text-muted mt-2">No projects yet.</p>
+    </div>
     {% endfor %}
 </div>
 {% endblock %}

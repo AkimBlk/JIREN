@@ -1,13 +1,22 @@
 {% extends "blog/base.html" %}
 {% block content %}
-<div class="content-section">
-    <h2>Delete sprint</h2>
-    <p>Are you sure you want to delete the sprint <strong>{{ sprint.name }}</strong>?</p>
+<div class="row justify-content-center" style="min-height:40vh; align-items:center;">
+  <div class="col-md-6 col-lg-5">
+    <div class="helb-card" style="text-align:center;">
+      <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-error); margin-bottom:1rem;">warning</span>
+      <h3 style="font-weight:800;">Delete Sprint</h3>
+      <p class="mt-2 mb-3">Are you sure you want to delete the sprint <strong>{{ sprint.name }}</strong>?</p>
 
-    <form method="post">
+      <form method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Delete</button>
-        <a href="{% url 'sprint-admin' sprint.project.pk %}" class="btn btn-secondary">Cancel</a>
-    </form>
+        <div class="d-flex justify-content-center" style="gap:0.75rem;">
+          <a href="{% url 'sprint-admin' sprint.project.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-outline-danger">
+            <span class="material-symbols-outlined" style="font-size:16px;">delete</span> Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock content %}

@@ -135,3 +135,40 @@ def invite_user(request):
         form = InvitationForm()
 
     return render(request, "users/invite.html", {"form": form, "invitations": invitations})
+
+
+@login_required
+def manage_roles(request):
+    if not _is_platform_admin(request.user):
+        messages.error(request, "Only platform administrators can manage roles.")
+        return redirect("blog-home")
+
+    from .models import Profile
+
+    profiles = Profile.objects.select_related("user").order_by("user__username")
+    return render(request, "users/manage_roles.html", {"profiles": profiles})
+
+
+@login_required
+def update_role(request, pk):
+    if not _is_platform_admin(request.user):
+        messages.error(request, "Only platform administrators can update roles.")
+        return redirect("blog-home")
+
+    from django.contrib.auth.models import User
+    from .models import Profile
+    from .forms import RoleUpdateForm
+
+    user = User.objects.get(pk=pk)
+    profile = user.profile
+
+    if request.method == "POST":
+        form = RoleUpdateForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Role updated for {user.username}.")
+            return redirect("manage-roles")
+    else:
+        form = RoleUpdateForm(instance=profile)
+
+    return render(request, "users/update_role.html", {"target": profile, "form": form})

@@ -2,55 +2,53 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="content-section">
-    <form method="POST">
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+    <div class="helb-card">
+      <h3 class="mb-4" style="font-weight:800;">
+        <span class="material-symbols-outlined" style="font-size:24px; color:var(--helb-on-primary-container); vertical-align:-4px;">edit_calendar</span>
+        Sprint
+      </h3>
+
+      <form method="POST">
         {% csrf_token %}
-            {% if request.GET.next %}
-            <input type="hidden" name="next" value="{{ request.GET.next }}">
-            {% endif %}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">Sprint</legend>
-            {{ form|crispy }}
+        {% if request.GET.next %}
+          <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
 
-            <div id="perUserCapacityBlock" class="mt-3">
-                <h6 class="mb-2">Per-user capacity</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Capacity (SP)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in capacity_rows %}
-                            <tr>
-                                <td>{{ row.user.username }}</td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        class="form-control form-control-sm"
-                                        name="{{ row.input_name }}"
-                                        value="{{ row.value }}"
-                                    >
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-muted small mb-0">
-                    Fill only the users that should receive sprint capacity.
-                </p>
-            </div>
-        </fieldset>
+        {{ form|crispy }}
 
-        <div class="form-group">
-            <button class="btn btn-outline-info" type="submit">Save</button>
-            <a href="{% url 'sprint-admin' object.project.pk %}" class="btn btn-secondary">Cancel</a>
+        <div id="perUserCapacityBlock" class="mt-3">
+          <h6 class="mb-2">Per-user capacity</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>User</th><th>Capacity (SP)</th></tr>
+              </thead>
+              <tbody>
+                {% for row in capacity_rows %}
+                  <tr>
+                    <td>{{ row.user.username }}</td>
+                    <td>
+                      <input type="number" min="1" class="form-control form-control-sm" name="{{ row.input_name }}" value="{{ row.value }}">
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="text-muted small mb-0">Fill only the users that should receive sprint capacity.</p>
         </div>
-    </form>
+
+        <div class="d-flex justify-content-end mt-4" style="gap:0.75rem;">
+          <a href="{% url 'sprint-admin' object.project.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <button class="btn btn-primary" type="submit">
+            <span class="material-symbols-outlined" style="font-size:16px;">save</span> Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -61,16 +59,9 @@
 
     function toggleCapacityMode() {
       if (!modeField) return;
-
       const isPerUser = modeField.value === "PER_USER";
-
-      if (capacityFieldWrapper) {
-        capacityFieldWrapper.style.display = isPerUser ? "none" : "";
-      }
-
-      if (perUserBlock) {
-        perUserBlock.style.display = isPerUser ? "" : "none";
-      }
+      if (capacityFieldWrapper) capacityFieldWrapper.style.display = isPerUser ? "none" : "";
+      if (perUserBlock) perUserBlock.style.display = isPerUser ? "" : "none";
     }
 
     if (modeField) {

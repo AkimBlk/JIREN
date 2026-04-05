@@ -57,6 +57,8 @@ class SprintAdminForm(forms.ModelForm):
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
             "objective": forms.Textarea(attrs={"rows": 3}),
+            "ticket_template": forms.Select(attrs={"class": "form-control"}),
+            "capacity": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
         }
 
 

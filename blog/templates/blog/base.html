@@ -5,65 +5,117 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'blog/main.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     {% if title %}<title>JIREN - {{ title }}</title>{% else %}<title>JIREN</title>{% endif %}
 </head>
 <body>
-<header class="site-header">
-    <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
-        <div class="container">
-            <a class="navbar-brand mr-4" href="{% url 'blog-home' %}">JIREN</a>
 
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<!-- HELB Arc Decorations -->
+<div class="helb-arc-bg"></div>
+<div class="helb-arc-bg-2"></div>
 
-            <div class="collapse navbar-collapse" id="navbarToggle">
-                <div class="navbar-nav mr-auto">
-                    <a class="nav-item nav-link" href="{% url 'blog-home' %}">Projects</a>
-                </div>
-
-                <div class="navbar-nav align-items-center">
-                    {% if user.is_authenticated %}
-                        {% if user.is_staff or user.is_superuser %}
-                            <a class="nav-item nav-link" href="{% url 'project-create' %}">+ Project</a>
-                            <a class="nav-item nav-link" href="{% url 'invite-user' %}">Invite</a>
-                        {% endif %}
-
-                        <a class="nav-item nav-link" href="{% url 'profile' %}">
-                            {{ user.username }}
-                            {% if user.is_staff or user.is_superuser %}
-                                <span class="badge badge-danger ml-1">super admin</span>
-                            {% else %}
-                                <span class="badge badge-secondary ml-1">member</span>
-                            {% endif %}
-                        </a>
-
-                        <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-item nav-link btn btn-link" style="padding:0.5rem;border:0;">Logout</button>
-                        </form>
-                    {% else %}
-                        <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </nav>
-</header>
-
-<main role="main" class="container mt-5 pt-4">
-    <div class="row">
-        <div class="col-md-12">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-            {% block content %}{% endblock %}
+<!-- TopNavBar -->
+<header class="helb-topnav">
+    <div class="d-flex align-items-center" style="gap: 2rem;">
+        <a class="helb-brand" href="{% url 'blog-home' %}">JIREN</a>
+        <div class="helb-nav-links d-none d-md-flex">
+            <a href="{% url 'blog-home' %}" class="helb-nav-active">
+                <span class="material-symbols-outlined" style="font-size:18px; margin-right:4px;">dashboard</span>
+                Projects
+            </a>
         </div>
     </div>
+    <div class="helb-nav-links d-flex align-items-center">
+        {% if user.is_authenticated %}
+            {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'project-create' %}" title="New Project">
+                    <span class="material-symbols-outlined" style="font-size:20px;">add_circle</span>
+                    <span class="d-none d-lg-inline">Project</span>
+                </a>
+                <a href="{% url 'invite-user' %}" title="Invite User">
+                    <span class="material-symbols-outlined" style="font-size:20px;">person_add</span>
+                    <span class="d-none d-lg-inline">Invite</span>
+                </a>
+            {% endif %}
+
+            <a href="{% url 'profile' %}" style="display:flex; align-items:center; gap:0.4rem;">
+                <span class="material-symbols-outlined" style="font-size:20px;">account_circle</span>
+                {{ user.username }}
+                {% if user.is_staff or user.is_superuser %}
+                    <span class="helb-user-badge helb-badge-admin">admin</span>
+                {% else %}
+                    <span class="helb-user-badge helb-badge-member">member</span>
+                {% endif %}
+            </a>
+
+            <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
+                {% csrf_token %}
+                <button type="submit" title="Logout" style="background:none; border:none; cursor:pointer; padding:0.5rem 0.75rem; border-radius:9999px; color:var(--helb-outline); transition: all 0.15s;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">logout</span>
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">
+                <span class="material-symbols-outlined" style="font-size:20px;">login</span>
+                Login
+            </a>
+        {% endif %}
+    </div>
+</header>
+
+{% if user.is_authenticated %}
+<!-- Sidebar -->
+<aside class="helb-sidebar d-none d-md-flex">
+    <div class="helb-sidebar-header">
+        <h3>Project Space</h3>
+        <p>Management</p>
+    </div>
+    <nav>
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'blog-home' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'blog-home' %}active{% endif %}">
+            <span class="material-symbols-outlined">dashboard</span>
+            Dashboard
+        </a>
+        {% endif %}
+        <a href="{% url 'kanban' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}">
+            <span class="material-symbols-outlined">view_week</span>
+            Kanban
+        </a>
+        <a href="{% url 'all-tickets' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'all-tickets' %}active{% endif %}">
+            <span class="material-symbols-outlined">confirmation_number</span>
+            All Tickets
+        </a>
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'sprint-admin-index' %}" class="helb-sidebar-link {% if 'sprint' in request.resolver_match.url_name %}active{% endif %}">
+            <span class="material-symbols-outlined">sprint</span>
+            Sprints
+        </a>
+        <a href="{% url 'manage-roles' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'manage-roles' %}active{% endif %}">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            Roles
+        </a>
+        {% endif %}
+        <a href="{% url 'profile' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <span class="material-symbols-outlined">person</span>
+            Profile
+        </a>
+    </nav>
+</aside>
+{% endif %}
+
+<!-- Main Content -->
+<main class="{% if user.is_authenticated %}helb-main{% else %}helb-main{% endif %}" {% if not user.is_authenticated %}style="margin-left:0;"{% endif %}>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mb-3" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
 </main>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>

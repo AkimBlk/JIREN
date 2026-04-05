@@ -1,119 +1,145 @@
 {% extends "blog/base.html" %}
 {% block content %}
 
-<div class="project-header-card mb-4">
+<div class="helb-card mb-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
         <div class="mb-3 mb-md-0">
-            <h2 class="mb-1">{{ project.name }}</h2>
-
+            <h2 class="mb-1" style="font-weight:800;">{{ project.name }}</h2>
             {% if project.code_prefix %}
                 <div class="project-code mb-2">{{ project.code_prefix }}</div>
             {% endif %}
-
             <p class="text-muted mb-0">
-                Manager: {{ project.manager.username }} · {{ project.date_created|date:"d M Y" }}
+                <span class="material-symbols-outlined" style="font-size:14px;">person</span>
+                Manager: {{ project.manager.username }} &middot; {{ project.date_created|date:"d M Y" }}
             </p>
         </div>
-
-        <div class="project-header-actions">
+        <div class="d-flex flex-wrap" style="gap:0.5rem;">
             {% if user_can_manage_sprints %}
-                <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-sm btn-outline-primary mb-2">Sprints</a>
+                <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-sm btn-outline-primary">
+                    <span class="material-symbols-outlined" style="font-size:16px;">sprint</span> Sprints
+                </a>
             {% endif %}
-
             {% if user_is_admin %}
-                <a href="{% url 'project-update' project.pk %}" class="btn btn-sm btn-warning mb-2">Edit</a>
-                <a href="{% url 'project-delete' project.pk %}" class="btn btn-sm btn-danger mb-2">Delete</a>
+                <a href="{% url 'project-update' project.pk %}" class="btn btn-sm btn-warning">
+                    <span class="material-symbols-outlined" style="font-size:16px;">edit</span> Edit
+                </a>
+                <a href="{% url 'project-delete' project.pk %}" class="btn btn-sm btn-outline-danger">
+                    <span class="material-symbols-outlined" style="font-size:16px;">delete</span> Delete
+                </a>
             {% endif %}
         </div>
     </div>
 </div>
 
-<div class="project-info-card mb-4">
-    <h5 class="section-title">Description</h5>
-    <p class="mb-4">{{ project.description|default:"No description." }}</p>
-
-    <h5 class="section-title">Project settings</h5>
-    <div class="row">
-        <div class="col-md-6">
-            <p><strong>Start date:</strong> {{ project.start_date|date:"d M Y" }}</p>
-            <p><strong>End date:</strong> {{ project.end_date|date:"d M Y" }}</p>
-            <p><strong>Workload unit:</strong> {{ project.get_workload_unit_display }}</p>
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="helb-card-sm mb-4">
+            <h5 class="mb-3" style="font-weight:700;">
+                <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">description</span>
+                Description
+            </h5>
+            <p class="mb-0">{{ project.description|default:"No description." }}</p>
         </div>
-        <div class="col-md-6">
-            <p><strong>Sprint duration:</strong> {{ project.sprint_duration_days }} days</p>
-            <p><strong>Capacity mode:</strong> {{ project.get_capacity_mode_display }}</p>
-            {% if project.global_capacity %}
-                <p><strong>Global capacity:</strong> {{ project.global_capacity }}</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
 
-<div class="mb-4">
-    <a class="btn btn-outline-primary btn-sm" href="{% url 'project-backlog' project.pk %}">View backlog</a>
-    <a class="btn btn-outline-info btn-sm" href="{% url 'ticket-create' %}?project={{ project.pk }}">Create ticket</a>
-    {% if active_sprint %}
-        <a class="btn btn-primary btn-sm" href="{% url 'project-active-sprint' project.pk %}">Active sprint</a>
-    {% else %}
-        <button type="button" class="btn btn-outline-secondary btn-sm" disabled>No active sprint</button>
-    {% endif %}
-</div>
-
-<h5 class="mb-3">Members</h5>
-<div class="project-table-card mb-4">
-    <table class="table table-sm mb-0">
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Role</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in members %}
-            <tr>
-                <td>{{ m.user.username }}</td>
-                <td>
-                    {% if m.user == project.manager or m.role == 'admin' %}
-                        <span class="badge badge-danger">admin</span>
-                    {% else %}
-                        <span class="badge badge-secondary">member</span>
+        <div class="helb-card-sm">
+            <h5 class="mb-3" style="font-weight:700;">
+                <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">settings</span>
+                Project Settings
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Start date:</strong> {{ project.start_date|date:"d M Y" }}</p>
+                    <p class="mb-2"><strong>End date:</strong> {{ project.end_date|date:"d M Y" }}</p>
+                    <p class="mb-2"><strong>Workload unit:</strong> {{ project.get_workload_unit_display }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Sprint duration:</strong> {{ project.sprint_duration_days }} days</p>
+                    <p class="mb-2"><strong>Capacity mode:</strong> {{ project.get_capacity_mode_display }}</p>
+                    {% if project.global_capacity %}
+                        <p class="mb-2"><strong>Global capacity:</strong> {{ project.global_capacity }}</p>
                     {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2" class="text-muted">No members yet.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="helb-card-sm mb-4" style="background:var(--helb-inverse-surface); color:var(--helb-inverse-on-surface);">
+            <h6 style="font-weight:700; color:var(--helb-inverse-on-surface); margin-bottom:1rem;">
+                <span class="material-symbols-outlined" style="font-size:18px;">bolt</span>
+                Quick Actions
+            </h6>
+            <div class="d-flex flex-column" style="gap:0.5rem;">
+                <a class="btn btn-sm btn-primary" href="{% url 'project-backlog' project.pk %}">
+                    <span class="material-symbols-outlined" style="font-size:16px;">reorder</span> View backlog
+                </a>
+                <a class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:white; border:none;" href="{% url 'ticket-create' %}?project={{ project.pk }}">
+                    <span class="material-symbols-outlined" style="font-size:16px;">add</span> Create ticket
+                </a>
+                {% if active_sprint %}
+                    <a class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:white; border:none;" href="{% url 'project-active-sprint' project.pk %}">
+                        <span class="material-symbols-outlined" style="font-size:16px;">sprint</span> Active sprint
+                    </a>
+                {% else %}
+                    <span class="btn btn-sm disabled" style="background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.4); border:none;">
+                        No active sprint
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="helb-card-sm mb-4">
+    <h5 class="mb-3" style="font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">group</span>
+        Members
+    </h5>
+    <div class="d-flex flex-wrap" style="gap:0.75rem;">
+        {% for m in members %}
+            <div class="d-flex align-items-center" style="background:var(--helb-surface-container-low); padding:0.5rem 1rem; border-radius:var(--helb-radius-full);">
+                <span class="material-symbols-outlined" style="font-size:18px; margin-right:0.5rem;">person</span>
+                <span style="font-weight:600; font-size:0.875rem;">{{ m.user.username }}</span>
+                {% if m.user == project.manager or m.role == 'admin' %}
+                    <span class="badge badge-danger ml-2">admin</span>
+                {% else %}
+                    <span class="badge badge-secondary ml-2">member</span>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p class="text-muted mb-0">No members yet.</p>
+        {% endfor %}
+    </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h5 class="mb-0">Tickets</h5>
-    <form method="get" class="form-inline mt-2 mt-md-0">
-        <label for="tag" class="mr-2 text-muted small">Tag</label>
-        <select name="tag" id="tag" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+    <h5 class="mb-0" style="font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">confirmation_number</span>
+        Tickets
+    </h5>
+    <form method="get" class="d-flex align-items-center mt-2 mt-md-0" style="gap:0.5rem;">
+        <select name="tag" id="tag" class="form-control form-control-sm" style="width:auto;" onchange="this.form.submit()">
             <option value="">All tags</option>
             {% for tag in available_tags %}
                 <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
             {% endfor %}
         </select>
         {% if selected_tag %}
-            <a href="{% url 'project-detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Clear tag</a>
+            <a href="{% url 'project-detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Clear</a>
         {% endif %}
         <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
     </form>
 </div>
 
 {% if selected_tag %}
-<div class="alert alert-light border">
+<div class="alert alert-light">
+    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:-3px;">filter_alt</span>
     Filtering project tickets by tag <strong>#{{ selected_tag.name }}</strong>.
 </div>
 {% endif %}
 
 {% for ticket in project_tickets %}
-<div class="ticket-row-card mb-2" style="border-left: 5px solid {% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}#dc3545{% elif ticket.issue_type == 'STORY' %}#28a745{% else %}#6c757d{% endif %}; padding-left: 1rem;">
+<div class="ticket-row-card mb-2" style="border-left: 5px solid {% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}var(--helb-error){% elif ticket.issue_type == 'STORY' %}var(--helb-on-tertiary-container){% else %}var(--helb-outline){% endif %};">
     <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div class="mb-2 mb-md-0">
             <div class="mb-1">
@@ -142,7 +168,7 @@
 
             {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}
                 <div class="text-muted small mt-1">
-                    Load: {{ ticket.completed_load }}/{{ ticket.initial_load }} completed · Remaining: {{ ticket.remaining_load }}
+                    Load: {{ ticket.completed_load }}/{{ ticket.initial_load }} completed &middot; Remaining: {{ ticket.remaining_load }}
                 </div>
             {% endif %}
         </div>
@@ -154,7 +180,10 @@
     </div>
 </div>
 {% empty %}
-<p class="text-muted">No tickets yet.</p>
+<div class="helb-card-sm" style="text-align:center; padding:2rem;">
+    <span class="material-symbols-outlined" style="font-size:36px; color:var(--helb-outline-variant);">confirmation_number</span>
+    <p class="text-muted mt-2 mb-0">No tickets yet.</p>
+</div>
 {% endfor %}
 
 {% endblock %}

@@ -1,19 +1,23 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="content-section">
-    <form method="POST">
-      {% csrf_token %}
-      <fieldset class="form-group">
-        <legend class="border-bottom mb-4">Delete ticket</legend>
-        <h5>Are you sure you want to delete "{{ object.title }}"?</h5>
-      </fieldset>
-      <div class="form-group">
-        <button class="btn btn-outline-danger" type="submit">Yes, delete</button>
-        <a class="btn btn-outline-secondary" href="{% url 'ticket-detail' object.id %}">Cancel</a>
-      </div>
-    </form>
+<div class="row justify-content-center" style="min-height:40vh; align-items:center;">
+  <div class="col-md-6 col-lg-5">
+    <div class="helb-card" style="text-align:center;">
+      <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-error); margin-bottom:1rem;">warning</span>
+      <h3 style="font-weight:800;">Delete Ticket</h3>
+      <p class="mt-2 mb-3">Are you sure you want to delete <strong>"{{ object.title }}"</strong>?</p>
+
+      <form method="POST">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center" style="gap:0.75rem;">
+          <a class="btn btn-outline-secondary" href="{% url 'ticket-detail' object.id %}">Cancel</a>
+          <button class="btn btn-outline-danger" type="submit">
+            <span class="material-symbols-outlined" style="font-size:16px;">delete</span> Yes, delete
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock content %}

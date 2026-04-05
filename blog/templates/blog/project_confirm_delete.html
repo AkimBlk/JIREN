@@ -1,20 +1,21 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-  <div class="col-md-8 col-lg-7">
-    <div class="content-section">
+<div class="row justify-content-center" style="min-height:40vh; align-items:center;">
+  <div class="col-md-6 col-lg-5">
+    <div class="helb-card" style="text-align:center;">
+      <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-error); margin-bottom:1rem;">warning</span>
+      <h3 style="font-weight:800;">Delete Project</h3>
+      <p class="mt-2 mb-1">Are you sure you want to delete <strong>"{{ object.name }}"</strong>?</p>
+      <p class="text-muted mb-3">This action cannot be undone.</p>
+
       <form method="POST">
         {% csrf_token %}
-        <fieldset class="form-group">
-          <legend class="border-bottom mb-4">Delete project</legend>
-          <h5>Are you sure you want to delete "{{ object.name }}"?</h5>
-          <p class="text-muted mb-0">This action cannot be undone.</p>
-        </fieldset>
-
-        <div class="form-group mt-3">
-          <button class="btn btn-outline-danger" type="submit">Yes, delete</button>
+        <div class="d-flex justify-content-center" style="gap:0.75rem;">
           <a class="btn btn-outline-secondary" href="{% url 'project-detail' object.pk %}">Cancel</a>
+          <button class="btn btn-outline-danger" type="submit">
+            <span class="material-symbols-outlined" style="font-size:16px;">delete</span> Yes, delete
+          </button>
         </div>
       </form>
     </div>

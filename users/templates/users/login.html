@@ -1,24 +1,22 @@
 {% extends "blog/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class = "content-section">
-        <form method ="POST">
-            {% csrf_token %}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Log in</legend>
-                {{ form|crispy }} 
-            </fieldset>
-            <div class="form-group">
-                <button class="btn btn-outline-info" type="submit">Log in</button>
+<div class="row justify-content-center" style="min-height:60vh; align-items:center;">
+    <div class="col-md-5 col-lg-4">
+        <div class="helb-card" style="text-align:center;">
+            <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-on-primary-container); margin-bottom:1rem;">lock_open</span>
+            <h3 style="font-weight:800; margin-bottom:1.5rem;">Log In</h3>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button class="btn btn-primary btn-block mt-3" type="submit">
+                    <span class="material-symbols-outlined" style="font-size:16px;">login</span> Log In
+                </button>
+            </form>
+            <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid rgba(195,198,208,0.15);">
+                <small class="text-muted">Need access? Contact your Super Admin for an invitation.</small>
             </div>
-        </form>
-        <div class="border-top pt-3">
-            <small class="text-muted"> 
-                Need access? Contact your Super Admin for an invitation.
-            </small>
-            <small class="text-muted"> 
-                <br>Log in to use website.</a>
-            </small>
         </div>
     </div>
+</div>
 {% endblock content %}

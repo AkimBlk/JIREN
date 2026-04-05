@@ -13,8 +13,10 @@ username_validator = UnicodeUsernameValidator()
 class Profile(models.Model):
     ROLE_ADMIN = "admin"
     ROLE_MEMBER = "member"
+    ROLE_CONTRIBUTEUR = "contributeur"
     ROLE_CHOICES = [
-        (ROLE_ADMIN, "Super Admin"),
+        (ROLE_ADMIN, "Admin"),
+        (ROLE_CONTRIBUTEUR, "Contributor"),
         (ROLE_MEMBER, "Member"),
     ]
 
