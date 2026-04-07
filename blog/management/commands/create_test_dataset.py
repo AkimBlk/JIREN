@@ -1,23 +1,5 @@
-"""
-Management command: create_test_dataset
-
-Creates a comprehensive dataset that exercises every feature of the site:
-  - 10 users (admin, devs, designers, QA, product)
-  - 3 projects (story-points/per-user, story-points/global, man-hours/global)
-  - 15 sprints (3 closed + 1 active + 1 planned per project)
-  - 33+ active tickets + ~36 closed sprint tickets (EPIC, STORY, BUG, TASK)
-  - 8 tags per project (infrastructure, frontend, backend, …)
-  - 15+ ticket links (BLOCKED_BY and RELATES_TO within each project)
-  - 5+ ticket attachments (minimal PNG files)
-  - StoryPointsScheme (Fibonacci) for each project
-  - GitRepository (GitHub + GitLab) for 2 projects
-  - SprintUserCapacity for per-user capacity sprints
-
-Usage:
-  python manage.py create_test_dataset
-  python manage.py create_test_dataset --clean
-"""
 from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
 
 from .test_dataset_creators import (
     clear_test_dataset,
@@ -47,6 +29,31 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        User = get_user_model()
+
+        def create_admin():
+            admin_user, created = User.objects.get_or_create(
+                username="admintest",
+                defaults={
+                    "email": "admin@jiren.com",
+                }
+            )
+            admin_user.email = "admin@jiren.com"
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.is_active = True
+            admin_user.set_password("admin123")
+            admin_user.save()
+
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS("Admin user created (admintest / admin123)")
+                )
+            else:
+                self.stdout.write(
+                    self.style.WARNING("Admin user updated (admintest / admin123)")
+                )
+
         if options["clean"]:
             clear_test_dataset()
             self.stdout.write(self.style.WARNING("Cleared existing test dataset."))
@@ -58,16 +65,24 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(projects)} projects"))
 
         schemes = create_story_points_schemes(projects)
-        self.stdout.write(self.style.SUCCESS(f"[OK] {len(schemes)} story-points schemes (Fibonacci)"))
+        self.stdout.write(
+            self.style.SUCCESS(f"[OK] {len(schemes)} story-points schemes (Fibonacci)")
+        )
 
         sprints = create_dataset_sprints(projects, users)
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(sprints)} sprints"))
 
         capacities = create_sprint_capacities(sprints, users)
-        self.stdout.write(self.style.SUCCESS(f"[OK] {len(capacities)} sprint user-capacity records"))
+        self.stdout.write(
+            self.style.SUCCESS(f"[OK] {len(capacities)} sprint user-capacity records")
+        )
 
         tags = create_dataset_tags(projects)
-        self.stdout.write(self.style.SUCCESS(f"[OK] {len(tags)} tags ({len(tags) // len(projects)} per project)"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"[OK] {len(tags)} tags ({len(tags) // len(projects)} per project)"
+            )
+        )
 
         all_tickets = create_dataset_tickets(projects, sprints, users, tags)
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(all_tickets)} tickets"))
@@ -80,14 +95,30 @@ class Command(BaseCommand):
         links = create_ticket_links(project_tickets_map)
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(links)} ticket links"))
 
-        attachment_tickets = [all_tickets[i] for i in ATTACHMENT_TICKET_INDICES if i < len(all_tickets)]
+        attachment_tickets = [
+            all_tickets[i]
+            for i in ATTACHMENT_TICKET_INDICES
+            if i < len(all_tickets)
+        ]
         attachments = create_ticket_attachments(attachment_tickets)
-        self.stdout.write(self.style.SUCCESS(f"[OK] {len(attachments)} ticket attachments"))
+        self.stdout.write(
+            self.style.SUCCESS(f"[OK] {len(attachments)} ticket attachments")
+        )
 
         repos = create_git_repositories(projects[0], projects[1])
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(repos)} git repositories"))
 
-        self._print_summary(users, projects, sprints, all_tickets, tags, links, attachments)
+        create_admin()
+
+        self._print_summary(
+            users,
+            projects,
+            sprints,
+            all_tickets,
+            tags,
+            links,
+            attachments,
+        )
 
     def _print_summary(self, users, projects, sprints, tickets, tags, links, attachments):
         self.stdout.write("\n" + "━" * 50)
@@ -95,18 +126,25 @@ class Command(BaseCommand):
         self.stdout.write("━" * 50)
         self.stdout.write(f"  Users        : {len(users)}")
         self.stdout.write(f"  Projects     : {len(projects)}")
-        closed  = sum(1 for s in sprints if s.status == "CLOSED")
-        active  = sum(1 for s in sprints if s.status == "ACTIVE")
+
+        closed = sum(1 for s in sprints if s.status == "CLOSED")
+        active = sum(1 for s in sprints if s.status == "ACTIVE")
         planned = sum(1 for s in sprints if s.status == "PLANNED")
-        self.stdout.write(f"  Sprints      : {len(sprints)} ({closed} closed, {active} active, {planned} planned)")
+        self.stdout.write(
+            f"  Sprints      : {len(sprints)} ({closed} closed, {active} active, {planned} planned)"
+        )
+
         self.stdout.write(f"  Tickets      : {len(tickets)}")
-        epics   = sum(1 for t in tickets if t.issue_type == "EPIC")
+        epics = sum(1 for t in tickets if t.issue_type == "EPIC")
         stories = sum(1 for t in tickets if t.issue_type == "STORY")
-        bugs    = sum(1 for t in tickets if t.issue_type == "BUG")
-        tasks   = sum(1 for t in tickets if t.issue_type == "TASK")
+        bugs = sum(1 for t in tickets if t.issue_type == "BUG")
+        tasks = sum(1 for t in tickets if t.issue_type == "TASK")
         self.stdout.write(f"    EPIC {epics}  STORY {stories}  BUG {bugs}  TASK {tasks}")
+
         self.stdout.write(f"  Tags         : {len(tags)}")
         self.stdout.write(f"  Links        : {len(links)}")
         self.stdout.write(f"  Attachments  : {len(attachments)}")
         self.stdout.write("━" * 50)
-        self.stdout.write(self.style.SUCCESS("Dataset ready. Login: testpass123 for all users."))
+        self.stdout.write(self.style.SUCCESS("Dataset ready."))
+        self.stdout.write("Admin login: admintest / admin123")
+        self.stdout.write("Test users password: testpass123")
