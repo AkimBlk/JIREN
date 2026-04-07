@@ -1,4 +1,56 @@
 # project_django jira ekip4
+
+# How to Run the Application (Test Instructions)
+
+## 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 2. Apply Database Migrations
+
+```bash
+python manage.py migrate
+```
+
+## 3. Generate the Test Dataset
+
+```bash
+python manage.py create_test_dataset --clean
+```
+
+## 4. Start the Server
+
+```bash
+python manage.py runserver
+```
+
+## 5. Open the Application
+
+Open in a browser:
+
+```
+http://127.0.0.1:8000
+```
+
+---
+
+# Test Login
+
+Administrator account:
+
+```
+username: admintest
+password: admin123
+```
+
+Test users (all share the same password):
+
+```
+password: testpass123
+```
+
 # comment update sur sa branch perso 
 **Première fois**
 
