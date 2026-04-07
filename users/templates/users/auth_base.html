@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+    (function () {
+        const storageKey = "jiren-theme";
+        const storedTheme = localStorage.getItem(storageKey);
+        const preferredTheme = storedTheme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", preferredTheme);
+        document.documentElement.classList.toggle("dark", preferredTheme === "dark");
+    }());
+    </script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/index.css' %}">
+    <title>HELB JIREN - {% block title_text %}Authentification{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="helb-auth-body {% block body_class %}{% endblock %}">
+<div class="helb-arc-bg"></div>
+<div class="helb-arc-bg-2"></div>
+
+{% if messages %}
+<div class="helb-auth-flash">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-2" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<button type="button" class="helb-theme-fab" id="themeToggleButton" aria-label="Switch color theme">
+    <span class="material-symbols-outlined" id="themeToggleIcon">dark_mode</span>
+    <span class="sr-only" id="themeToggleLabel">Dark mode</span>
+</button>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const storageKey = "jiren-theme";
+        const toggleButton = document.getElementById("themeToggleButton");
+        const toggleIcon = document.getElementById("themeToggleIcon");
+        const toggleLabel = document.getElementById("themeToggleLabel");
+
+        function getTheme() {
+            return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.classList.toggle("dark", theme === "dark");
+            if (toggleIcon) {
+                toggleIcon.textContent = theme === "dark" ? "light_mode" : "dark_mode";
+            }
+            if (toggleLabel) {
+                toggleLabel.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+            }
+            if (toggleButton) {
+                toggleButton.setAttribute(
+                    "aria-label",
+                    theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                );
+            }
+        }
+
+        if (!toggleButton) {
+            return;
+        }
+
+        applyTheme(getTheme());
+
+        toggleButton.addEventListener("click", function () {
+            const nextTheme = getTheme() === "dark" ? "light" : "dark";
+            localStorage.setItem(storageKey, nextTheme);
+            applyTheme(nextTheme);
+        });
+    });
+</script>
+</body>
+</html>

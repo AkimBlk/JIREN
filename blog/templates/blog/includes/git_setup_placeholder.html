@@ -1,0 +1,32 @@
+{% load static %}
+
+{% if user_is_admin and not git_repository %}
+<link rel="stylesheet" href="{% static 'blog/css/git_setup.css' %}">
+
+<div class="git-setup-placeholder">
+  <div class="git-setup-placeholder__card">
+    <div class="git-setup-placeholder__header">
+      <h5 class="git-setup-placeholder__title">
+        <span class="material-symbols-outlined">code</span>
+        Git Repository (Not Configured)
+      </h5>
+      <p class="git-setup-placeholder__subtitle">Select a Git provider for this project.</p>
+    </div>
+
+    <div class="git-setup-placeholder__providers">
+      {% for provider_key, provider_name in providers %}
+        <button class="git-setup-provider-btn" 
+                data-provider="{{ provider_key }}" 
+                data-setup-url="{% url 'git-setup-create' project.pk %}" 
+                title="{{ provider_name }}" type="button">
+          <span class="git-setup-provider-icon {{ provider_key }}"></span>
+          <span class="git-setup-provider-name">{{ provider_name }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% include "blog/includes/git_setup_modal_form.html" %}
+<script src="{% static 'blog/js/git_setup_modal.js' %}" defer></script>
+{% endif %}

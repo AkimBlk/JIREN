@@ -129,5 +129,3 @@ def project_linkable_tickets(project, exclude_ticket=None):
     if exclude_ticket is not None:
         queryset = queryset.exclude(pk=exclude_ticket.pk)
     return queryset
-
-

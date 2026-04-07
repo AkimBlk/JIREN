@@ -78,7 +78,7 @@ def sprint_admin(request, pk):
         "form": SprintAdminForm(),
         "capacity_rows": capacity_rows(project),
         "sprints": [(sprint, SprintStatusForm(sprint=sprint)) for sprint in project.sprints.all()],
-        "title": "Administration des sprints",
+        "title": "Sprint Administration",
     }
     return render(request, "blog/sprint_admin.html", context)
 
@@ -98,7 +98,7 @@ def _handle_sprint_creation(request, project):
         except ValidationError as exc:
             form.add_error(None, exc.messages[0])
         else:
-            messages.success(request, f"Le sprint '{sprint.name}' a été créé.")
+            messages.success(request, f"Sprint '{sprint.name}' created.")
             return redirect("sprint-admin", pk=project.pk)
 
     context = {
@@ -106,7 +106,7 @@ def _handle_sprint_creation(request, project):
         "form": form,
         "capacity_rows": rows,
         "sprints": [(sprint, SprintStatusForm(sprint=sprint)) for sprint in project.sprints.all()],
-        "title": "Administration des sprints",
+        "title": "Sprint Administration",
     }
     return render(request, "blog/sprint_admin.html", context)
 
@@ -121,7 +121,7 @@ def sprint_start(request, pk):
         return redirect("project-backlog", pk=sprint.project_id)
     try:
         sprint.start()
-        messages.success(request, f"Le sprint '{sprint.name}' est maintenant actif.")
+        messages.success(request, f"Sprint '{sprint.name}' is now active.")
     except ValidationError as exc:
         messages.error(request, exc.messages[0])
     return redirect("project-backlog", pk=sprint.project_id)
@@ -137,7 +137,7 @@ def sprint_close(request, pk):
         return redirect("project-backlog", pk=sprint.project_id)
     try:
         sprint.close()
-        messages.success(request, f"Le sprint '{sprint.name}' a été clôturé.")
+        messages.success(request, f"Sprint '{sprint.name}' closed.")
     except ValidationError as exc:
         messages.error(request, exc.messages[0])
     return redirect("project-backlog", pk=sprint.project_id)
@@ -154,7 +154,7 @@ def update_sprint_status(request, pk):
 
     form = SprintStatusForm(request.POST, sprint=sprint)
     if not form.is_valid():
-        messages.error(request, "Le statut demandé est invalide.")
+        messages.error(request, "Requested status is invalid.")
         return redirect("sprint-admin", pk=sprint.project_id)
 
     new_status = form.cleaned_data["status"]
@@ -170,16 +170,16 @@ def _apply_sprint_status_transition(sprint, new_status, request):
     if new_status == sprint.status:
         messages.success(
             request,
-            f"Le sprint '{sprint.name}' est déjà en statut {sprint.get_status_display().lower()}.",
+            f"Sprint '{sprint.name}' is already {sprint.get_status_display().lower()}.",
         )
     elif sprint.status == Sprint.STATUS_PLANNED and new_status == Sprint.STATUS_ACTIVE:
         sprint.start()
-        messages.success(request, f"Le sprint '{sprint.name}' est maintenant actif.")
+        messages.success(request, f"Sprint '{sprint.name}' is now active.")
     elif sprint.status == Sprint.STATUS_ACTIVE and new_status == Sprint.STATUS_CLOSED:
         sprint.close()
-        messages.success(request, f"Le sprint '{sprint.name}' a été clôturé.")
+        messages.success(request, f"Sprint '{sprint.name}' closed.")
     else:
-        messages.error(request, "Cette transition de statut n'est pas prise en charge depuis cette page.")
+        messages.error(request, "This status transition is not supported from this page.")
 
 
 @login_required
@@ -203,34 +203,67 @@ def delete_sprint(request, pk):
 @login_required
 def move_backlog_ticket(request, pk, direction):
     from ..models import Ticket
+
     ticket = get_object_or_404(
         Ticket.objects.select_related("project", "sprint"),
         pk=pk,
-        issue_type__in=[Ticket.ISSUE_TYPE_STORY, Ticket.ISSUE_TYPE_BUG],
+        issue_type__in=[
+            Ticket.ISSUE_TYPE_STORY,
+            Ticket.ISSUE_TYPE_BUG,
+            Ticket.ISSUE_TYPE_TASK,
+        ],
     )
     if not can_manage_sprints(request.user, ticket.project):
         messages.error(request, "Access denied.")
         return redirect("blog-home")
 
-    backlog_items = list(project_backlog_queryset(ticket.project))
-    ids = [item.pk for item in backlog_items]
+    if ticket.sprint_id:
+        ordered_items = list(
+            Ticket.objects.filter(sprint=ticket.sprint)
+            .select_related("project", "sprint")
+            .order_by("backlog_order", "date_posted", "id")
+        )
+        failure_message = "This ticket cannot be reordered in the sprint."
+        success_message = "Sprint ticket order updated."
+    else:
+        ordered_items = list(project_backlog_queryset(ticket.project))
+        failure_message = "This ticket cannot be reordered in the product backlog."
+        success_message = "Backlog priority updated."
 
+    ids = [item.pk for item in ordered_items]
     if ticket.pk not in ids:
-        messages.error(request, "Ce ticket n'est pas réordonnable dans le Product Backlog.")
-        return redirect("project-backlog", pk=ticket.project_id)
-
-    current_index = ids.index(ticket.pk)
-    other = _find_swap_target(backlog_items, current_index, direction)
-
-    if other is None:
+        messages.error(request, failure_message)
         return redirect("project-backlog", pk=ticket.project_id)
 
     with transaction.atomic():
-        ticket.backlog_order, other.backlog_order = other.backlog_order, ticket.backlog_order
-        ticket.save(update_fields=["backlog_order"])
+        needs_normalization = len(set(item.backlog_order for item in ordered_items)) < len(ordered_items)
+        if needs_normalization:
+            for i, item in enumerate(ordered_items):
+                if item.backlog_order != i:
+                    item.backlog_order = i
+                    item.save(update_fields=["backlog_order"])
+            ticket.refresh_from_db(fields=["backlog_order"])
+            if ticket.sprint_id:
+                ordered_items = list(
+                    Ticket.objects.filter(sprint=ticket.sprint)
+                    .select_related("project", "sprint")
+                    .order_by("backlog_order", "date_posted", "id")
+                )
+            else:
+                ordered_items = list(project_backlog_queryset(ticket.project))
+            ids = [item.pk for item in ordered_items]
+
+        current_index = ids.index(ticket.pk)
+        other = _find_swap_target(ordered_items, current_index, direction)
+        if other is None:
+            return redirect("project-backlog", pk=ticket.project_id)
+
+        ticket_obj = next(item for item in ordered_items if item.pk == ticket.pk)
+        ticket_obj.backlog_order, other.backlog_order = other.backlog_order, ticket_obj.backlog_order
+        ticket_obj.save(update_fields=["backlog_order"])
         other.save(update_fields=["backlog_order"])
 
-    messages.success(request, "La priorité relative du backlog a été mise à jour.")
+    messages.success(request, success_message)
     return redirect("project-backlog", pk=ticket.project_id)
 
 
@@ -240,5 +273,3 @@ def _find_swap_target(backlog_items, current_index, direction):
     if direction == "down" and current_index < len(backlog_items) - 1:
         return backlog_items[current_index + 1]
     return None
-
-

@@ -11,6 +11,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from ..forms import RemainingLoadUpdateForm, TicketForm
 from ..models import Sprint, Ticket, TicketAttachment, TicketLink
+from ..services.git_service import GitService
 from .permissions import can_edit_ticket, project_assignees, visible_projects
 from .queries import project_linkable_tickets, ticket_form_project_data
 
@@ -38,6 +39,10 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ctx["blocked_by_tickets"] = self._get_blocked_by_tickets()
         ctx["blocks_tickets"] = self._get_blocks_tickets()
         ctx["related_tickets"] = self._get_related_tickets()
+        ctx["ticket_summary"] = {
+            "attachment_count": self.object.attachments.count(),
+            "link_count": len(ctx["blocked_by_tickets"]) + len(ctx["blocks_tickets"]) + len(ctx["related_tickets"]),
+        }
         return ctx
 
     def _get_blocked_by_tickets(self):
@@ -122,7 +127,20 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx["ticket_project_data"] = ticket_form_project_data(self.request.user)
         ctx["existing_attachments"] = []
+        ctx["recent_commits"] = self._get_recent_commits_for_project()
         return ctx
+
+    def _get_recent_commits_for_project(self) -> list:
+        """Return up to 10 recent commits for the pre-selected project (if it has a linked git repo)."""
+        project_id = self.request.GET.get("project") or self.request.POST.get("project")
+        if not project_id:
+            return []
+        try:
+            project = visible_projects(self.request.user).get(pk=project_id)
+            git_service = GitService(project.git_repository)
+            return git_service.get_recent_commits(limit=10)
+        except Exception:
+            return []
 
 
 class TicketUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -204,5 +222,3 @@ def delete_ticket_attachment(request, pk):
     attachment.delete()
     messages.success(request, "Attachment deleted.")
     return redirect("ticket-update", pk=ticket.pk)
-
-

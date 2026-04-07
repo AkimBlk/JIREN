@@ -24,5 +24,3 @@ __all__ = [
     "update_ticket_remaining_load",
     "update_ticket_status",
 ]
-
-

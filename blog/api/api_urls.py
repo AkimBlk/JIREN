@@ -5,6 +5,7 @@ from django.urls import path, re_path
 
 from .api_views_tag import TagViewSet
 from .api_views_ticket import TicketTagViewSet
+from .api_views_git import git_repository_info, git_repository_branches
 
 # Simple tag endpoints using path converters
 tag_views = TagViewSet.as_view({
@@ -45,4 +46,13 @@ urlpatterns = [
     path('tickets/<int:ticket_id>/tags/', 
          TicketTagViewSet.as_view({'get': 'list_tags'}), 
          name='ticket-tags-list'),
+
+    # Git repository endpoints
+    path('projects/<int:project_pk>/git/info/', 
+         git_repository_info, 
+         name='api-git-repository-info'),
+
+    path('projects/<int:project_pk>/git/branches/', 
+         git_repository_branches, 
+         name='api-git-repository-branches'),
 ]

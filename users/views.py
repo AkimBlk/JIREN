@@ -73,6 +73,7 @@ def register(request):
 @login_required
 def profile(request):
     from blog.models import Project, ProjectMember, Ticket
+    from .models import Profile
 
     if request.method == "POST":
         p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
@@ -83,25 +84,35 @@ def profile(request):
     else:
         p_form = ProfileUpdateForm(instance=request.user.profile)
 
-    memberships = (
+    memberships = list(
         ProjectMember.objects.filter(user=request.user)
         .select_related("project")
         .order_by("project__name")
     )
 
-    managed_projects = Project.objects.filter(manager=request.user).order_by("name")
+    managed_projects = list(Project.objects.filter(manager=request.user).order_by("name"))
 
-    assigned_tickets = (
+    assigned_tickets = list(
         Ticket.objects.filter(assignee=request.user)
         .select_related("project", "epic", "sprint")
         .order_by("status", "backlog_order", "date_posted")
     )
 
-    created_tickets = (
+    created_tickets = list(
         Ticket.objects.filter(author=request.user)
         .select_related("project", "epic", "sprint")
         .order_by("-date_posted")[:10]
     )
+
+    role_profiles = []
+    role_summary = None
+    if _is_platform_admin(request.user):
+        role_profiles = list(Profile.objects.select_related("user").order_by("user__username"))
+        role_summary = {
+            "total": len(role_profiles),
+            "admins": sum(profile.role == Profile.ROLE_ADMIN for profile in role_profiles),
+            "members": sum(profile.role != Profile.ROLE_ADMIN for profile in role_profiles),
+        }
 
     context = {
         "p_form": p_form,
@@ -110,6 +121,14 @@ def profile(request):
         "assigned_tickets": assigned_tickets,
         "created_tickets": created_tickets,
         "is_platform_admin": _is_platform_admin(request.user),
+        "profile_summary": {
+            "managed_project_count": len(managed_projects),
+            "membership_count": len(memberships),
+            "assigned_ticket_count": len(assigned_tickets),
+            "created_ticket_count": len(created_tickets),
+        },
+        "role_profiles": role_profiles,
+        "role_summary": role_summary,
     }
     return render(request, "users/profile.html", context)
 
@@ -120,7 +139,7 @@ def invite_user(request):
         messages.error(request, "Only platform administrators can send invitations.")
         return redirect("blog-home")
 
-    invitations = Invitation.objects.filter(created_by=request.user).order_by("-created_at")
+    invitations = list(Invitation.objects.filter(created_by=request.user).order_by("-created_at"))
 
     if request.method == "POST":
         form = InvitationForm(request.POST)
@@ -134,7 +153,19 @@ def invite_user(request):
     else:
         form = InvitationForm()
 
-    return render(request, "users/invite.html", {"form": form, "invitations": invitations})
+    return render(
+        request,
+        "users/invite.html",
+        {
+            "form": form,
+            "invitations": invitations,
+            "invitation_summary": {
+                "total": len(invitations),
+                "pending": sum(not invitation.used for invitation in invitations),
+                "used": sum(invitation.used for invitation in invitations),
+            },
+        },
+    )
 
 
 @login_required
@@ -145,8 +176,19 @@ def manage_roles(request):
 
     from .models import Profile
 
-    profiles = Profile.objects.select_related("user").order_by("user__username")
-    return render(request, "users/manage_roles.html", {"profiles": profiles})
+    profiles = list(Profile.objects.select_related("user").order_by("user__username"))
+    return render(
+        request,
+        "users/manage_roles.html",
+        {
+            "profiles": profiles,
+            "role_summary": {
+                "total": len(profiles),
+                "admins": sum(profile.role == Profile.ROLE_ADMIN for profile in profiles),
+                "members": sum(profile.role != Profile.ROLE_ADMIN for profile in profiles),
+            },
+        },
+    )
 
 
 @login_required

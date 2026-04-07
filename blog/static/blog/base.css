@@ -1,0 +1,134 @@
+/* ============================================================
+   HELB "Fluid Academic" Design System — CSS Variables & Theme
+   ============================================================ */
+
+:root {
+  /* Primary palette */
+  --helb-primary: #3a2400;
+  --helb-on-primary: #ffffff;
+  --helb-primary-container: #573800;
+  --helb-on-primary-container: #e69a00;
+  --helb-primary-fixed: #ffddb3;
+  --helb-primary-fixed-dim: #ffb94f;
+  --helb-on-primary-fixed: #291800;
+  --helb-on-primary-fixed-variant: #624000;
+  --helb-inverse-primary: #ffb94f;
+
+  /* Secondary palette */
+  --helb-secondary: #3e608d;
+  --helb-on-secondary: #ffffff;
+  --helb-secondary-container: #aacbff;
+  --helb-on-secondary-container: #335583;
+  --helb-secondary-fixed: #d4e3ff;
+  --helb-secondary-fixed-dim: #a7c8fc;
+  --helb-on-secondary-fixed: #001c3a;
+  --helb-on-secondary-fixed-variant: #244874;
+
+  /* Tertiary palette */
+  --helb-tertiary: #112f00;
+  --helb-on-tertiary: #ffffff;
+  --helb-tertiary-container: #1d4800;
+  --helb-on-tertiary-container: #6dbd3a;
+  --helb-tertiary-fixed: #a3f86d;
+  --helb-tertiary-fixed-dim: #88db54;
+  --helb-on-tertiary-fixed: #092100;
+  --helb-on-tertiary-fixed-variant: #225100;
+
+  /* Surface palette */
+  --helb-surface: #f9f9ff;
+  --helb-on-surface: #001c3a;
+  --helb-surface-variant: #d4e3ff;
+  --helb-on-surface-variant: #43474f;
+  --helb-surface-container-lowest: #ffffff;
+  --helb-surface-container-low: #f0f3ff;
+  --helb-surface-container: #e6eeff;
+  --helb-surface-container-high: #dde9ff;
+  --helb-surface-container-highest: #d4e3ff;
+  --helb-surface-bright: #f9f9ff;
+  --helb-surface-dim: #c6dbff;
+  --helb-surface-tint: #825500;
+  --helb-inverse-surface: #05315c;
+  --helb-inverse-on-surface: #ebf1ff;
+
+  /* Outline */
+  --helb-outline: #737780;
+  --helb-outline-variant: #c3c6d0;
+
+  /* Error */
+  --helb-error: #ba1a1a;
+  --helb-on-error: #ffffff;
+  --helb-error-container: #ffdad6;
+  --helb-on-error-container: #93000a;
+
+  /* Shadows (Deep Blue tinted) */
+  --helb-shadow-sm: 0px 4px 12px rgba(0, 28, 58, 0.04);
+  --helb-shadow-md: 0px 20px 40px rgba(0, 28, 58, 0.06);
+  --helb-shadow-lg: 0px 20px 40px rgba(0, 28, 58, 0.10);
+
+  /* Radii */
+  --helb-radius-sm: 0.75rem;
+  --helb-radius-md: 1rem;
+  --helb-radius-lg: 2rem;
+  --helb-radius-xl: 3rem;
+  --helb-radius-full: 9999px;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --navbar-height: 64px;
+}
+
+/* ============================================================
+   Base Reset & Typography
+   ============================================================ */
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--helb-surface);
+  color: var(--helb-on-surface);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--helb-on-surface);
+  font-weight: 700;
+  margin: 0;
+}
+
+a {
+  color: var(--helb-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+a:hover {
+  color: var(--helb-on-secondary-fixed-variant);
+  text-decoration: none;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === MATERIAL SYMBOLS === */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}

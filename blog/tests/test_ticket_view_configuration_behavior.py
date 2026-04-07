@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.test import RequestFactory, TestCase
 
 from blog.models import Project, ProjectMember, Sprint, SprintUserCapacity, Ticket
@@ -149,3 +150,48 @@ class TicketViewConfigurationBehaviorTests(TestCase):
         _save_sprint_user_capacities(sprint, {})
 
         self.assertFalse(sprint.user_capacities.exists())
+
+    def test_ticket_create_page_avoids_helper_microcopy(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse("ticket-create"), data={"project": self.project.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Epic")
+        self.assertContains(response, "Assignee")
+        self.assertNotContains(response, "Choose an epic")
+        self.assertNotContains(response, "Choose a member")
+        self.assertNotContains(response, "Describe the ticket...")
+        self.assertNotContains(response, "No blocking ticket selected.")
+        self.assertNotContains(response, "No related ticket selected.")
+
+    def test_all_tickets_export_returns_csv(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse("all-tickets"), data={"export": "csv"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        content = response.content.decode("utf-8")
+        self.assertIn("id,type,title,status,priority,project,assignee,tags", content)
+        self.assertIn("Configured Project", content)
+        self.assertIn("Story", content)
+
+    def test_ticket_card_uses_project_code_prefix_not_hardcoded_at(self):
+        """
+        Bug    : ticket_card.html used hardcoded "AT-" prefix instead of
+                 ticket.project.code_prefix — all kanban cards showed wrong ID.
+        Root   : Template literal "AT-{{ ticket.id }}" not using model field.
+        """
+        self.client.force_login(self.manager)
+
+        # The home Kanban view is scoped per project/sprint — test all-tickets
+        # page which also renders the code_prefix-based ticket identity.
+        response = self.client.get(reverse("all-tickets"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        # Should contain project code prefix "CFG" (not bare "AT-")
+        self.assertIn("CFG-", content)
+        # The hardcoded prefix must NOT appear for this project's tickets
+        self.assertNotIn("AT-1", content)

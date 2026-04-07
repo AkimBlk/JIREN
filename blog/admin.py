@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from .models import Project, ProjectMember, Sprint, SprintUserCapacity, StoryPointsScheme, Tag, Ticket, TicketAttachment, TicketLink
+from .models import (
+    GitRepository,
+    Project,
+    ProjectMember,
+    Sprint,
+    SprintUserCapacity,
+    StoryPointsScheme,
+    Tag,
+    Ticket,
+    TicketAttachment,
+    TicketLink,
+)
 
 
 @admin.register(Tag)
@@ -37,3 +48,35 @@ class StoryPointsSchemeAdmin(admin.ModelAdmin):
     list_filter = ("scheme_type",)
     search_fields = ("project__name",)
     readonly_fields = ("project",)
+
+
+@admin.register(GitRepository)
+class GitRepositoryAdmin(admin.ModelAdmin):
+    list_display = ("project", "repository_type", "is_private", "created_at")
+    list_filter = ("repository_type", "is_private")
+    search_fields = ("project__name", "repository_url")
+    readonly_fields = ("created_at", "updated_at", "last_synced_at")
+
+    fieldsets = (
+        (
+            "Repository",
+            {
+                "fields": ("project", "repository_url", "repository_type", "is_private")
+            },
+        ),
+        (
+            "Authentication",
+            {
+                "fields": ("access_token",),
+                "description": "Personal access token for private repositories",
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ("last_synced_at", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )

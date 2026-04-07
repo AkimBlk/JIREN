@@ -1,73 +1,168 @@
 {% extends "blog/base.html" %}
-
 {% block content %}
 
-<h2>{{ project.name }} Statistics</h2>
+<div class="helb-card mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0" style="font-weight:800;">
+      <span class="material-symbols-outlined" style="font-size:24px; vertical-align:middle;">analytics</span>
+      {{ project.name }} — Statistics
+    </h2>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'project-detail' project.pk %}">
+      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">arrow_back</span>
+      Back to project
+    </a>
+  </div>
+</div>
 
-<h3>Velocity</h3>
-<canvas id="velocityChart"></canvas>
+{% if not has_statistics_data %}
 
-<h3>Capacity Consumption (%)</h3>
-<canvas id="consumptionChart"></canvas>
+<div class="helb-card-sm" style="text-align:center; padding:3rem 2rem;">
+  <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-outline-variant);">info</span>
+  <h4 class="mt-3" style="font-weight:700;">No Statistics Available Yet</h4>
+  <p class="text-muted mb-0">
+    Close at least one sprint with completed tickets to see velocity, capacity, and burndown charts.
+  </p>
+</div>
 
-<h3>Burndown Chart ({{ selected_sprint.name }})</h3>
-<canvas id="burndownChart"></canvas>
+{% else %}
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="helb-card-sm" style="height:100%;">
+      <h5 style="font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">speed</span>
+        Velocity
+      </h5>
+      <p class="text-muted" style="font-size:0.85rem;">Story points completed per closed sprint.</p>
+      <canvas id="velocityChart"></canvas>
+    </div>
+  </div>
+  <div class="col-md-6 mb-4">
+    <div class="helb-card-sm" style="height:100%;">
+      <h5 style="font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">battery_charging_full</span>
+        Capacity Consumption
+      </h5>
+      <p class="text-muted" style="font-size:0.85rem;">Percentage of sprint capacity consumed.</p>
+      <canvas id="consumptionChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{% if burndown %}
+<div class="helb-card-sm mb-4">
+  <h5 style="font-weight:700;">
+    <span class="material-symbols-outlined" style="font-size:18px; vertical-align:middle;">trending_down</span>
+    Burndown — {{ selected_sprint.name }}
+  </h5>
+  <p class="text-muted" style="font-size:0.85rem;">Ideal vs actual remaining story points for the last closed sprint.</p>
+  <canvas id="burndownChart"></canvas>
+</div>
+{% else %}
+<div class="helb-card-sm mb-4" style="text-align:center; padding:2rem;">
+  <span class="material-symbols-outlined" style="font-size:36px; color:var(--helb-outline-variant);">show_chart</span>
+  <p class="text-muted mt-2 mb-0">
+    Burndown chart requires a closed sprint with story points assigned to tickets.
+  </p>
+</div>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-
-const velocityLabels = {{ velocity_labels|safe }};
-const velocityValues = {{ velocity_values|safe }};
-const consumptionValues = {{ consumption_values|safe }};
-
-new Chart(document.getElementById("velocityChart"), {
-    type: "bar",
-    data: {
-        labels: velocityLabels,
-        datasets: [{
-            label: "Story points completed",
-            data: velocityValues
-        }]
-    }
-});
-
-new Chart(document.getElementById("consumptionChart"), {
-    type: "bar",
-    data: {
-        labels: velocityLabels,
-        datasets: [{
-            label: "Capacity consumption %",
-            data: consumptionValues
-        }]
-    }
-});
-
+{# Data islands — avoids Django template tags inside JS (linter-clean + XSS-safe) #}
+<script id="chart-velocity-data" type="application/json">{"labels": {{ velocity_labels|safe }}, "values": {{ velocity_values|safe }}, "consumption": {{ consumption_values|safe }}}</script>
 {% if burndown %}
-
-const burndownLabels = {{ burndown.labels|safe }};
-const burndownIdeal = {{ burndown.ideal|safe }};
-const burndownActual = {{ burndown.actual|safe }};
-
-new Chart(document.getElementById("burndownChart"), {
-    type: "line",
-    data: {
-        labels: burndownLabels,
-        datasets: [
-            {
-                label: "Ideal",
-                data: burndownIdeal
-            },
-            {
-                label: "Actual",
-                data: burndownActual
-            }
-        ]
-    }
-});
-
+<script id="chart-burndown-data" type="application/json">{"labels": {{ burndown.labels|safe }}, "ideal": {{ burndown.ideal|safe }}, "actual": {{ burndown.actual|safe }}}</script>
 {% endif %}
 
+<script>
+  const HELB_PRIMARY = getComputedStyle(document.documentElement).getPropertyValue("--helb-primary").trim() || "#6750A4";
+  const HELB_SECONDARY = getComputedStyle(document.documentElement).getPropertyValue("--helb-secondary").trim() || "#625B71";
+  const HELB_ERROR = getComputedStyle(document.documentElement).getPropertyValue("--helb-error").trim() || "#ef4444";
+
+  const _velocityData = JSON.parse(document.getElementById("chart-velocity-data").textContent);
+  const velocityLabels = _velocityData.labels;
+  const velocityValues = _velocityData.values;
+  const consumptionValues = _velocityData.consumption;
+
+  new Chart(document.getElementById("velocityChart"), {
+    type: "bar",
+    data: {
+      labels: velocityLabels,
+      datasets: [{
+        label: "Story Points Completed",
+        data: velocityValues,
+        backgroundColor: HELB_PRIMARY + "CC",
+        borderColor: HELB_PRIMARY,
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  new Chart(document.getElementById("consumptionChart"), {
+    type: "bar",
+    data: {
+      labels: velocityLabels,
+      datasets: [{
+        label: "Capacity Consumption %",
+        data: consumptionValues,
+        backgroundColor: HELB_SECONDARY + "CC",
+        borderColor: HELB_SECONDARY,
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, max: 150, ticks: { callback: function(v) { return v + "%"; } } } }
+    }
+  });
+
+  const _burndownEl = document.getElementById("chart-burndown-data");
+  if (_burndownEl) {
+    const _bd = JSON.parse(_burndownEl.textContent);
+    new Chart(document.getElementById("burndownChart"), {
+      type: "line",
+      data: {
+        labels: _bd.labels,
+        datasets: [
+          {
+            label: "Ideal",
+            data: _bd.ideal,
+            borderColor: HELB_PRIMARY,
+            borderDash: [6, 3],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: "Actual",
+            data: _bd.actual,
+            borderColor: HELB_ERROR,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: HELB_ERROR,
+            fill: false,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
 </script>
+
+{% endif %}
 
 {% endblock %}

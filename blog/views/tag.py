@@ -75,5 +75,3 @@ def api_ticket_remove_tag(request, pk):
     ticket.tags.remove(tag_id)
     tags = [{"id": t["id"], "name": t["name"]} for t in ticket.tags.values("id", "name").order_by("name")]
     return JsonResponse({"detail": "Tag removed", "tags": tags})
-
-

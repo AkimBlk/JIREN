@@ -1,196 +1,371 @@
 {% extends "blog/base.html" %}
 {% block content %}
-
-<div class="helb-card mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
-        <div class="mb-3 mb-md-0">
-            <h2 class="mb-1" style="font-weight:800;">{{ project.name }}</h2>
-            {% if project.code_prefix %}
-                <div class="project-code mb-2">{{ project.code_prefix }}</div>
-            {% endif %}
-            <p class="text-muted mb-0">
-                <span class="material-symbols-outlined" style="font-size:14px;">person</span>
-                Manager: {{ project.manager.username }} &middot; {{ project.date_created|date:"d M Y" }}
-            </p>
+<section class="stitch-project-header">
+    <div>
+        <div class="stitch-meta-row">
+            {% if project.code_prefix %}<span class="atelier-code-chip">{{ project.code_prefix }}</span>{% endif %}
+            <span class="stitch-meta-row__text">Established {{ project.date_created|date:"M Y" }}</span>
         </div>
-        <div class="d-flex flex-wrap" style="gap:0.5rem;">
-            {% if user_can_manage_sprints %}
-                <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-sm btn-outline-primary">
-                    <span class="material-symbols-outlined" style="font-size:16px;">sprint</span> Sprints
-                </a>
-            {% endif %}
-            {% if user_is_admin %}
-                <a href="{% url 'project-update' project.pk %}" class="btn btn-sm btn-warning">
-                    <span class="material-symbols-outlined" style="font-size:16px;">edit</span> Edit
-                </a>
-                <a href="{% url 'project-delete' project.pk %}" class="btn btn-sm btn-outline-danger">
-                    <span class="material-symbols-outlined" style="font-size:16px;">delete</span> Delete
-                </a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-8">
-        <div class="helb-card-sm mb-4">
-            <h5 class="mb-3" style="font-weight:700;">
-                <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">description</span>
-                Description
-            </h5>
-            <p class="mb-0">{{ project.description|default:"No description." }}</p>
-        </div>
-
-        <div class="helb-card-sm">
-            <h5 class="mb-3" style="font-weight:700;">
-                <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">settings</span>
-                Project Settings
-            </h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="mb-2"><strong>Start date:</strong> {{ project.start_date|date:"d M Y" }}</p>
-                    <p class="mb-2"><strong>End date:</strong> {{ project.end_date|date:"d M Y" }}</p>
-                    <p class="mb-2"><strong>Workload unit:</strong> {{ project.get_workload_unit_display }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="mb-2"><strong>Sprint duration:</strong> {{ project.sprint_duration_days }} days</p>
-                    <p class="mb-2"><strong>Capacity mode:</strong> {{ project.get_capacity_mode_display }}</p>
-                    {% if project.global_capacity %}
-                        <p class="mb-2"><strong>Global capacity:</strong> {{ project.global_capacity }}</p>
-                    {% endif %}
-                </div>
-            </div>
+        <h1 class="atelier-page-header__title mb-2">{{ project.name }}</h1>
+        <div class="stitch-meta-row">
+            <img src="{{ project.manager.profile.image.url }}" alt="{{ project.manager.username }}" class="atelier-user-inline__avatar">
+            <span class="stitch-meta-row__text">{{ project.manager.get_full_name|default:project.manager.username }}</span>
+            <span class="stitch-meta-row__text">{{ project_summary.member_count }} collaborators</span>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="helb-card-sm mb-4" style="background:var(--helb-inverse-surface); color:var(--helb-inverse-on-surface);">
-            <h6 style="font-weight:700; color:var(--helb-inverse-on-surface); margin-bottom:1rem;">
-                <span class="material-symbols-outlined" style="font-size:18px;">bolt</span>
-                Quick Actions
-            </h6>
-            <div class="d-flex flex-column" style="gap:0.5rem;">
-                <a class="btn btn-sm btn-primary" href="{% url 'project-backlog' project.pk %}">
-                    <span class="material-symbols-outlined" style="font-size:16px;">reorder</span> View backlog
-                </a>
-                <a class="btn btn-sm btn-secondary" href="{% url 'project-statistics' project.pk %}">
-                    View Statistics
-                </a>
-                <a 
-                    class="btn btn-sm" 
-                    style="background: var(--helb-secondary); color: white; border: none;" 
-                    href="{% url 'ticket-create' %}?project={{ project.pk }}"
-                    >
-                    <span class="material-symbols-outlined" style="font-size:16px;">add</span> Create ticket
-                </a>
-                {% if active_sprint %}
-                    <a class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:white; border:none;" href="{% url 'project-active-sprint' project.pk %}">
-                        <span class="material-symbols-outlined" style="font-size:16px;">sprint</span> Active sprint
-                    </a>
-                {% else %}
-                    <span class="btn btn-sm disabled" style="background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.4); border:none;">
-                        No active sprint
-                    </span>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="helb-card-sm mb-4">
-    <h5 class="mb-3" style="font-weight:700;">
-        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">group</span>
-        Members
-    </h5>
-    <div class="d-flex flex-wrap" style="gap:0.75rem;">
-        {% for m in members %}
-            <div class="d-flex align-items-center" style="background:var(--helb-surface-container-low); padding:0.5rem 1rem; border-radius:var(--helb-radius-full);">
-                <span class="material-symbols-outlined" style="font-size:18px; margin-right:0.5rem;">person</span>
-                <span style="font-weight:600; font-size:0.875rem;">{{ m.user.username }}</span>
-                {% if m.user == project.manager or m.role == 'admin' %}
-                    <span class="badge badge-danger ml-2">admin</span>
-                {% else %}
-                    <span class="badge badge-secondary ml-2">member</span>
-                {% endif %}
-            </div>
-        {% empty %}
-            <p class="text-muted mb-0">No members yet.</p>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h5 class="mb-0" style="font-weight:700;">
-        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">confirmation_number</span>
-        Tickets
-    </h5>
-    <form method="get" class="d-flex align-items-center mt-2 mt-md-0" style="gap:0.5rem;">
-        <select name="tag" id="tag" class="form-control form-control-sm" style="width:auto;" onchange="this.form.submit()">
-            <option value="">All tags</option>
-            {% for tag in available_tags %}
-                <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
-            {% endfor %}
-        </select>
-        {% if selected_tag %}
-            <a href="{% url 'project-detail' project.pk %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+    <div class="stitch-project-actions">
+        {% if user_can_manage_sprints %}
+            <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-outline-primary">Sprints</a>
         {% endif %}
-        <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
-    </form>
-</div>
+        {% if user_is_admin %}
+            <a href="{% url 'project-update' project.pk %}" class="btn stitch-btn-orange">Edit</a>
+            <a href="{% url 'project-delete' project.pk %}" class="btn btn-outline-danger">Delete</a>
+        {% endif %}
+    </div>
+</section>
 
-{% if selected_tag %}
-<div class="alert alert-light">
-    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:-3px;">filter_alt</span>
-    Filtering project tickets by tag <strong>#{{ selected_tag.name }}</strong>.
-</div>
-{% endif %}
+<section class="stitch-project-shell">
+    <div class="stitch-project-main">
+        <article class="stitch-intent-card">
+            <h3 class="stitch-card-title">
+                <span class="material-symbols-outlined">subject</span>
+                Project Intent
+            </h3>
+            <p>{{ project.description|default:"Define the project direction and capture the core delivery narrative." }}</p>
+        </article>
 
-{% for ticket in project_tickets %}
-<div class="ticket-row-card mb-2" style="border-left: 5px solid {% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}var(--helb-error){% elif ticket.issue_type == 'STORY' %}var(--helb-on-tertiary-container){% else %}var(--helb-outline){% endif %};">
-    <div class="d-flex justify-content-between align-items-center flex-wrap">
-        <div class="mb-2 mb-md-0">
-            <div class="mb-1">
-                {% if ticket.issue_type == 'EPIC' %}
-                    <span class="badge" style="background-color: {{ ticket.display_color }}; color: #fff;">EPIC</span>
-                {% elif ticket.issue_type == 'STORY' %}
-                    <span class="badge badge-success">STORY</span>
-                {% elif ticket.issue_type == 'BUG' %}
-                    <span class="badge badge-danger">BUG</span>
-                {% elif ticket.issue_type == 'TASK' %}
-                    <span class="badge badge-secondary">TASK</span>
-                {% endif %}
+        <div class="stitch-info-grid">
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">shield</span>
+                <strong>Permissions</strong>
+                <small>{% if user_is_admin %}Admin access{% elif user_can_manage_sprints %}Project lead{% else %}Project member{% endif %}</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">cloud_sync</span>
+                <strong>Integrations</strong>
+                <small>{% if git_repository %}{{ git_repository.get_repository_type_display }} connected{% else %}No repository linked{% endif %}</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">history</span>
+                <strong>Changelog</strong>
+                <small>Created {{ project.date_created|date:"d M Y" }}</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">groups</span>
+                <strong>Members</strong>
+                <small>{{ project_summary.member_count }} active collaborators</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">timer</span>
+                <strong>Sprint cadence</strong>
+                <small>{{ project.sprint_duration_days }} day cycle</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">architecture</span>
+                <strong>Framework</strong>
+                <small>{{ project.get_capacity_mode_display }}</small>
+            </article>
+        </div>
+
+        <div class="stitch-kpi-grid">
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-blue-sante);">
+                <span>Tickets</span>
+                <strong>{{ project_summary.ticket_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-orange);">
+                <span>In Progress</span>
+                <strong>{{ project_summary.in_progress_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-green);">
+                <span>Done</span>
+                <strong>{{ project_summary.done_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-red);">
+                <span>Bugs</span>
+                <strong>{{ project_summary.bug_count }}</strong>
+            </article>
+        </div>
+
+        <section class="stitch-section">
+            <div class="stitch-section__header">
+                <h2>Active Tickets</h2>
+                <form method="get" class="stitch-toolbar-form">
+                    <select name="tag" id="tag" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
+                        <option value="">All tags</option>
+                        {% for tag in available_tags %}
+                            <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if selected_tag %}
+                        <a href="{% url 'project-detail' project.pk %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </form>
             </div>
 
-            <a href="{% url 'ticket-detail' ticket.pk %}" class="ticket-title-link">{{ ticket.title }}</a>
-
-            {% if ticket.epic %}
-                <span class="small ml-2" style="color: {{ ticket.epic.display_color }};">Epic: {{ ticket.epic.title }}</span>
-            {% endif %}
-
-            {% if ticket.sprint %}
-                <span class="text-muted small ml-2">Sprint: {{ ticket.sprint.name }}</span>
-            {% endif %}
-
-            {% include "blog/ticket_tags.html" %}
-
-            {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}
-                <div class="text-muted small mt-1">
-                    Load: {{ ticket.completed_load }}/{{ ticket.initial_load }} completed &middot; Remaining: {{ ticket.remaining_load }}
+            {% if selected_tag %}
+                <div class="atelier-inline-note mb-4">
+                    <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
+                    Filtering tickets by <strong>#{{ selected_tag.name }}</strong>.
                 </div>
             {% endif %}
-        </div>
 
-        <div>
-            <span class="badge badge-info">{{ ticket.status }}</span>
-            <span class="badge badge-warning ml-1">{{ ticket.priority }}</span>
-        </div>
+            <div class="stitch-ticket-list">
+                {% for ticket in project_tickets|slice:":6" %}
+                    <article class="stitch-ticket-row {% if ticket.issue_type == 'EPIC' %}stitch-ticket-row--epic{% elif ticket.issue_type == 'BUG' %}stitch-ticket-row--bug{% elif ticket.issue_type == 'STORY' %}stitch-ticket-row--story{% else %}stitch-ticket-row--task{% endif %}">
+                        <div>
+                            <div class="stitch-chip-row stitch-chip-row--compact">
+                                {% if ticket.issue_type == 'EPIC' %}
+                                    <span class="atelier-badge atelier-badge--epic">Epic</span>
+                                {% elif ticket.issue_type == 'BUG' %}
+                                    <span class="atelier-badge atelier-badge--bug">Bug</span>
+                                {% elif ticket.issue_type == 'STORY' %}
+                                    <span class="atelier-badge atelier-badge--story">Story</span>
+                                {% else %}
+                                    <span class="atelier-badge atelier-badge--task">Task</span>
+                                {% endif %}
+                                <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
+                            </div>
+                            <a href="{% url 'ticket-detail' ticket.pk %}" class="stitch-ticket-row__title">{{ ticket.title }}</a>
+                            <div class="stitch-ticket-row__meta">
+                                {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
+                                {% if ticket.epic %}<span>Epic: {{ ticket.epic.title }}</span>{% endif %}
+                                {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}<span>{{ ticket.remaining_load }} remaining</span>{% endif %}
+                            </div>
+                            {% include "blog/includes/tag_chips.html" with ticket=ticket %}
+                        </div>
+                        <div class="stitch-ticket-row__aside">
+                            {% if ticket.assignee %}
+                                <span>Assigned to</span>
+                                <strong>{{ ticket.assignee.get_full_name|default:ticket.assignee.username }}</strong>
+                            {% else %}
+                                <span>Assigned to</span>
+                                <strong>Unassigned</strong>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="atelier-empty-state atelier-empty-state--table">
+                        <span class="material-symbols-outlined atelier-empty-state__icon">confirmation_number</span>
+                        <h3 class="atelier-empty-state__title">No ticket yet</h3>
+                        <p class="atelier-empty-state__copy">Create a ticket to start tracking delivery from this project space.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        {% if has_done_tickets %}
+        <section class="analytics-charts-section">
+            <div class="analytics-chart-container">
+                <canvas id="projectChart"></canvas>
+            </div>
+
+            <fieldset class="analytics-chart-selector">
+                <legend>Chart Type</legend>
+                <label><input type="radio" name="chart_type" value="velocity" checked> Velocity</label>
+                <label><input type="radio" name="chart_type" value="consumption"> Capacity</label>
+                <label><input type="radio" name="chart_type" value="burndown"> Burndown</label>
+            </fieldset>
+        </section>
+        {{ velocity_labels|json_script:"velocityLabelsData" }}
+        {{ velocity_values|json_script:"velocityValuesData" }}
+        {{ consumption_values|json_script:"consumptionValuesData" }}
+        {{ burndown|json_script:"burndownData" }}
+        {% endif %}
     </div>
-</div>
-{% empty %}
-<div class="helb-card-sm" style="text-align:center; padding:2rem;">
-    <span class="material-symbols-outlined" style="font-size:36px; color:var(--helb-outline-variant);">confirmation_number</span>
-    <p class="text-muted mt-2 mb-0">No tickets yet.</p>
-</div>
-{% endfor %}
 
+    <aside class="stitch-project-side">
+        <article class="stitch-quick-panel">
+            <h3>Quick Actions</h3>
+            <div class="stitch-quick-panel__actions">
+                <a href="{% url 'project-backlog' project.pk %}" class="btn stitch-btn-orange">View Backlog</a>
+                <a href="{% url 'ticket-create' %}?project={{ project.pk }}" class="btn stitch-btn-green">Create New Ticket</a>
+                <a href="{% url 'sprint-admin' project.pk %}" class="btn stitch-btn-ghost">Sprint</a>
+                {% if active_sprint %}
+                    <a href="{% url 'project-active-sprint' project.pk %}" class="btn stitch-btn-ghost">Active Sprint</a>
+                {% else %}
+                    <span class="btn stitch-btn-ghost disabled">No Active Sprint</span>
+                {% endif %}
+            </div>
+        </article>
+
+        <article class="stitch-member-panel">
+            <div class="stitch-panel-head">
+                <h3>Project Members</h3>
+                {% if user_is_admin %}<a href="{% url 'manage-roles' %}">Manage</a>{% endif %}
+            </div>
+            <div class="stitch-member-list">
+                {% for membership in members|slice:":6" %}
+                    <div class="stitch-member-chip">
+                        <img src="{{ membership.user.profile.image.url }}" alt="{{ membership.user.username }}" class="atelier-user-inline__avatar">
+                        <span>{{ membership.user.get_full_name|default:membership.user.username }}</span>
+                    </div>
+                {% empty %}
+                    <p class="stitch-muted-note mb-0">No member assigned yet.</p>
+                {% endfor %}
+            </div>
+            {% if members|length > 6 %}
+                <p class="stitch-muted-note mb-0">+{{ members|length|add:"-6" }} more collaborators</p>
+            {% endif %}
+        </article>
+
+        <article class="stitch-repository-card">
+            {% include "blog/includes/git_accordion.html" %}
+        </article>
+    </aside>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chartCanvas = document.getElementById("projectChart");
+    if (!chartCanvas) return;
+
+    // Retrieve data from script tags
+    const velocityLabelsElem = document.getElementById("velocityLabelsData");
+    const velocityValuesElem = document.getElementById("velocityValuesData");
+    const consumptionValuesElem = document.getElementById("consumptionValuesData");
+    const burndownElem = document.getElementById("burndownData");
+
+    const velocityLabels = velocityLabelsElem ? JSON.parse(velocityLabelsElem.textContent) : [];
+    const velocityValues = velocityValuesElem ? JSON.parse(velocityValuesElem.textContent) : [];
+    const consumptionValues = consumptionValuesElem ? JSON.parse(consumptionValuesElem.textContent) : [];
+    const burndownData = burndownElem ? JSON.parse(burndownElem.textContent) : null;
+
+    let currentChart = null;
+
+    function destroyChart() {
+        if (currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+    }
+
+    function createVelocityChart() {
+        destroyChart();
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: velocityLabels,
+                datasets: [{
+                    label: "Story Points Completed",
+                    data: velocityValues,
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#6366f1"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    function createConsumptionChart() {
+        destroyChart();
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: velocityLabels,
+                datasets: [{
+                    label: "Capacity Consumption (%)",
+                    data: consumptionValues,
+                    backgroundColor: "rgba(34, 197, 94, 0.7)",
+                    borderColor: "#22c55e",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    function createBurndownChart() {
+        destroyChart();
+        if (!burndownData) {
+            const ctx = chartCanvas.getContext("2d");
+            ctx.fillStyle = "var(--helb-on-surface-variant)";
+            ctx.font = "16px Plus Jakarta Sans";
+            ctx.textAlign = "center";
+            ctx.fillText("No burndown data available", chartCanvas.width / 2, chartCanvas.height / 2);
+            return;
+        }
+
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: burndownData.labels,
+                datasets: [
+                    {
+                        label: "Ideal Burndown",
+                        data: burndownData.ideal,
+                        borderColor: "#94a3b8",
+                        borderDash: [5, 5],
+                        tension: 0.3,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: "Actual Burndown",
+                        data: burndownData.actual,
+                        borderColor: "#6366f1",
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#6366f1"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    // Initialize with velocity chart
+    createVelocityChart();
+
+    // Handle radio button changes
+    document.querySelectorAll('input[name="chart_type"]').forEach(radio => {
+        radio.addEventListener("change", function() {
+            if (this.value === "velocity") createVelocityChart();
+            else if (this.value === "consumption") createConsumptionChart();
+            else if (this.value === "burndown") createBurndownChart();
+        });
+    });
+});
+</script>
 {% endblock %}

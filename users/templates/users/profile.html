@@ -2,143 +2,315 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<!-- Profile Header -->
-<div class="helb-card mb-4">
-    <div class="d-flex align-items-center flex-wrap" style="gap:1.5rem;">
-        <img class="account-img" src="{{ user.profile.image.url }}" alt="Profile">
-        <div>
-            <h2 class="mb-1" style="font-weight:800;">{{ user.username }}</h2>
-            <p class="mb-1" style="color:var(--helb-secondary);">{{ user.email }}</p>
-            <p class="text-muted mb-0">
-                Access level:
+<section class="atelier-page-header">
+    <div>
+        <span class="atelier-page-header__eyebrow">Personal workspace</span>
+        <h1 class="atelier-page-header__title">Profile</h1>
+        <p class="atelier-page-header__subtitle">View your account, ecosystems, and current commitments.</p>
+    </div>
+    <div class="atelier-page-header__actions">
+        <a href="{% url 'password_change' %}" class="btn btn-outline-secondary">
+            <span class="material-symbols-outlined" style="font-size:16px;">lock</span>
+            Change password
+        </a>
+    </div>
+</section>
+
+<div class="atelier-profile-layout">
+    <aside class="atelier-profile-sidebar">
+        <section class="atelier-panel">
+            <div class="atelier-profile-identity">
+                <img class="atelier-profile-identity__avatar" src="{{ user.profile.image.url }}" alt="{{ user.username }}">
+                <h2 class="atelier-profile-identity__name">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="atelier-profile-identity__email">{{ user.email }}</p>
                 {% if is_platform_admin %}
-                    <span class="badge" style="background:var(--helb-error-container); color:var(--helb-on-error-container);">Super Admin</span>
+                    <span class="atelier-badge atelier-badge--admin">Super Admin</span>
                 {% else %}
-                    <span class="badge badge-secondary">Member</span>
+                    <span class="atelier-badge atelier-badge--member">Member</span>
                 {% endif %}
-            </p>
-            <small class="text-muted">Username is managed by your Super Admin.</small>
-        </div>
+
+                <div class="atelier-mini-stats-grid">
+                    <div class="atelier-mini-stat">
+                        <strong class="atelier-mini-stat__value">{{ profile_summary.managed_project_count }}</strong>
+                        <span class="atelier-mini-stat__label">Managed</span>
+                    </div>
+                    <div class="atelier-mini-stat">
+                        <strong class="atelier-mini-stat__value">{{ profile_summary.membership_count }}</strong>
+                        <span class="atelier-mini-stat__label">Teams</span>
+                    </div>
+                    <div class="atelier-mini-stat">
+                        <strong class="atelier-mini-stat__value">{{ profile_summary.assigned_ticket_count }}</strong>
+                        <span class="atelier-mini-stat__label">Assigned</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="atelier-panel atelier-profile-upload">
+            <h3 class="atelier-panel__title">
+                <span class="material-symbols-outlined">photo_camera</span>
+                Update Identity
+            </h3>
+            <form method="POST" enctype="multipart/form-data" class="atelier-form-stack atelier-identity-form" id="profile-upload-form">
+                {% csrf_token %}
+                <label for="{{ p_form.image.id_for_label }}" class="atelier-identity-dropzone" id="profile-dropzone">
+                    <span class="material-symbols-outlined">cloud_upload</span>
+                    <strong id="dropzone-label-text">Drag photo here</strong>
+                    <small>PNG, JPG up to 5 MB</small>
+                    <span class="btn btn-outline-secondary">Browse Files</span>
+                </label>
+                {# File input off-screen — visually hidden, label trigger preserved #}
+                <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+                    {{ p_form.image }}
+                </div>
+                {% if p_form.image.errors %}
+                    <ul class="list-unstyled">
+                        {% for error in p_form.image.errors %}
+                            <li class="text-danger small">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <button class="btn btn-primary" type="submit" id="profile-save-btn">Save profile</button>
+            </form>
+        </section>
+    </aside>
+
+    <div class="atelier-profile-main">
+        <section class="atelier-panel">
+            <h3 class="atelier-panel__title">
+                <span class="material-symbols-outlined">groups</span>
+                Active Ecosystems
+            </h3>
+
+            <div class="atelier-stack-section">
+                <span class="atelier-stack-section__label">Managed teams</span>
+                {% if managed_projects %}
+                    <div class="atelier-pill-list">
+                        {% for project in managed_projects %}
+                            <a href="{% url 'project-detail' project.pk %}" class="atelier-pill atelier-pill--primary">{{ project.name }}</a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="atelier-empty-line">No project is currently managed from this account.</p>
+                {% endif %}
+            </div>
+
+            <div class="atelier-stack-section">
+                <span class="atelier-stack-section__label">Memberships</span>
+                {% if memberships %}
+                    <div class="atelier-pill-list">
+                        {% for membership in memberships %}
+                            <a href="{% url 'project-detail' membership.project.pk %}" class="atelier-pill atelier-pill--surface">
+                                {{ membership.project.name }}
+                                <span class="atelier-pill__meta">{{ membership.role|title }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="atelier-empty-line">No project membership yet.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="atelier-panel">
+            <div class="atelier-panel__split-header">
+                <h3 class="atelier-panel__title mb-0">
+                    <span class="material-symbols-outlined">confirmation_number</span>
+                    Recent commitments
+                </h3>
+                <div class="atelier-tab-switch" aria-hidden="true">
+                    <span class="atelier-tab-switch__item atelier-tab-switch__item--active">Assigned</span>
+                    <span class="atelier-tab-switch__item">Created</span>
+                </div>
+            </div>
+
+            <div class="atelier-stack-section">
+                <span class="atelier-stack-section__label">Assigned tickets</span>
+                {% if assigned_tickets %}
+                    <div class="atelier-ticket-stack">
+                        {% for ticket in assigned_tickets %}
+                            <article class="atelier-ticket-stack__item">
+                                <div>
+                                    <div class="atelier-ticket-stack__badges">
+                                        {% if ticket.issue_type == 'EPIC' %}
+                                            <span class="atelier-badge atelier-badge--epic">Epic</span>
+                                        {% elif ticket.issue_type == 'STORY' %}
+                                            <span class="atelier-badge atelier-badge--story">Story</span>
+                                        {% elif ticket.issue_type == 'BUG' %}
+                                            <span class="atelier-badge atelier-badge--bug">Bug</span>
+                                        {% else %}
+                                            <span class="atelier-badge atelier-badge--task">Task</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{% url 'ticket-detail' ticket.pk %}" class="atelier-ticket-title">{{ ticket.title }}</a>
+                                    <div class="atelier-ticket-meta">
+                                        <span>{{ ticket.project.name }}</span>
+                                        {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
+                                        {% if ticket.epic %}<span>Epic: <a href="{% url 'ticket-detail' ticket.epic.pk %}" class="epic-color-text">{{ ticket.epic.title }}</a></span>{% endif %}
+                                    </div>
+                                </div>
+                                <div class="atelier-ticket-stack__status">
+                                    <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
+                                    <span class="atelier-badge atelier-badge--muted">{{ ticket.get_priority_display }}</span>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="atelier-empty-line">No assigned ticket for the moment.</p>
+                {% endif %}
+            </div>
+
+            {% if is_platform_admin %}
+                <div class="atelier-stack-section">
+                    <span class="atelier-stack-section__label">Created tickets</span>
+                    {% if created_tickets %}
+                        <div class="atelier-ticket-stack">
+                            {% for ticket in created_tickets %}
+                                <article class="atelier-ticket-stack__item">
+                                    <div>
+                                        <div class="atelier-ticket-stack__badges">
+                                            {% if ticket.issue_type == 'EPIC' %}
+                                                <span class="atelier-badge atelier-badge--epic">Epic</span>
+                                            {% elif ticket.issue_type == 'STORY' %}
+                                                <span class="atelier-badge atelier-badge--story">Story</span>
+                                            {% elif ticket.issue_type == 'BUG' %}
+                                                <span class="atelier-badge atelier-badge--bug">Bug</span>
+                                            {% else %}
+                                                <span class="atelier-badge atelier-badge--task">Task</span>
+                                            {% endif %}
+                                        </div>
+                                        <a href="{% url 'ticket-detail' ticket.pk %}" class="atelier-ticket-title">{{ ticket.title }}</a>
+                                        <div class="atelier-ticket-meta">
+                                            <span>{{ ticket.project.name }}</span>
+                                            {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
+                                            {% if ticket.epic %}<span>Epic: <a href="{% url 'ticket-detail' ticket.epic.pk %}" class="epic-color-text">{{ ticket.epic.title }}</a></span>{% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="atelier-ticket-stack__status">
+                                        <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="atelier-empty-line">No recent authored ticket yet.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 
-<!-- Profile Picture Form -->
-<div class="helb-card-sm mb-4">
-    <h5 class="mb-3" style="font-weight:700;">
-        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">photo_camera</span>
-        Profile Picture
-    </h5>
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ p_form|crispy }}
-        <div class="d-flex mt-3" style="gap:0.75rem;">
-            <button class="btn btn-primary btn-sm" type="submit">
-                <span class="material-symbols-outlined" style="font-size:16px;">save</span> Update
-            </button>
-            <a href="{% url 'password_change' %}" class="btn btn-warning btn-sm">
-                <span class="material-symbols-outlined" style="font-size:16px;">lock</span> Change password
-            </a>
+{% if is_platform_admin %}
+    <section class="atelier-role-section">
+        <div class="atelier-role-section__header">
+            <div>
+                <h2 class="atelier-page-header__title atelier-page-header__title--section">Manage User Roles</h2>
+                <p class="atelier-page-header__subtitle">Govern access and permission levels across the Atelier.</p>
+            </div>
+            <div class="atelier-page-header__actions">
+                <a href="{% url 'invite-user' %}" class="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size:16px;">person_add</span>
+                    Invite User
+                </a>
+            </div>
         </div>
-    </form>
-</div>
 
-<!-- Teams / Related Projects -->
-<div class="helb-card-sm mb-4">
-    <h5 class="mb-3" style="font-weight:700;">
-        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">group</span>
-        Teams / Related Projects
-    </h5>
-
-    {% if managed_projects %}
-        <h6 class="text-muted text-uppercase small mb-2" style="font-weight:700; letter-spacing:0.08em;">Managed Projects</h6>
-        <div class="mb-3">
-            {% for project in managed_projects %}
-                <div class="d-flex align-items-center mb-2" style="background:var(--helb-surface-container-low); padding:0.5rem 1rem; border-radius:var(--helb-radius-sm);">
-                    <a href="{% url 'project-detail' project.pk %}" style="flex:1;">{{ project.name }}</a>
-                    <span class="badge badge-primary">Manager</span>
-                </div>
-            {% endfor %}
+        <div class="atelier-role-table-shell">
+            <div class="table-responsive">
+                <table class="table atelier-table atelier-table--roles mb-0">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email Address</th>
+                            <th>Current Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for profile in role_profiles %}
+                        <tr>
+                            <td>
+                                <div class="atelier-user-cell">
+                                    <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}" class="atelier-user-cell__avatar">
+                                    <div>
+                                        <strong class="atelier-user-cell__name">{{ profile.user.get_full_name|default:profile.user.username }}</strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ profile.user.email|default:"No email set" }}</td>
+                            <td>
+                                {% if profile.role == 'admin' %}
+                                    <span class="atelier-badge atelier-badge--admin">Admin</span>
+                                {% else %}
+                                    <span class="atelier-badge atelier-badge--member">Member</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-secondary">Change Role</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="atelier-empty-state atelier-empty-state--table">
+                                    <span class="material-symbols-outlined atelier-empty-state__icon">group_off</span>
+                                    <h3 class="atelier-empty-state__title">No profiles found</h3>
+                                    <p class="atelier-empty-state__copy">Invite users to get started.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    {% endif %}
+    </section>
+{% endif %}
 
-    <h6 class="text-muted text-uppercase small mb-2" style="font-weight:700; letter-spacing:0.08em;">Project Memberships</h6>
-    {% if memberships %}
-        {% for membership in memberships %}
-            <div class="d-flex justify-content-between align-items-center mb-2" style="background:var(--helb-surface-container-low); padding:0.5rem 1rem; border-radius:var(--helb-radius-sm);">
-                <a href="{% url 'project-detail' membership.project.pk %}">{{ membership.project.name }}</a>
-                <span class="badge badge-light">
-                    {% if membership.role == 'admin' %}Admin{% else %}Member{% endif %}
-                </span>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted mb-0">No related project.</p>
-    {% endif %}
-</div>
+<script>
+(function () {
+  const input = document.getElementById('id_image');
+  const dropzone = document.getElementById('profile-dropzone');
+  const labelText = document.getElementById('dropzone-label-text');
+  const form = document.getElementById('profile-upload-form');
 
-<!-- User Tickets -->
-<div class="helb-card-sm mb-4">
-    <h5 class="mb-3" style="font-weight:700;">
-        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">confirmation_number</span>
-        User-related Tickets
-    </h5>
+  if (!input || !dropzone) return;
 
-    <h6 class="text-muted text-uppercase small mb-2" style="font-weight:700; letter-spacing:0.08em;">Assigned Tickets</h6>
-    {% if assigned_tickets %}
-        {% for ticket in assigned_tickets %}
-            <div class="d-flex justify-content-between align-items-center mb-2" style="background:var(--helb-surface-container-low); padding:0.625rem 1rem; border-radius:var(--helb-radius-sm);">
-                <div>
-                    {% if ticket.issue_type == 'EPIC' %}
-                        <span class="badge badge-primary mr-1">EPIC</span>
-                    {% elif ticket.issue_type == 'STORY' %}
-                        <span class="badge badge-success mr-1">STORY</span>
-                    {% elif ticket.issue_type == 'BUG' %}
-                        <span class="badge badge-danger mr-1">BUG</span>
-                    {% endif %}
-                    <a href="{% url 'ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
-                    <div class="small text-muted mt-1">
-                        Project: {{ ticket.project.name }}
-                        {% if ticket.epic %}
-                            &bull; Epic: <a href="{% url 'ticket-detail' ticket.epic.pk %}">{{ ticket.epic.title }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-                <div>
-                    <span class="badge badge-light mr-1">{{ ticket.get_status_display }}</span>
-                    <span class="badge badge-light">{{ ticket.get_priority_display }}</span>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted">No assigned ticket.</p>
-    {% endif %}
+  /* Make input invisible but still functional */
+  input.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;';
 
-    {% if user.is_superuser or user.is_staff %}
-    <h6 class="text-muted text-uppercase small mb-2 mt-4" style="font-weight:700; letter-spacing:0.08em;">Latest Created Tickets</h6>
-    {% if created_tickets %}
-        {% for ticket in created_tickets %}
-            <div class="d-flex align-items-center mb-2" style="background:var(--helb-surface-container-low); padding:0.625rem 1rem; border-radius:var(--helb-radius-sm);">
-                {% if ticket.issue_type == 'EPIC' %}
-                    <span class="badge badge-primary mr-2">EPIC</span>
-                {% elif ticket.issue_type == 'STORY' %}
-                    <span class="badge badge-success mr-2">STORY</span>
-                {% elif ticket.issue_type == 'BUG' %}
-                    <span class="badge badge-danger mr-2">BUG</span>
-                {% endif %}
-                <div>
-                    <a href="{% url 'ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
-                    <div class="small text-muted mt-1">
-                        Project: {{ ticket.project.name }}
-                        {% if ticket.epic %}
-                            &bull; Epic: <a href="{% url 'ticket-detail' ticket.epic.pk %}">{{ ticket.epic.title }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted">No recently created ticket.</p>
-    {% endif %}
-    {% endif %}
-</div>
+  /* Show filename after selection */
+  input.addEventListener('change', function () {
+    if (this.files && this.files.length > 0) {
+      const name = this.files[0].name;
+      labelText.textContent = name;
+      dropzone.classList.add('atelier-identity-dropzone--selected');
+    }
+  });
+
+  /* Drag & drop support */
+  dropzone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    dropzone.classList.add('atelier-identity-dropzone--drag');
+  });
+  dropzone.addEventListener('dragleave', function () {
+    dropzone.classList.remove('atelier-identity-dropzone--drag');
+  });
+  dropzone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    dropzone.classList.remove('atelier-identity-dropzone--drag');
+    const dt = e.dataTransfer;
+    if (dt && dt.files.length > 0) {
+      /* Assign dropped files to the input */
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(dt.files[0]);
+      input.files = dataTransfer.files;
+      labelText.textContent = dt.files[0].name;
+      dropzone.classList.add('atelier-identity-dropzone--selected');
+    }
+  });
+})();
+</script>
 {% endblock content %}

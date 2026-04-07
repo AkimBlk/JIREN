@@ -9,6 +9,7 @@
         const storedTheme = localStorage.getItem(storageKey);
         const preferredTheme = storedTheme === "dark" ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", preferredTheme);
+        document.documentElement.classList.toggle("dark", preferredTheme === "dark");
         }());
     </script>
 
@@ -17,111 +18,119 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static 'blog/main.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/index.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    {% if title %}<title>JIREN - {{ title }}</title>{% else %}<title>JIREN</title>{% endif %}
-</head>
-<body>
+    {% if title %}<title>HELB JIREN - {{ title }}</title>{% else %}<title>HELB JIREN</title>{% endif %}    {% block extra_head %}{% endblock %}</head>
+<body class="helb-app-shell">
 
 <!-- HELB Arc Decorations -->
 <div class="helb-arc-bg"></div>
 <div class="helb-arc-bg-2"></div>
 
-<!-- TopNavBar -->
-<header class="helb-topnav">
-    <div class="d-flex align-items-center" style="gap: 2rem;">
-        <a class="helb-brand" href="{% url 'blog-home' %}">JIREN</a>
-        <div class="helb-nav-links d-none d-md-flex">
-            <a href="{% url 'blog-home' %}" class="helb-nav-active">
-                <span class="material-symbols-outlined" style="font-size:18px; margin-right:4px;">dashboard</span>
-                Projects
-            </a>
-        </div>
+{% if user.is_authenticated %}
+<aside class="helb-sidebar d-none d-lg-flex">
+    <a class="helb-sidebar-brand" href="{% url 'blog-home' %}">
+        <span class="helb-sidebar-brand-mark">
+            <span class="material-symbols-outlined">school</span>
+        </span>
+        <span class="helb-sidebar-brand-copy">
+            <strong>HELB JIREN</strong>
+            <small>Academic Atelier</small>
+        </span>
+    </a>
+
+    {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'project-create' %}" class="helb-sidebar-create">
+            <span class="material-symbols-outlined">add</span>
+            Create Project
+        </a>
+        <a href="{% url 'invite-user' %}" class="helb-sidebar-create helb-sidebar-create--secondary">
+            <span class="material-symbols-outlined">person_add</span>
+            Invite User
+        </a>
+    {% endif %}
+
+    <nav class="helb-sidebar-nav">
+        <a href="{% url 'blog-home' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'blog-home' %}active{% endif %}">
+            <span class="material-symbols-outlined">folder</span>
+            <span>Projects</span>
+        </a>
+        <a href="{{ shell_backlog_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'project-backlog' %}active{% endif %}">
+            <span class="material-symbols-outlined">list_alt</span>
+            <span>Backlog</span>
+        </a>
+        <a href="{{ shell_kanban_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'kanban' or request.resolver_match.url_name == 'project-active-sprint' %}active{% endif %}">
+            <span class="material-symbols-outlined">view_kanban</span>
+            <span>Kanban</span>
+        </a>
+        <a href="{{ shell_sprint_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'sprint-admin' or request.resolver_match.url_name == 'sprint-update' or request.resolver_match.url_name == 'sprint-delete' %}active{% endif %}">
+            <span class="material-symbols-outlined">sprint</span>
+            <span>Sprint</span>
+        </a>
+        <a href="{% url 'all-tickets' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'all-tickets' or 'ticket' in request.resolver_match.url_name %}active{% endif %}">
+            <span class="material-symbols-outlined">confirmation_number</span>
+            <span>Tickets</span>
+        </a>
+        <a href="{% url 'profile' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'password_change' or request.resolver_match.url_name == 'manage-roles' or request.resolver_match.url_name == 'update-role' or request.resolver_match.url_name == 'invite-user' %}active{% endif %}">
+            <span class="material-symbols-outlined">account_circle</span>
+            <span>Profile</span>
+        </a>
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'analytics' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+            <span class="material-symbols-outlined">analytics</span>
+            <span>Analytics</span>
+        </a>
+        {% endif %}
+    </nav>
+
+</aside>
+
+<header class="helb-topnav helb-topnav--app">
+    <div class="helb-topnav-left">
+        <a class="helb-topnav-mobile-brand d-lg-none" href="{% url 'blog-home' %}">HELB JIREN</a>
     </div>
-    <div class="helb-nav-links d-flex align-items-center">
+
+    <div class="helb-topnav-right">
         <button type="button" class="helb-theme-toggle" id="themeToggleButton" aria-label="Switch color theme">
             <span class="material-symbols-outlined" id="themeToggleIcon">dark_mode</span>
-            <span class="d-none d-lg-inline" id="themeToggleLabel">Dark mode</span>
+            <span class="helb-theme-toggle__label" id="themeToggleLabel">Dark Mode</span>
         </button>
-        {% if user.is_authenticated %}
-            {% if user.is_staff or user.is_superuser %}
-                <a href="{% url 'project-create' %}" title="New Project">
-                    <span class="material-symbols-outlined" style="font-size:20px;">add_circle</span>
-                    <span class="d-none d-lg-inline">Project</span>
-                </a>
-                <a href="{% url 'invite-user' %}" title="Invite User">
-                    <span class="material-symbols-outlined" style="font-size:20px;">person_add</span>
-                    <span class="d-none d-lg-inline">Invite</span>
-                </a>
-            {% endif %}
 
-            <a href="{% url 'profile' %}" style="display:flex; align-items:center; gap:0.4rem;">
-                <span class="material-symbols-outlined" style="font-size:20px;">account_circle</span>
-                {{ user.username }}
-                {% if user.is_staff or user.is_superuser %}
-                    <span class="helb-user-badge helb-badge-admin">admin</span>
-                {% else %}
-                    <span class="helb-user-badge helb-badge-member">member</span>
-                {% endif %}
-            </a>
+        <a href="{% url 'profile' %}" class="helb-user-chip">
+            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
+            <span class="helb-user-chip__text d-none d-xl-flex">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                <small>{% if user.is_staff or user.is_superuser %}Curator{% else %}Member{% endif %}</small>
+            </span>
+        </a>
 
-            <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
-                {% csrf_token %}
-                <button type="submit" title="Logout" style="background:none; border:none; cursor:pointer; padding:0.5rem 0.75rem; border-radius:9999px; color:var(--helb-outline); transition: all 0.15s;">
-                    <span class="material-symbols-outlined" style="font-size:20px;">logout</span>
-                </button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}">
-                <span class="material-symbols-outlined" style="font-size:20px;">login</span>
-                Login
-            </a>
-        {% endif %}
+        <form method="post" action="{% url 'logout' %}" class="helb-inline-form">
+            {% csrf_token %}
+            <button type="submit" class="helb-icon-button" aria-label="Logout">
+                <span class="material-symbols-outlined">logout</span>
+            </button>
+        </form>
     </div>
 </header>
-
-{% if user.is_authenticated %}
-<!-- Sidebar -->
-<aside class="helb-sidebar d-none d-md-flex">
-    <div class="helb-sidebar-header">
-        <h3>Project Space</h3>
-        <p>Management</p>
+{% else %}
+<header class="helb-topnav helb-topnav--public">
+    <a class="helb-public-brand" href="{% url 'login' %}">
+        <span class="helb-sidebar-brand-mark">
+            <span class="material-symbols-outlined">school</span>
+        </span>
+        <span class="helb-sidebar-brand-copy">
+            <strong>HELB JIREN</strong>
+            <small>Academic Atelier</small>
+        </span>
+    </a>
+    <div class="helb-topnav-right">
+        <a href="{% url 'login' %}" class="helb-topnav-new">Sign In</a>
     </div>
-    <nav>
-        {% if user.is_staff or user.is_superuser %}
-        <a href="{% url 'blog-home' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'blog-home' %}active{% endif %}">
-            <span class="material-symbols-outlined">dashboard</span>
-            Dashboard
-        </a>
-        {% endif %}
-        <a href="{% url 'kanban' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}">
-            <span class="material-symbols-outlined">view_week</span>
-            Kanban
-        </a>
-        <a href="{% url 'all-tickets' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'all-tickets' %}active{% endif %}">
-            <span class="material-symbols-outlined">confirmation_number</span>
-            All Tickets
-        </a>
-        {% if user.is_staff or user.is_superuser %}
-        <a href="{% url 'sprint-admin-index' %}" class="helb-sidebar-link {% if 'sprint' in request.resolver_match.url_name %}active{% endif %}">
-            <span class="material-symbols-outlined">sprint</span>
-            Sprints
-        </a>
-        <a href="{% url 'manage-roles' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'manage-roles' %}active{% endif %}">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            Roles
-        </a>
-        {% endif %}
-        <a href="{% url 'profile' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-            <span class="material-symbols-outlined">person</span>
-            Profile
-        </a>
-    </nav>
-</aside>
+</header>
 {% endif %}
 
 <!-- Main Content -->
-<main class="{% if user.is_authenticated %}helb-main{% else %}helb-main{% endif %}" {% if not user.is_authenticated %}style="margin-left:0;"{% endif %}>
+<main class="helb-main {% if not user.is_authenticated %}helb-main--public{% endif %}">
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} mb-3" role="alert">
@@ -157,17 +166,22 @@
             toggleButton.setAttribute("aria-label", "Switch to " + nextTheme + " mode");
         }
 
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.classList.toggle("dark", theme === "dark");
+            updateToggle(theme);
+        }
+
         if (!toggleButton) {
             return;
         }
 
-        updateToggle(getTheme());
+        applyTheme(getTheme());
 
         toggleButton.addEventListener("click", function () {
             const nextTheme = getTheme() === "dark" ? "light" : "dark";
-            document.documentElement.setAttribute("data-theme", nextTheme);
             localStorage.setItem(storageKey, nextTheme);
-            updateToggle(nextTheme);
+            applyTheme(nextTheme);
         });
     });
 </script>

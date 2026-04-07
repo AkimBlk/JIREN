@@ -1,0 +1,220 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<section class="analytics-dashboard">
+    <div class="analytics-header">
+        <div>
+            <h1 class="analytics-page-title">Analytics Dashboard</h1>
+            <p class="analytics-page-subtitle">Team Performance Across All Projects</p>
+        </div>
+        
+        <div class="analytics-filter-group">
+            <label for="projectFilter" style="font-weight: 600; color: var(--helb-on-surface);">Filter by Project</label>
+            <select id="projectFilter" class="analytics-project-filter">
+                <option value="">All Projects</option>
+                {% for project in all_projects %}
+                    <option value="{{ project.id }}" {% if selected_project and selected_project.id == project.id %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if sprints_count > 0 %}
+        <div class="analytics-stats-row">
+            <div class="analytics-stat-pill">
+                <span class="analytics-stat-label">Projects</span>
+                <span class="analytics-stat-value">{{ projects_count }}</span>
+            </div>
+            <div class="analytics-stat-pill">
+                <span class="analytics-stat-label">Sprints Completed</span>
+                <span class="analytics-stat-value">{{ sprints_count }}</span>
+            </div>
+            {% if selected_sprint %}
+            <div class="analytics-stat-pill">
+                <span class="analytics-stat-label">Latest Sprint</span>
+                <span class="analytics-stat-value">{{ selected_sprint.name }}</span>
+            </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="analytics-empty-state">
+            <span class="material-symbols-outlined">analytics</span>
+            <p>{% if selected_project %}No completed sprints for this project{% else %}No analytics data yet. Complete your first sprint to see metrics.{% endif %}</p>
+        </div>
+    {% endif %}
+
+    {% if sprints_count > 0 %}
+    <div class="analytics-charts-grid">
+        <!-- VELOCITY CHART SECTION -->
+        <div class="analytics-chart-card">
+            <h2 class="analytics-card-title">Team Velocity</h2>
+            <p class="analytics-card-description">Story points completed per sprint</p>
+            <div class="analytics-chart-container">
+                <canvas id="velocityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- CAPACITY CONSUMPTION CHART SECTION -->
+        <div class="analytics-chart-card">
+            <h2 class="analytics-card-title">Capacity Consumption</h2>
+            <p class="analytics-card-description">Utilization rate per sprint</p>
+            <div class="analytics-chart-container">
+                <canvas id="consumptionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- BURNDOWN CHART SECTION -->
+        <div class="analytics-chart-card">
+            <h2 class="analytics-card-title">Sprint Burndown</h2>
+            <p class="analytics-card-description">{% if selected_sprint %}{{ selected_sprint.name }}{% else %}Latest Sprint{% endif %}</p>
+            <div class="analytics-chart-container">
+                <canvas id="burndownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed data safely in script tags -->
+    {{ velocity_labels|json_script:"velocityLabelsData" }}
+    {{ velocity_values|json_script:"velocityValuesData" }}
+    {{ consumption_values|json_script:"consumptionValuesData" }}
+    {{ burndown|json_script:"burndownData" }}
+
+    <!-- Chart.js initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Handle project filter dropdown change
+        const projectFilter = document.getElementById("projectFilter");
+        if (projectFilter) {
+            projectFilter.addEventListener("change", function() {
+                if (this.value) {
+                    window.location.href = "/analytics/?project_id=" + this.value;
+                } else {
+                    window.location.href = "/analytics/";
+                }
+            });
+        }
+
+        const velocityLabelsElem = document.getElementById("velocityLabelsData");
+        const velocityValuesElem = document.getElementById("velocityValuesData");
+        const consumptionValuesElem = document.getElementById("consumptionValuesData");
+        const burndownElem = document.getElementById("burndownData");
+
+        const velocityLabels = velocityLabelsElem ? JSON.parse(velocityLabelsElem.textContent) : [];
+        const velocityValues = velocityValuesElem ? JSON.parse(velocityValuesElem.textContent) : [];
+        const consumptionValues = consumptionValuesElem ? JSON.parse(consumptionValuesElem.textContent) : [];
+        const burndownData = burndownElem ? JSON.parse(burndownElem.textContent) : null;
+
+        // Velocity Chart
+        const velocityCtx = document.getElementById("velocityChart");
+        if (velocityCtx && velocityLabels.length > 0) {
+            new Chart(velocityCtx, {
+                type: "line",
+                data: {
+                    labels: velocityLabels,
+                    datasets: [{
+                        label: "Story Points",
+                        data: velocityValues,
+                        borderColor: "#6366f1",
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: "#6366f1"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: "top" } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Consumption Chart with color coding
+        const consumptionCtx = document.getElementById("consumptionChart");
+        if (consumptionCtx && consumptionValues.length > 0) {
+            const backgroundColors = consumptionValues.map(value => {
+                if (value <= 80) return "rgba(34, 197, 94, 0.7)";    // Green
+                if (value <= 95) return "rgba(245, 158, 11, 0.7)";   // Amber
+                return "rgba(239, 68, 68, 0.7)";                      // Red
+            });
+            const borderColors = consumptionValues.map(value => {
+                if (value <= 80) return "#22c55e";
+                if (value <= 95) return "#f59e0b";
+                return "#ef4444";
+            });
+
+            new Chart(consumptionCtx, {
+                type: "bar",
+                data: {
+                    labels: velocityLabels,
+                    datasets: [{
+                        label: "Capacity %",
+                        data: consumptionValues,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: "top" } },
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+
+        // Burndown Chart
+        const burndownCtx = document.getElementById("burndownChart");
+        if (burndownCtx) {
+            if (burndownData) {
+                new Chart(burndownCtx, {
+                    type: "line",
+                    data: {
+                        labels: burndownData.labels,
+                        datasets: [
+                            {
+                                label: "Ideal Burndown",
+                                data: burndownData.ideal,
+                                borderColor: "#94a3b8",
+                                borderDash: [5, 5],
+                                tension: 0.3,
+                                pointRadius: 0,
+                                fill: false
+                            },
+                            {
+                                label: "Actual Burndown",
+                                data: burndownData.actual,
+                                borderColor: "#6366f1",
+                                backgroundColor: "rgba(99, 102, 241, 0.1)",
+                                tension: 0.3,
+                                fill: true,
+                                pointRadius: 3,
+                                pointBackgroundColor: "#6366f1"
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true, position: "top" } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            } else {
+                const ctx = burndownCtx.getContext("2d");
+                ctx.fillStyle = "var(--helb-on-surface-variant)";
+                ctx.font = "16px Plus Jakarta Sans";
+                ctx.textAlign = "center";
+                ctx.fillText("No burndown data available", burndownCtx.width / 2, burndownCtx.height / 2);
+            }
+        }
+    });
+    </script>
+    {% endif %}
+</section>
+{% endblock %}

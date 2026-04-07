@@ -1,12 +1,177 @@
 {% extends "blog/base.html" %}
 {% load crispy_forms_tags %}
 
-{% block content %}
-<style>
-  .rich-editor-source--enhanced {
-    display: none;
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    prefix: 'tw-',
+    corePlugins: { preflight: false }
   }
+</script>
+{% endblock %}
 
+{% block content %}
+
+<div class="tw-max-w-6xl tw-mx-auto tw-mt-6 tw-mb-10 tw-px-4">
+  <div class="tw-bg-[var(--helb-surface-container-lowest)] tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-shadow-sm tw-overflow-hidden">
+    <div class="tw-px-6 tw-pt-6 tw-pb-4 tw-border-b tw-border-[var(--helb-outline-variant)]">
+      <h4 class="tw-font-extrabold tw-text-lg tw-text-[var(--helb-on-surface)] tw-m-0">
+        {% if object %}
+          Edit ticket: Ticket #{{ object.id }}
+        {% else %}
+          Create a new ticket
+        {% endif %}
+      </h4>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="alert alert-danger tw-mx-6 tw-mt-4">
+          <strong>Error:</strong>
+          {{ form.non_field_errors }}
+          <ul class="tw-mb-0">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if not object %}
+        <div class="alert alert-info tw-mx-6 tw-mt-4 tw-mb-0">
+          <strong>Status:</strong> To Do
+        </div>
+      {% endif %}
+
+      {# ── Issue type pills (full width) ────────────────────── #}
+      <div class="tw-px-6 tw-pt-5 tw-pb-2">
+        <label class="tw-block tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wider tw-text-[var(--helb-on-surface-variant)] tw-mb-2">Issue type</label>
+        <div class="tw-flex tw-flex-wrap tw-gap-2" id="issueTypePills">
+          {% for radio in form.issue_type %}
+            <label class="issue-type-pill tw-cursor-pointer tw-inline-flex tw-items-center tw-gap-1.5
+                          tw-px-4 tw-py-2 tw-rounded-full tw-border tw-border-[var(--helb-outline-variant)]
+                          tw-text-sm tw-font-semibold tw-select-none
+                          tw-bg-[var(--helb-surface-container-low)] tw-text-[var(--helb-on-surface)]
+                          tw-transition-all tw-duration-200 tw-whitespace-nowrap tw-overflow-visible
+                          hover:tw-shadow-md"
+                   data-issue-type="{{ radio.data.value }}">
+              <span class="tw-hidden">{{ radio.tag }}</span>
+              {% if radio.data.value == "EPIC" %}
+                <span class="material-symbols-outlined tw-text-base">bolt</span> Epic
+              {% elif radio.data.value == "STORY" %}
+                <span class="material-symbols-outlined tw-text-base">auto_stories</span> Story
+              {% elif radio.data.value == "BUG" %}
+                <span class="material-symbols-outlined tw-text-base">bug_report</span> Bug
+              {% elif radio.data.value == "TASK" %}
+                <span class="material-symbols-outlined tw-text-base">task_alt</span> Task
+              {% endif %}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Two-column grid (lg+) ────────────────────────────── #}
+      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+
+        {# LEFT COLUMN — Title + Description (3/5) #}
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.title|as_crispy_field }}
+
+          {{ form.description|as_crispy_field }}
+
+          {# ── Recent commits panel — visible only on create when project has a git repo ── #}
+          {% if not object and recent_commits %}
+          <div class="tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-overflow-hidden tw-mt-2 tw-mb-2">
+            <div class="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2 tw-bg-[var(--helb-surface-container-low)] tw-border-b tw-border-[var(--helb-outline-variant)]">
+              <span class="material-symbols-outlined tw-text-base tw-text-[var(--helb-on-surface-variant)]">commit</span>
+              <span class="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wider tw-text-[var(--helb-on-surface-variant)]">Recent commits — click to pre-fill title</span>
+            </div>
+            <ul class="tw-list-none tw-m-0 tw-p-0 tw-divide-y tw-divide-[var(--helb-outline-variant)] tw-max-h-64 tw-overflow-y-auto" id="recentCommitsList">
+              {% for commit in recent_commits %}
+              <li class="commit-row tw-flex tw-items-start tw-gap-3 tw-px-4 tw-py-2.5 tw-cursor-pointer
+                          hover:tw-bg-[var(--helb-surface-container)] tw-transition-colors tw-duration-100"
+                  data-message="{{ commit.message|truncatechars:120 }}"
+                  title="{{ commit.message }}">
+                <code class="tw-text-xs tw-font-mono tw-text-[var(--helb-secondary)] tw-shrink-0 tw-mt-0.5 tw-select-none">{{ commit.hash }}</code>
+                <span class="tw-text-xs tw-text-[var(--helb-on-surface-variant)] tw-line-clamp-2">{{ commit.message|truncatechars:120 }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        {# RIGHT COLUMN — Fields (2/5) #}
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {% if form.project %}
+            {{ form.project|as_crispy_field }}
+          {% endif %}
+          {{ form.sprint|as_crispy_field }}
+          {{ form.epic|as_crispy_field }}
+          {{ form.assignee|as_crispy_field }}
+          {% if form.status %}
+            {{ form.status|as_crispy_field }}
+          {% endif %}
+          {{ form.priority|as_crispy_field }}
+          {{ form.story_points|as_crispy_field }}
+        </div>
+      </div>
+
+      {# ── Tags + Attachments ────────────────────────────────── #}
+      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.tags_input|as_crispy_field }}
+
+          <div>
+            <label for="id_attachments" class="tw-block tw-text-sm tw-font-semibold tw-text-[var(--helb-on-surface)] tw-mb-2">Attachments</label>
+            <input type="file" id="id_attachments" name="attachments" multiple class="tw-block tw-w-full">
+            <div id="attachmentsList" class="tw-mt-2"></div>
+          </div>
+        </div>
+
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {{ form.color|as_crispy_field }}
+          {{ form.initial_load|as_crispy_field }}
+          {{ form.remaining_load|as_crispy_field }}
+        </div>
+      </div>
+
+      {# ── Ticket Links ────────────────────────────────────────── #}
+      {% if form.blocked_by_tickets %}
+      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.blocked_by_tickets|as_crispy_field }}
+        </div>
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {{ form.relates_to_tickets|as_crispy_field }}
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Submit Button ────────────────────────────────────────── #}
+      <div class="tw-px-6 tw-py-4 tw-flex tw-gap-3">
+        <button type="submit" class="tw-px-6 tw-py-2 tw-bg-[var(--helb-primary)] tw-text-[var(--helb-on-primary)] tw-rounded tw-font-semibold tw-transition-all hover:tw-shadow-lg">
+          {% if object %}Update{% else %}Create{% endif %}
+        </button>
+        <a href="{% url 'kanban' %}" class="tw-px-6 tw-py-2 tw-border tw-border-[var(--helb-outline-variant)] tw-text-[var(--helb-on-surface)] tw-rounded tw-font-semibold tw-transition-all hover:tw-bg-[var(--helb-surface-container)]">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if ticket_project_data %}
+  {{ ticket_project_data|json_script:"ticketProjectData" }}
+{% endif %}
+
+<style>
+  .rich-editor-source--enhanced { display: none; }
   .rich-editor-shell {
     background: var(--helb-surface-container-lowest);
     border: 1px solid var(--helb-outline-variant);
@@ -16,370 +181,149 @@
     overflow: auto;
     min-height: 320px;
   }
-
   .rich-editor-shell.is-focused {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+    border-color: var(--helb-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--helb-secondary) 25%, transparent);
   }
-
-  .rich-editor-shell.is-invalid {
-    border-color: #dc3545;
-  }
-
+  .rich-editor-shell.is-invalid { border-color: var(--helb-error); }
   .rich-editor-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    padding: 0.75rem;
+    display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.75rem;
     border-bottom: 1px solid var(--helb-outline-variant);
     background: var(--helb-surface-container-low);
   }
-
   .rich-editor-toolbar button {
-    min-width: 2.25rem;
-    padding: 0.35rem 0.65rem;
-    border: 1px solid var(--helb-outline-variant);
-    border-radius: 0.35rem;
-    background: var(--helb-surface-container-lowest);
-    color: var(--helb-on-surface);
-    font-size: 0.95rem;
-    line-height: 1.2;
+    min-width: 2.25rem; padding: 0.35rem 0.65rem;
+    border: 1px solid var(--helb-outline-variant); border-radius: 0.35rem;
+    background: var(--helb-surface-container-lowest); color: var(--helb-on-surface);
+    font-size: 0.95rem; line-height: 1.2;
+    transition: background 0.15s, border-color 0.15s;
   }
-
   .rich-editor-toolbar button:hover {
     background: var(--helb-surface-container);
     border-color: var(--helb-secondary-container);
   }
-
   .rich-editor-surface {
-    min-height: 260px;
-    height: 100%;
-    padding: 1rem;
-    outline: none;
-    line-height: 1.6;
-    color: var(--helb-on-surface);
+    min-height: 260px; height: 100%; padding: 1rem;
+    outline: none; line-height: 1.6; color: var(--helb-on-surface);
   }
-
   .rich-editor-surface:empty:before {
-    content: attr(data-placeholder);
-    color: var(--helb-outline);
+    content: attr(data-placeholder); color: var(--helb-outline);
   }
-
   .rich-editor-surface img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    margin: 1rem 0;
-    border-radius: 0.5rem;
+    display: block; max-width: 100%; height: auto;
+    margin: 1rem 0; border-radius: 0.5rem;
   }
-
   .link-selector-panel {
     background: var(--helb-surface-container-lowest);
     border: 1px solid var(--helb-outline-variant);
     border-radius: 0.25rem;
   }
-
-  .link-selector-options {
-    max-height: 220px;
-    overflow-y: auto;
-  }
-
+  .link-selector-options { max-height: 220px; overflow-y: auto; }
   .link-selector-chip {
-    display: inline-flex;
-    align-items: center;
+    display: inline-flex; align-items: center;
     padding: 0.45rem 0.75rem;
     border: 1px solid var(--helb-outline-variant);
     border-radius: 999px;
     background: var(--helb-surface-container-low);
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    margin-right: 0.5rem; margin-bottom: 0.5rem; font-size: 0.9rem;
   }
-
   .link-selector-chip button {
-    border: 0;
-    background: transparent;
-    color: var(--helb-outline);
-    margin-left: 0.5rem;
-    padding: 0;
-    line-height: 1;
-    font-size: 1rem;
+    border: 0; background: transparent; color: var(--helb-outline);
+    margin-left: 0.5rem; padding: 0; line-height: 1; font-size: 1rem;
+    transition: color 0.15s;
   }
+  .link-selector-chip button:hover { color: var(--helb-on-surface); }
 
-  .link-selector-chip button:hover {
-    color: var(--helb-on-surface);
+  /* Issue type pill styles - distinct colors for each type */
+  .issue-type-pill[data-issue-type="EPIC"] {
+    background: rgba(156, 39, 176, 0.12); color: #C77DFF;
+    border-color: #C77DFF;
+  }
+  .issue-type-pill[data-issue-type="EPIC"].is-active-EPIC {
+    background: #C77DFF; color: #fff;
+    border-color: #C77DFF;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(199, 125, 255, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="STORY"] {
+    background: rgba(52, 211, 153, 0.12); color: #10B981;
+    border-color: #10B981;
+  }
+  .issue-type-pill[data-issue-type="STORY"].is-active-STORY {
+    background: #10B981; color: #fff;
+    border-color: #10B981;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="BUG"] {
+    background: rgba(239, 68, 68, 0.12); color: #EF4444;
+    border-color: #EF4444;
+  }
+  .issue-type-pill[data-issue-type="BUG"].is-active-BUG {
+    background: #EF4444; color: #fff;
+    border-color: #EF4444;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="TASK"] {
+    background: rgba(59, 130, 246, 0.12); color: #3B82F6;
+    border-color: #3B82F6;
+  }
+  .issue-type-pill[data-issue-type="TASK"].is-active-TASK {
+    background: #3B82F6; color: #fff;
+    border-color: #3B82F6;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
   }
 </style>
 
-<div class="row justify-content-center mt-4 mb-5">
-  <div class="col-md-8 col-lg-7">
-    <div class="card shadow border-0" style="border-radius: 5px;">
-      <div class="card-body p-4 p-md-5">
-        <h4 class="font-weight-bold border-bottom pb-3 mb-4">
-          {% if object %}
-            Edit ticket: Ticket #{{ object.id }}
-          {% else %}
-            Create a new ticket
-          {% endif %}
-        </h4>
-
-        {% if not object %}
-          <div class="alert alert-info mb-3">
-            <strong>Status:</strong> To Do
-          </div>
-        {% endif %}
-
-        <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-
-          {% if form.errors %}
-            <div class="alert alert-danger">
-              <strong>Error:</strong>
-              {{ form.non_field_errors }}
-              <ul class="mb-0">
-                {% for field in form %}
-                  {% for error in field.errors %}
-                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                  {% endfor %}
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
-
-          <p class="text-muted small">
-            Leave Sprint empty to keep the ticket in backlog.
-          </p>
-
-          {{ form.issue_type|as_crispy_field }}
-          {{ form.title|as_crispy_field }}
-
-          {% if form.project %}
-            {{ form.project|as_crispy_field }}
-          {% endif %}
-
-          {{ form.description|as_crispy_field }}
-          <p class="text-muted small mt-n2 mb-4">
-            Format the description and insert images directly into the content.
-          </p>
-
-          {{ form.tags_input|as_crispy_field }}
-
-          <div id="div_id_sprint_wrapper">
-            {{ form.sprint|as_crispy_field }}
-          </div>
-
-          <div class="form-group" id="div_id_epic_wrapper">
-            <label for="epicDropdownButton">{{ form.epic.label }}</label>
-            <div class="dropdown w-100">
-              <button
-                class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
-                type="button"
-                id="epicDropdownButton"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-              >
-                <span id="epicDropdownLabel">Choose an epic</span>
-              </button>
-              <div
-                class="dropdown-menu w-100 p-3"
-                aria-labelledby="epicDropdownButton"
-                id="epicDropdownMenu"
-                style="max-height: 260px; overflow-y: auto;"
-              >
-                <div id="epicDropdownOptions"></div>
-              </div>
-            </div>
-            <div class="d-none">
-              {{ form.epic }}
-            </div>
-            {% if form.epic.help_text %}
-              <small class="form-text text-muted">{{ form.epic.help_text }}</small>
-            {% endif %}
-            {% if form.epic.errors %}
-              <div class="invalid-feedback d-block">
-                {% for error in form.epic.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div id="div_id_color_wrapper">
-            {{ form.color|as_crispy_field }}
-          </div>
-
-          <div class="form-group">
-            <label for="assigneeDropdownButton">{{ form.assignee.label }}</label>
-            <div class="dropdown w-100">
-              <button
-                class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
-                type="button"
-                id="assigneeDropdownButton"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-              >
-                <span id="assigneeDropdownLabel">Choose a member</span>
-              </button>
-              <div
-                class="dropdown-menu w-100 p-3"
-                aria-labelledby="assigneeDropdownButton"
-                id="assigneeDropdownMenu"
-                style="max-height: 260px; overflow-y: auto;"
-              >
-                <div id="assigneeDropdownOptions"></div>
-              </div>
-            </div>
-            <div class="d-none">
-              {{ form.assignee }}
-            </div>
-            {% if form.assignee.help_text %}
-              <small class="form-text text-muted">{{ form.assignee.help_text }}</small>
-            {% endif %}
-            {% if form.assignee.errors %}
-              <div class="invalid-feedback d-block">
-                {% for error in form.assignee.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="form-group">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="mb-0" for="id_blocked_by_tickets">{{ form.blocked_by_tickets.label }}</label>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-info"
-                id="blockedByToggleButton"
-                aria-controls="blockedByPanel"
-                aria-expanded="false"
-              >
-                Add link
-              </button>
-            </div>
-            <small class="form-text text-muted mb-2">{{ form.blocked_by_tickets.help_text }}</small>
-            <div class="d-none">
-              {{ form.blocked_by_tickets }}
-            </div>
-            <div class="link-selector-panel px-3 py-3">
-              <div id="blockedBySelected"></div>
-              <p id="blockedByEmptyState" class="text-muted small mb-0">No blocking ticket selected.</p>
-              <div id="blockedByPanel" class="mt-3 pt-3 border-top d-none">
-                <div id="blockedByOptions" class="link-selector-options"></div>
-              </div>
-            </div>
-            {% if form.blocked_by_tickets.errors %}
-              <div class="invalid-feedback d-block">
-                {% for error in form.blocked_by_tickets.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="form-group">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="mb-0" for="id_relates_to_tickets">{{ form.relates_to_tickets.label }}</label>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-info"
-                id="relatesToToggleButton"
-                aria-controls="relatesToPanel"
-                aria-expanded="false"
-              >
-                Add link
-              </button>
-            </div>
-            <small class="form-text text-muted mb-2">{{ form.relates_to_tickets.help_text }}</small>
-            <div class="d-none">
-              {{ form.relates_to_tickets }}
-            </div>
-            <div class="link-selector-panel px-3 py-3">
-              <div id="relatesToSelected"></div>
-              <p id="relatesToEmptyState" class="text-muted small mb-0">No related ticket selected.</p>
-              <div id="relatesToPanel" class="mt-3 pt-3 border-top d-none">
-                <div id="relatesToOptions" class="link-selector-options"></div>
-              </div>
-            </div>
-            {% if form.relates_to_tickets.errors %}
-              <div class="invalid-feedback d-block">
-                {% for error in form.relates_to_tickets.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          {% if existing_attachments %}
-          <div class="form-group">
-            <label>Existing attachments</label>
-            {% for attachment in existing_attachments %}
-              <div class="d-flex align-items-center justify-content-between border rounded px-2 py-2 mb-2">
-                <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name|cut:"attachments/" }}</a>
-                <button type="submit" class="btn btn-sm btn-outline-danger ml-3" formaction="{% url 'ticket-attachment-delete' attachment.pk %}" formmethod="post" formnovalidate>Delete</button>
-              </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          {% if object %}
-            <div class="form-group">
-              <label for="id_attachments">Attachments</label>
-              <input
-                type="file"
-                class="form-control-file"
-                id="id_attachments"
-                name="attachments"
-                multiple
-                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-              />
-              <small class="form-text text-muted">You can attach multiple images (max 5&nbsp;MB each).</small>
-            </div>
-          {% endif %}
-
-          {% if object %}
-            {{ form.status|as_crispy_field }}
-          {% endif %}
-
-          {{ form.priority|as_crispy_field }}
-
-          <div id="div_id_story_points_wrapper">
-            {{ form.story_points|as_crispy_field }}
-          </div>
-
-          <div id="div_id_initial_load_wrapper">
-            {{ form.initial_load|as_crispy_field }}
-            {% if object %}
-              <small class="form-text text-muted">
-                Initial load is locked after ticket creation.
-              </small>
-            {% endif %}
-          </div>
-
-          <div id="div_id_remaining_load_wrapper">
-            {{ form.remaining_load|as_crispy_field }}
-          </div>
-
-          <div class="form-group mt-4 pt-3 border-top d-flex justify-content-end align-items-center">
-            <a class="text-muted mr-4 text-decoration-none" href="{% url 'blog-home' %}">Cancel</a>
-            <button class="btn btn-outline-info" style="border-radius: 3px;" type="submit">
-              {% if object %}Update{% else %}Create ticket{% endif %}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% if ticket_project_data %}
-  {{ ticket_project_data|json_script:"ticketProjectData" }}
-{% endif %}
-
 <script>
+  // Ticket templates for each issue type
+  const TEMPLATES = {
+    "STORY": "📖 USER STORY (As... I want... so that...)\n\nAs a <role/persona>,\nI want <action/feature>,\nso that <benefit/value>.\n\n✅ ACCEPTANCE CRITERIA:\n- Criteria 1: ...\n- Criteria 2: ...\n- Criteria 3: ...\n\n📎 RESOURCES / REFERENCES:\n- Link 1: ...\n\n🎯 NOTES:\n...",
+    "BUG": "🐛 BUG REPORT\n\n🔍 CONTEXT:\n- Environment: (dev/staging/prod)\n- Browser/Version:\n- Steps: ...\n\n❌ PROBLEM:\nWhat is not working correctly?\n\n✅ EXPECTED BEHAVIOR:\nWhat should happen instead?\n\n📸 ACTUAL RESULT:\nWhat did you observe? (screenshot/error)\n\n🔄 STEPS TO REPRODUCE:\n1. ...\n2. ...\n3. ...\n\n💾 ADDITIONAL INFORMATION:\n- App version:\n- Error log: ...",
+    "TASK": "☑️ TASK (Technical work)\n\n📋 DESCRIPTION:\nWhat do we need to do?\n\n🎯 OBJECTIVE:\nWhat is the expected outcome?\n\n📝 ITEMS TO COVER:\n- [ ] Item 1\n- [ ] Item 2\n- [ ] Item 3\n\n⚙️ TECHNICAL DETAILS:\n- Files to modify: ...\n- Dependencies: ...\n\n📎 REFERENCES:\n- PR: ...\n- Documentation: ...",
+    "EPIC": "🏔️ EPIC (Major initiative)\n\n📖 DESCRIPTION:\nWhat is this epic about?\n\n🎯 OBJECTIVES:\n- Objective 1: ...\n- Objective 2: ...\n\n📝 USER STORIES INCLUDED:\n- US#1: ...\n- US#2: ...\n\n⏱️ TIMELINE:\n- Phase 1: ...\n- Phase 2: ...\n\n📊 SUCCESS METRICS:\n- Metric 1: ...\n- Metric 2: ..."
+  };
+
   document.addEventListener("DOMContentLoaded", function () {
+
+    /* ── Issue type pills ── */
+    (function setupIssueTypePills() {
+      var pills = document.querySelectorAll(".issue-type-pill");
+      var hiddenRadios = document.querySelectorAll('input[name="issue_type"]');
+
+      function syncPillStates() {
+        var checkedRadio = document.querySelector('input[name="issue_type"]:checked');
+        var activeValue = checkedRadio ? checkedRadio.value : "";
+        pills.forEach(function (pill) {
+          var type = pill.getAttribute("data-issue-type");
+          pill.classList.remove("is-active-EPIC", "is-active-STORY", "is-active-BUG", "is-active-TASK");
+          if (type === activeValue) {
+            pill.classList.add("is-active-" + type);
+          }
+        });
+      }
+
+      pills.forEach(function (pill) {
+        pill.addEventListener("click", function () {
+          var type = pill.getAttribute("data-issue-type");
+          hiddenRadios.forEach(function (radio) {
+            radio.checked = (radio.value === type);
+          });
+          var checkedRadio = document.querySelector('input[name="issue_type"]:checked');
+          if (checkedRadio) {
+            checkedRadio.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          syncPillStates();
+        });
+      });
+
+      hiddenRadios.forEach(function (radio) {
+        radio.addEventListener("change", syncPillStates);
+      });
+
+      syncPillStates();
+    })();
     function setupRichTextEditor() {
       const textarea = document.getElementById("id_description");
 
@@ -407,7 +351,7 @@
       editor.contentEditable = "true";
       editor.setAttribute("role", "textbox");
       editor.setAttribute("aria-multiline", "true");
-      editor.setAttribute("data-placeholder", "Describe the ticket...");
+      editor.setAttribute("data-placeholder", "Description");
 
       const imageInput = document.createElement("input");
       imageInput.type = "file";
@@ -875,7 +819,7 @@
       optionsContainerId: "epicDropdownOptions",
       labelId: "epicDropdownLabel",
       menuId: "epicDropdownMenu",
-      placeholder: "Choose an epic",
+      placeholder: "Epic",
       emptyLabel: "No epic",
       emptyStateLabel: "No epic available",
       noOptionsLabel: "No epic available for this project.",
@@ -887,7 +831,7 @@
       optionsContainerId: "assigneeDropdownOptions",
       labelId: "assigneeDropdownLabel",
       menuId: "assigneeDropdownMenu",
-      placeholder: "Choose a member",
+      placeholder: "Assignee",
       emptyLabel: "Unassigned",
       emptyStateLabel: "No member available",
       noOptionsLabel: "No member available for this project.",
@@ -947,6 +891,13 @@
       const type = getSelectedIssueType();
       if (!type) {
         return;
+      }
+
+      // Update description template based on issue type
+      const descriptionField = document.getElementById("id_description");
+      if (descriptionField && !descriptionField.value) {
+        const template = TEMPLATES[type] || TEMPLATES.STORY;
+        descriptionField.placeholder = template;
       }
 
       const isEpic = type === "EPIC";
@@ -1068,4 +1019,24 @@
     }
   });
 </script>
+
+{% if not object and recent_commits %}
+<script>
+(function () {
+  var titleInput = document.getElementById('id_title');
+  var rows = document.querySelectorAll('#recentCommitsList .commit-row');
+  rows.forEach(function (row) {
+    row.addEventListener('click', function () {
+      if (!titleInput) return;
+      var msg = (row.dataset.message || '').split('\n')[0].trim();
+      titleInput.value = msg;
+      titleInput.focus();
+      rows.forEach(function (r) { r.style.background = ''; });
+      row.style.background = 'var(--helb-secondary-container)';
+    });
+  });
+})();
+</script>
+{% endif %}
+
 {% endblock content %}

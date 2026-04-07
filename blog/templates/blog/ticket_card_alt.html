@@ -1,47 +1,53 @@
-<div class="kanban-card mb-2"
+<div class="kanban-card kanban-card--{{ ticket.issue_type|lower }}{% if ticket.status == 'DONE' %} kanban-card--done{% endif %}"
      data-ticket-id="{{ ticket.id }}"
-     style="overflow:hidden;">
-    <div style="height:6px; background:{% if ticket.issue_type == 'EPIC' %}{{ ticket.display_color }}{% elif ticket.issue_type == 'BUG' %}var(--helb-error){% elif ticket.issue_type == 'STORY' %}var(--helb-on-tertiary-container){% elif ticket.issue_type == 'TASK' %}var(--helb-outline){% else %}var(--helb-secondary){% endif %};"></div>
+     draggable="true">
 
-    <div class="p-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <div>
-                {% if ticket.issue_type == 'STORY' %}
-                    <span class="badge badge-success mr-1">STORY</span>
-                {% elif ticket.issue_type == 'BUG' %}
-                    <span class="badge badge-danger mr-1">BUG</span>
-                {% elif ticket.issue_type == 'TASK' %}
-                    <span class="badge badge-secondary mr-1">TASK</span>
-                {% elif ticket.issue_type == 'EPIC' %}
-                    <span class="badge mr-1" style="background-color: {{ ticket.display_color }}; color: #fff;">EPIC</span>
-                {% endif %}
-                <small class="text-muted ml-1">#{{ ticket.id }}</small>
-            </div>
-            <span class="badge badge-light">{{ ticket.get_status_display }}</span>
-        </div>
-
-        <div class="mb-2" style="font-size:0.9375rem; font-weight:700; line-height:1.3;">
-            <a href="{% url 'ticket-detail' ticket.id %}" style="color:var(--helb-on-surface); text-decoration:none;">{{ ticket.title }}</a>
-        </div>
-
-        {% if ticket.epic %}
-            <div class="small mb-2" style="background:var(--helb-surface-container-low); padding:0.25rem 0.5rem; border-radius:var(--helb-radius-sm); color: {{ ticket.epic.display_color }};">
-                Epic: {{ ticket.epic.title }}
-            </div>
-        {% endif %}
-
-        {% include "blog/ticket_tags.html" %}
-
-        <div class="d-flex justify-content-between align-items-center mt-2" style="padding-top:0.5rem; border-top:1px solid rgba(195,198,208,0.1);">
-            <small class="text-muted">{{ ticket.get_priority_display }}</small>
-            {% if ticket.assignee %}
-                <img class="rounded-circle"
-                     style="width:26px;height:26px;object-fit:cover;"
-                     src="{{ ticket.assignee.profile.image.url }}"
-                     title="Assigned to: {{ ticket.assignee.username }}">
-            {% else %}
-                <small class="text-muted">Unassigned</small>
-            {% endif %}
-        </div>
+  {# ── Row 1 : badge + priority / check ── #}
+  <div class="kanban-card__top">
+    <div class="kanban-card__badge-row">
+      <span class="kanban-card__badge kanban-card__badge--{{ ticket.issue_type|lower }}">
+        {{ ticket.get_issue_type_display }}
+      </span>
+      {% if ticket.status == 'DONE' %}
+        <span class="material-symbols-outlined kanban-card__check">check_circle</span>
+      {% endif %}
     </div>
+    {% if ticket.status != 'DONE' %}
+      {% if ticket.priority == 'HIGH' %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--high">priority_high</span>
+      {% elif ticket.priority == 'MEDIUM' %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--medium">drag_handle</span>
+      {% else %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--low">low_priority</span>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {# ── Row 2 : title ── #}
+  <h4 class="kanban-card__title">
+    <a href="{% url 'ticket-detail' ticket.id %}">{{ ticket.title }}</a>
+  </h4>
+
+  {# ── Row 3 : tags ── #}
+  {% if ticket.tags.all %}
+  <div class="kanban-card__tags">
+    {% for tag in ticket.tags.all %}
+      <span class="kanban-card__tag">{{ tag.name }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Row 4 : assignee + ID ── #}
+  <div class="kanban-card__footer">
+    {% if ticket.assignee %}
+      <img class="kanban-card__avatar"
+           src="{{ ticket.assignee.profile.image.url }}"
+           title="{{ ticket.assignee.username }}"
+           alt="{{ ticket.assignee.username }}">
+    {% else %}
+      <div class="kanban-card__avatar kanban-card__avatar--empty" title="Unassigned">?</div>
+    {% endif %}
+    <span class="kanban-card__id">{{ ticket.project.code_prefix|default:"AT" }}-{{ ticket.id }}</span>
+  </div>
+
 </div>

@@ -210,3 +210,19 @@ class SprintAssignmentTests(TestCase):
         self.assertContains(response, "Sprint Admin")
         self.assertContains(response, self.project.name)
         self.assertContains(response, reverse("sprint-admin", kwargs={"pk": self.project.pk}))
+
+    def test_sprint_pages_use_english_copy_without_helper_notes(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        self.client.force_login(self.user)
+
+        admin_response = self.client.get(reverse("sprint-admin", kwargs={"pk": self.project.pk}))
+        index_response = self.client.get(reverse("sprint-admin-index"))
+        update_response = self.client.get(reverse("sprint-update", kwargs={"pk": self.sprint.pk}))
+
+        self.assertContains(admin_response, "Sprint Administration")
+        self.assertNotContains(admin_response, "Administration des sprints")
+        self.assertNotContains(admin_response, "Fill only the users that should receive sprint capacity.")
+        self.assertNotContains(admin_response, "Choose one ticket card template for the whole sprint.")
+        self.assertContains(index_response, "Manage project sprints.")
+        self.assertNotContains(update_response, "Fill only the users that should receive sprint capacity.")

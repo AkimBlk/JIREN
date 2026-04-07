@@ -1,0 +1,105 @@
+{% load static %}
+
+<div class="helb-card-sm mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0" style="font-weight:700;">
+      <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">code</span>
+      Git Integration
+    </h5>
+    {% if git_repository and user_can_configure_git %}
+      <button type="button"
+              class="btn btn-sm btn-outline-secondary"
+              data-toggle="modal"
+              data-target="#git-setup-modal">
+        <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">edit</span>
+        Edit
+      </button>
+    {% endif %}
+  </div>
+
+  <div id="git-accordion-root" class="git-accordion">
+    {% if not git_repository %}
+      {% include "blog/includes/git_components_empty.html" %}
+    {% elif git_extended_data.error %}
+      {% include "blog/includes/git_components_error.html" with error=git_extended_data.error %}
+      {% if user_can_configure_git %}
+        <div class="text-center mt-3">
+          <button type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  data-toggle="modal"
+                  data-target="#git-setup-modal">
+            <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">edit</span>
+            Edit Repository Settings
+          </button>
+        </div>
+      {% endif %}
+    {% else %}
+      <!-- Section 1: Repository Info -->
+      <div class="git-accordion__section">
+        <button
+          class="git-accordion__toggle"
+          id="git-toggle-info"
+          role="button"
+          aria-expanded="false"
+          aria-controls="git-content-info"
+          data-section="info">
+          <span class="git-accordion__toggle-icon">▶</span>
+          <span class="git-accordion__toggle-label">
+            Repository Information
+          </span>
+        </button>
+        <div id="git-content-info" class="git-accordion__content" aria-hidden="true">
+          {% include "blog/includes/git_accordion_info_section.html" %}
+        </div>
+      </div>
+
+      <!-- Section 2: Branches -->
+      <div class="git-accordion__section">
+        <button
+          class="git-accordion__toggle"
+          id="git-toggle-branches"
+          role="button"
+          aria-expanded="false"
+          aria-controls="git-content-branches"
+          data-section="branches">
+          <span class="git-accordion__toggle-icon">▶</span>
+          <span class="git-accordion__toggle-label">
+            Branches
+          </span>
+        </button>
+        <div id="git-content-branches" class="git-accordion__content" aria-hidden="true">
+          {% include "blog/includes/git_accordion_branches_section.html" %}
+        </div>
+      </div>
+
+      <!-- Section 3: Recent Activity -->
+      <div class="git-accordion__section">
+        <button
+          class="git-accordion__toggle"
+          id="git-toggle-activity"
+          role="button"
+          aria-expanded="false"
+          aria-controls="git-content-activity"
+          data-section="activity">
+          <span class="git-accordion__toggle-icon">▶</span>
+          <span class="git-accordion__toggle-label">
+            Recent Activity
+          </span>
+        </button>
+        <div id="git-content-activity" class="git-accordion__content" aria-hidden="true">
+          {% include "blog/includes/git_accordion_activity_section.html" %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'blog/css/git_accordion_consolidated.css' %}">
+<script src="{% static 'blog/js/git_accordion_utils.js' %}" defer></script>
+<script src="{% static 'blog/js/git_accordion_core.js' %}" defer></script>
+
+{% if user_can_configure_git %}
+  {% include "blog/includes/git_setup_modal_form.html" %}
+  <link rel="stylesheet" href="{% static 'blog/css/git_setup.css' %}">
+  <script src="{% static 'blog/js/git_setup_modal.js' %}" defer></script>
+{% endif %}

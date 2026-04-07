@@ -1,5 +1,7 @@
 from django.urls import path
 from .views.statistics import ProjectStatisticsView
+from .views.git_setup import GitRepositoryCreateView, GitRepositoryUpdateView
+from .views import AnalyticsView
 
 from . import views
 from .views import (
@@ -72,4 +74,9 @@ urlpatterns = [
     path("sprints/<int:pk>/edit/", views.SprintUpdateView.as_view(), name="sprint-update"),
     path("projects/delete/", views.delete_projects, name="project-delete-multiple"),
     path("project/<int:pk>/statistics/", ProjectStatisticsView.as_view(), name="project-statistics"),
+    path("analytics/", AnalyticsView.as_view(), name="analytics"),
+
+    # Git repository setup
+    path("project/<int:project_pk>/git/add/", GitRepositoryCreateView.as_view(), name="git-setup-create"),
+    path("project/<int:project_pk>/git/edit/", GitRepositoryUpdateView.as_view(), name="git-setup-update"),
 ]

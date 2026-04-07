@@ -1,30 +1,100 @@
-{% extends "blog/base.html" %}
-{% load crispy_forms_tags %}
+{% extends "users/auth_base.html" %}
+
+{% block title_text %}Create Account{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center" style="min-height:60vh; align-items:center;">
-    <div class="col-md-6 col-lg-5">
-        <div class="helb-card">
-            <div style="text-align:center; margin-bottom:1.5rem;">
-                <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-on-primary-container);">person_add</span>
-                <h3 style="font-weight:800;">Create Account</h3>
-            </div>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="token" value="{{ token }}">
-                <div class="form-group">
-                    <label for="invitation-username">Username</label>
-                    <input id="invitation-username" type="text" class="form-control" value="{{ invitation_username }}" readonly>
-                    <small class="form-text text-muted">This username was assigned by your Super Admin and cannot be changed here.</small>
-                </div>
-                {{ form|crispy }}
-                <button class="btn btn-primary btn-block mt-3" type="submit">
-                    <span class="material-symbols-outlined" style="font-size:16px;">how_to_reg</span> Register
-                </button>
-            </form>
-            <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid rgba(195,198,208,0.15); text-align:center;">
-                <small class="text-muted">Already have an account? <a href="{% url 'login' %}">Log In</a></small>
-            </div>
+<section class="helb-auth-shell helb-auth-shell--split">
+    <div class="helb-auth-hero d-none d-lg-flex">
+        <div>
+            <span class="helb-auth-kicker">HELB JIREN PLATFORM</span>
+            <h1>The Academic <span>Atelier.</span></h1>
+            <p>
+                Join the curated workspace where academic rigor meets modern agility. Structure your research, manage your projects, and collaborate with precision.
+            </p>
         </div>
+        <div class="helb-auth-hero__visual" aria-hidden="true"></div>
     </div>
-</div>
+
+    <main class="helb-auth-card">
+        <div class="helb-auth-card__icon">
+            <span class="material-symbols-outlined">person_add</span>
+        </div>
+        <div class="helb-auth-heading helb-auth-heading--left">
+            <h1>Create Account</h1>
+            <p>Join the academic atelier.</p>
+        </div>
+
+        <form method="post" class="helb-auth-form">
+            {% csrf_token %}
+            <input type="hidden" name="token" value="{{ token }}">
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="helb-auth-field">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="invitation-username" class="mb-0">Username</label>
+                    <span class="helb-auth-chip">Assigned by admin</span>
+                </div>
+                <div class="helb-auth-input helb-auth-input--locked">
+                    <input id="invitation-username" type="text" class="form-control" value="{{ invitation_username }}" readonly>
+                    <span class="material-symbols-outlined helb-auth-input__trailing">lock</span>
+                </div>
+            </div>
+
+            <div class="helb-auth-field">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">mail</span>
+                    {{ form.email }}
+                </div>
+                {% for error in form.email.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">lock</span>
+                    {{ form.password1 }}
+                </div>
+                {% for error in form.password1.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">verified_user</span>
+                    {{ form.password2 }}
+                </div>
+                {% for error in form.password2.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <label class="helb-auth-checkbox" for="terms-acceptance">
+                <input id="terms-acceptance" type="checkbox" required>
+                <span>I agree to the Terms of Use and Privacy Policy.</span>
+            </label>
+
+            <button class="btn btn-primary btn-block helb-auth-submit" type="submit">
+                Create account
+            </button>
+        </form>
+
+        <div class="helb-auth-footer">
+            <p class="mb-0">
+                Already have an account? <a href="{% url 'login' %}">Sign in</a>
+            </p>
+        </div>
+    </main>
+</section>
 {% endblock %}

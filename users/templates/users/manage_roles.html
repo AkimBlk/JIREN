@@ -1,38 +1,88 @@
 {% extends "blog/base.html" %}
 {% block content %}
-<h2 class="mb-4" style="font-weight:800;">
-    <span class="material-symbols-outlined" style="font-size:28px; color:var(--helb-on-primary-container); vertical-align:-4px;">admin_panel_settings</span>
-    Manage User Roles
-</h2>
+<section class="atelier-page-header">
+    <div>
+        <span class="atelier-page-header__eyebrow">Governance</span>
+        <h1 class="atelier-page-header__title">Manage User Roles</h1>
+        <p class="atelier-page-header__subtitle">Review and update platform roles.</p>
+    </div>
+    <div class="atelier-page-header__actions">
+        <a href="{% url 'invite-user' %}" class="btn btn-primary">
+            <span class="material-symbols-outlined" style="font-size:16px;">person_add</span>
+            Invite user
+        </a>
+    </div>
+</section>
 
-<div class="helb-card-sm" style="overflow-x:auto;">
-    <table class="table table-sm mb-0">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for profile in profiles %}
-        <tr>
-            <td style="font-weight:600;">{{ profile.user.username }}</td>
-            <td class="text-muted">{{ profile.user.email }}</td>
-            <td>
-                <span class="badge badge-{% if profile.role == 'admin' %}danger{% elif profile.role == 'contributeur' %}primary{% else %}secondary{% endif %}">
-                    {{ profile.role }}
-                </span>
-            </td>
-            <td>
-                <a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-primary">
-                    <span class="material-symbols-outlined" style="font-size:14px;">edit</span> Change Role
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<section class="atelier-stats-grid atelier-stats-grid--compact">
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Profiles</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.total }}</strong>
+        <span class="atelier-stat-card__meta">Total accounts</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Admins</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.admins }}</strong>
+        <span class="atelier-stat-card__meta">Admin accounts</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Members</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.members }}</strong>
+        <span class="atelier-stat-card__meta">Member accounts</span>
+    </article>
+</section>
+
+<div class="atelier-role-table-shell">
+    <div class="table-responsive">
+        <table class="table atelier-table atelier-table--roles mb-0">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for profile in profiles %}
+                <tr>
+                    <td>
+                        <div class="atelier-user-cell">
+                            <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}" class="atelier-user-cell__avatar">
+                            <div>
+                                <strong class="atelier-user-cell__name">{{ profile.user.get_full_name|default:profile.user.username }}</strong>
+                                <small class="atelier-user-cell__email">{{ profile.user.email|default:"No email set" }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="atelier-mono-cell">{{ profile.user.username }}</td>
+                    <td>
+                        {% if profile.role == 'admin' %}
+                            <span class="atelier-badge atelier-badge--admin">Admin</span>
+                        {% else %}
+                            <span class="atelier-badge atelier-badge--member">Member</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-secondary">
+                            <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+                            Change Role
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">
+                        <div class="atelier-empty-state atelier-empty-state--table">
+                            <span class="material-symbols-outlined atelier-empty-state__icon">group_off</span>
+                            <h3 class="atelier-empty-state__title">No profiles found</h3>
+                            <p class="atelier-empty-state__copy">Invite users to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

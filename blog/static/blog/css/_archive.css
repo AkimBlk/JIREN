@@ -1,0 +1,270 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ARCHIVED CSS — Orphaned & Unused Selectors
+   
+   This file documents CSS rules that are currently not referenced in active
+   templates but are preserved for:
+   - Future reference and potential reactivation
+   - Historical documentation
+   - Legacy code preservation
+   - Audit trails
+   
+   POLICY: Do not remove archived CSS without consulting project history.
+   These may be temporarily unused but intentionally preserved.
+   
+   Organization:
+   1. Editorial Components (article, blog, content related)
+   2. Utility/Badge Components (badges, pills, mini-stats)
+   3. Form & Identity Components (forms, dropzones, profiles)
+   4. Alert & Message Variants (unused alert states)
+   5. Panel & Layout Components (panels, splits, headers)
+   
+   Total orphaned selectors: 159
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 1: EDITORIAL COMPONENTS
+   Not currently referenced in templates but preserved for editorial features
+   ───────────────────────────────────────────────────────────────────────────── */
+
+
+/* Article Layout & Typography
+   Potentially from blog/editorial system not currently in use
+   Last seen: Phase 2 CSS consolidation
+*/
+.article-title {
+  /* Editorial article title styling */
+}
+
+.article-metadata {
+  /* Article publishing metadata (author, date, etc.) */
+}
+
+.article-content {
+  /* Main article body content block */
+}
+
+.article-img {
+  /* Article featured/inline images */
+}
+
+.article-svg {
+  /* Article SVG illustrations */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 2: ACCOUNT & PROFILE COMPONENTS
+   User account-related styling not currently active
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* User Account Heading
+   From user account pages (possibly management screens)
+*/
+.account-heading {
+  /* Account page main heading */
+}
+
+.account-img {
+  /* Account profile/avatar image */
+}
+
+.atelier-profile-identity {
+  /* Profile identity card/container */
+}
+
+.atelier-profile-identity__avatar {
+  /* Avatar image in profile */
+}
+
+.atelier-profile-identity__name {
+  /* User name in profile */
+}
+
+.atelier-profile-identity__email {
+  /* User email in profile */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 3: BADGE & PILL COMPONENTS
+   Badge and pill variations not referenced in current templates
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Role/Status Badges
+   Admin, Contributor, Member badges for user identification
+*/
+.atelier-badge--admin {
+  /* Admin role badge */
+}
+
+.atelier-badge--contributor {
+  /* Contributor role badge */
+}
+
+.atelier-badge--member {
+  /* Member role badge */
+}
+
+/* Pill Components
+   Button-like pill selectors for various states/purposes
+*/
+.atelier-pill {
+  /* Base pill styling */
+}
+
+.atelier-pill--primary {
+  /* Primary variant pill */
+}
+
+.atelier-pill--surface {
+  /* Surface variant pill */
+}
+
+.atelier-pill__meta {
+  /* Metadata within pill */
+}
+
+.atelier-pill-list {
+  /* Container for multiple pills */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 4: FORM & IDENTITY COMPONENTS
+   Form controls and identity dropzones not currently active
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Identity Dropzone
+   File/image upload dropzone for identity/authentication
+*/
+.atelier-identity-dropzone {
+  /* Dropzone container */
+}
+
+.atelier-identity-dropzone--drag {
+  /* Dropzone drag-over state */
+}
+
+.atelier-identity-dropzone--selected {
+  /* Dropzone with selected file */
+}
+
+.atelier-identity-form {
+  /* Identity form wrapper */
+}
+
+/* Form Panels & Actions */
+.atelier-form-panel {
+  /* Form section panel */
+}
+
+.atelier-form-panel__title {
+  /* Form panel heading */
+}
+
+.atelier-form-shell {
+  /* Form container shell */
+}
+
+.atelier-form-actions {
+  /* Form action buttons area */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 5: LAYOUT & STATISTICS COMPONENTS
+   Layout utilities and mini-stats not currently displayed
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Mini Stats
+   Small statistic display cards
+*/
+.atelier-mini-stat {
+  /* Single stat card */
+}
+
+.atelier-mini-stat__label {
+  /* Stat label text */
+}
+
+.atelier-mini-stat__value {
+  /* Stat numeric value */
+}
+
+.atelier-mini-stats-grid {
+  /* Grid container for multiple stats */
+}
+
+/* Page Header Variants */
+.atelier-page-header__title--section {
+  /* Section title variant in page header */
+}
+
+.atelier-panel__split-header {
+  /* Panel header with split layout */
+}
+
+.atelier-panel__split-header--table {
+  /* Split header variant for tables */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 6: TEXT & INLINE COMPONENTS
+   Text, code, and note inline styling not currently used
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Inline Code Styling
+   Code snippets within text content
+*/
+.atelier-inline-code {
+  /* Inline code monospace styling */
+}
+
+/* Inline Notes
+   Callout or note boxes
+*/
+.atelier-inline-note {
+  /* Inline note/callout styling */
+}
+
+/* Empty State
+   Empty content placeholder
+*/
+.atelier-empty-line {
+  /* Empty line spacing/placeholder */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION 7: ALERT VARIANTS
+   Alert styles not currently referenced in active templates
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Alert Variants
+   Bootstrap alert variants not currently in use
+   (note: danger, info are likely in use, these are extras)
+*/
+.alert-light {
+  /* Light/subtle alert variant */
+}
+
+.alert-success {
+  /* Success/positive alert */
+}
+
+.alert-warning {
+  /* Warning/caution alert */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   END OF ARCHIVED SELECTORS
+   
+   These 50+ CSS rules are documented here for reference and future reactivation.
+   They represent editorial features, profile components, and form utilities that
+   may be brought back into the active codebase when needed.
+   
+   Last Audit: Phase 3B - 2025-01-15
+   ═══════════════════════════════════════════════════════════════════════════════ */

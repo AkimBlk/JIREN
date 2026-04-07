@@ -1,5 +1,6 @@
 from django.shortcuts import render
 
+from .analytics_view import AnalyticsView
 from .project import (
     ProjectBacklogView,
     ProjectCreateView,
@@ -34,13 +35,15 @@ from .ticket import (
 )
 
 __all__ = [
+    "about",
     "AllTicketsListView",
+    "AnalyticsView",
     "ProjectBacklogView",
     "ProjectCreateView",
     "ProjectDeleteView",
     "ProjectDetailView",
     "ProjectHomeView",
-        "ProjectUpdateView",
+    "ProjectUpdateView",
     "SprintAdminIndexView",
     "SprintUpdateView",
     "TicketCreateView",
@@ -66,3 +69,5 @@ __all__ = [
 ]
 
 
+def about(request):
+    return render(request, "blog/about.html", {"title": "About"})

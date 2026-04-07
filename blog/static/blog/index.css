@@ -1,0 +1,56 @@
+/* ============================================================
+   JIREN Unified CSS Architecture — Master Index
+   
+   This is the entry point for all CSS. All styles are imported
+   from modular component files to maintain organization and
+   reduce CSS payload through proper deduplication.
+   
+   Status: MODULARIZATION IN PROGRESS
+   - Phase 1: Base + Layouts ✓ COMPLETE
+   - Phase 2: Components ✓ COMPLETE  
+   - Phase 3: Consolidation & Deduplication ✓ COMPLETE
+   - Phase 4: Deduplication & Optimization (PENDING)
+   
+   Structure:
+   1. base.css                          — Variables, reset, typography ✓
+   2. bootstrap-overrides.css           — Bootstrap overrides ✓
+   3. components/layout.css             — App shell layouts ✓
+   4. components/*.css                  — Individual component styles ✓
+   5. css/git_accordion_consolidated.css — Merged git accordion files ✓
+   6. css/_archive.css                  — Orphaned classes documentation ✓
+   7. components/main-consolidated-pending.css — Temporary full fallback (TRANSITION)
+   ============================================================ */
+
+/* === FOUNDATION === */
+@import url('./base.css');
+@import url('./bootstrap-overrides.css');
+
+/* === COMPONENT MODULES === */
+@import url('./components/layout.css');
+@import url('./components/shells-auth.css');
+@import url('./components/buttons-badges.css');
+@import url('./components/forms-inputs.css');
+@import url('./components/tables.css');
+@import url('./components/lists-alerts.css');
+@import url('./components/cards-panels.css');
+@import url('./components/kanban.css');
+@import url('./components/stitch-sprint.css');
+@import url('./components/utilities-theme.css');
+
+/* === CONSOLIDATED SPECIAL FILES === */
+@import url('./css/git_accordion_consolidated.css');
+@import url('./css/_archive.css');
+
+/* === TEMPORARY FALLBACK ===
+   Contains ALL CSS from original main.css for transition period.
+   This provides critical utilities and layout fallbacks.
+   
+   Current issue: Phase 1 deduplication broke layout/spacing.
+   Restoring fallback to diagnose which CSS was essential.
+   
+   GOAL: Identify and preserve ONLY essential layout/utility styles,
+   then remove all other redundant classes.
+*/
+@import url('./components/main-consolidated-pending.css');
+
+/* === END INDEX === */

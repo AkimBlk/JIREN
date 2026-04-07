@@ -1,0 +1,77 @@
+from django.urls import reverse
+
+from .models import Sprint, Ticket
+from .views.permissions import visible_projects
+
+
+PROJECT_PK_URLS = {
+    "project-detail",
+    "project-backlog",
+    "project-update",
+    "project-delete",
+    "project-active-sprint",
+    "project-statistics",
+    "project-tags",
+    "sprint-admin",
+}
+
+SPRINT_PK_URLS = {
+    "sprint-update-status",
+    "sprint-start",
+    "sprint-close",
+    "sprint-delete",
+    "sprint-update",
+}
+
+TICKET_PK_URLS = {
+    "ticket-detail",
+    "ticket-update",
+    "ticket-delete",
+    "ticket-update-status",
+    "ticket-update-remaining-load",
+}
+
+
+def shell_navigation(request):
+    if not getattr(request, "user", None) or not request.user.is_authenticated:
+        return {}
+
+    projects = visible_projects(request.user).order_by("name")
+    project_id = _resolve_shell_project_id(request, projects)
+
+    if not project_id:
+        return {
+            "shell_backlog_url": reverse("blog-home"),
+            "shell_kanban_url": reverse("kanban"),
+            "shell_sprint_url": reverse("blog-home"),
+        }
+
+    return {
+        "shell_backlog_url": reverse("project-backlog", kwargs={"pk": project_id}),
+        "shell_kanban_url": f"{reverse('kanban')}?project={project_id}",
+        "shell_sprint_url": reverse("sprint-admin", kwargs={"pk": project_id}),
+    }
+
+
+def _resolve_shell_project_id(request, projects):
+    project_id = request.GET.get("project")
+    if project_id and projects.filter(pk=project_id).exists():
+        return project_id
+
+    resolver_match = getattr(request, "resolver_match", None)
+    if not resolver_match:
+        return projects.values_list("id", flat=True).first()
+
+    url_name = resolver_match.url_name
+    pk = resolver_match.kwargs.get("pk")
+
+    if url_name in PROJECT_PK_URLS and pk and projects.filter(pk=pk).exists():
+        return pk
+
+    if url_name in SPRINT_PK_URLS and pk:
+        return Sprint.objects.filter(pk=pk, project__in=projects).values_list("project_id", flat=True).first()
+
+    if url_name in TICKET_PK_URLS and pk:
+        return Ticket.objects.filter(pk=pk, project__in=projects).values_list("project_id", flat=True).first()
+
+    return projects.values_list("id", flat=True).first()

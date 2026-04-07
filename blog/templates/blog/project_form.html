@@ -14,12 +14,6 @@
 
       <form method="POST">
         {% csrf_token %}
-        <div class="alert alert-light small mb-3">
-          In "capacity per user" mode, the per-user details depend on a team assignment screen that is not connected yet.
-        </div>
-        <div class="alert alert-light small mb-3">
-          La liste des membres pilote la visibilite du projet pour les utilisateurs non admin.
-        </div>
         {{ form.code_prefix|as_crispy_field }}
         {{ form.name|as_crispy_field }}
         {{ form.description|as_crispy_field }}

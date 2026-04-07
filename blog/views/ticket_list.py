@@ -1,5 +1,8 @@
+import csv
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Case, IntegerField, Value, When
+from django.http import HttpResponse
 from django.views.generic import ListView
 
 from ..models import Sprint, Tag, Ticket
@@ -63,12 +66,19 @@ class TicketListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         selected_project = self.get_selected_project()
+        tickets = list(ctx["tickets"])
+        ctx["tickets"] = tickets
         ctx["projects"] = visible_projects(self.request.user).order_by("name")
         ctx["selected_project"] = selected_project
         ctx["active_sprint"] = self._get_active_sprint(selected_project) if selected_project else None
         ctx["available_tags"] = getattr(self, "available_tags", Tag.objects.none())
         ctx["selected_tag"] = getattr(self, "selected_tag", None)
-        ctx["title"] = "Sprint actif"
+        ctx["kanban_summary"] = {
+            "todo": sum(ticket.status == Ticket.STATUS_TODO for ticket in tickets),
+            "in_progress": sum(ticket.status == Ticket.STATUS_IN_PROGRESS for ticket in tickets),
+            "done": sum(ticket.status == Ticket.STATUS_DONE for ticket in tickets),
+        }
+        ctx["title"] = "Active Sprint"
         return ctx
 
 
@@ -86,15 +96,48 @@ class AllTicketsListView(LoginRequiredMixin, ListView):
         self.available_tags, self.selected_tag = resolve_tag_filter(self.request, base)
         return (
             filter_tickets_by_tag(base, self.selected_tag)
-            .select_related("project", "sprint", "author", "assignee")
+            .select_related("project", "project__manager", "sprint", "author", "assignee", "epic")
             .prefetch_related("tags")
             .order_by("-date_posted")
         )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        tickets = list(ctx["tickets"])
+        ctx["tickets"] = tickets
         ctx["available_tags"] = getattr(self, "available_tags", Tag.objects.none())
         ctx["selected_tag"] = getattr(self, "selected_tag", None)
+        ctx["ticket_summary"] = {
+            "total": len(tickets),
+            "project_count": len({ticket.project_id for ticket in tickets}),
+            "in_progress": sum(ticket.status == Ticket.STATUS_IN_PROGRESS for ticket in tickets),
+            "done": sum(ticket.status == Ticket.STATUS_DONE for ticket in tickets),
+        }
         return ctx
 
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get("export") == "csv":
+            return self._export_csv(context["tickets"])
+        return super().render_to_response(context, **response_kwargs)
 
+    def _export_csv(self, tickets):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="all-tickets.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["id", "type", "title", "status", "priority", "project", "assignee", "tags"])
+
+        for ticket in tickets:
+            writer.writerow(
+                [
+                    f"{ticket.project.code_prefix or 'TKT'}-{ticket.id}",
+                    ticket.get_issue_type_display(),
+                    ticket.title,
+                    ticket.get_status_display(),
+                    ticket.get_priority_display(),
+                    ticket.project.name,
+                    (ticket.assignee.get_full_name() or ticket.assignee.username) if ticket.assignee else "",
+                    ", ".join(tag.name for tag in ticket.tags.all()),
+                ]
+            )
+
+        return response

@@ -1,0 +1,52 @@
+/* ============================================================
+   Tables - Bootstrap Overrides + HELB Styling
+   ============================================================ */
+
+/* ============================================================
+   Tables
+   ============================================================ */
+
+.table {
+  color: var(--helb-on-surface);
+}
+
+.table thead th {
+  background: var(--helb-surface-container-low);
+  border-top: none;
+  border-bottom: none;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--helb-outline);
+  padding: 0.875rem 1rem;
+}
+
+.table td {
+  border-top: none;
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+}
+
+.table-bordered {
+  border: none;
+  border-radius: var(--helb-radius-md);
+  overflow: hidden;
+  box-shadow: var(--helb-shadow-sm);
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: none;
+  border-bottom: 1px solid rgba(195, 198, 208, 0.15);
+}
+
+.table-hover tbody tr:hover {
+  background: var(--helb-surface-container-low);
+}
+
+.thead-light th {
+  background: var(--helb-surface-container-low) !important;
+  border: none;
+}
+

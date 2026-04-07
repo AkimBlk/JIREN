@@ -1,15 +1,20 @@
-{% extends "blog/base.html" %}
+{% extends "users/auth_base.html" %}
+
+{% block title_text %}Signed Out{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center" style="min-height:50vh; align-items:center;">
-    <div class="col-md-5 col-lg-4">
-        <div class="helb-card" style="text-align:center;">
-            <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-outline-variant); margin-bottom:1rem;">waving_hand</span>
-            <h3 style="font-weight:800;">You have been logged out</h3>
-            <p class="text-muted mt-2 mb-3">See you next time!</p>
-            <a href="{% url 'login' %}" class="btn btn-primary">
-                <span class="material-symbols-outlined" style="font-size:16px;">login</span> Log In Again
-            </a>
+<section class="helb-auth-shell helb-auth-shell--center">
+    <main class="helb-auth-card helb-auth-card--compact text-center">
+        <div class="helb-auth-card__icon">
+            <span class="material-symbols-outlined">waving_hand</span>
         </div>
-    </div>
-</div>
+        <div class="helb-auth-heading">
+            <h1>Signed out</h1>
+            <p>Your session has ended.</p>
+        </div>
+        <a href="{% url 'login' %}" class="btn btn-primary helb-auth-submit mt-3">
+            Back to sign in
+        </a>
+    </main>
+</section>
 {% endblock content %}

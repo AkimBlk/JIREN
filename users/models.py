@@ -13,12 +13,13 @@ username_validator = UnicodeUsernameValidator()
 class Profile(models.Model):
     ROLE_ADMIN = "admin"
     ROLE_MEMBER = "member"
-    ROLE_CONTRIBUTEUR = "contributeur"
+    ROLE_CONTRIBUTOR = "contributor"
+    ROLE_CONTRIBUTEUR = ROLE_CONTRIBUTOR
     ROLE_CHOICES = [
         (ROLE_ADMIN, "Admin"),
-        (ROLE_CONTRIBUTEUR, "Contributor"),
         (ROLE_MEMBER, "Member"),
     ]
+    EDITABLE_ROLES = {ROLE_MEMBER}
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")
@@ -36,7 +37,7 @@ class Profile(models.Model):
     def save(self, *args, **kwargs):
         if self.user.is_superuser or self.user.is_staff:
             self.role = self.ROLE_ADMIN
-        else:
+        elif self.role not in self.EDITABLE_ROLES:
             self.role = self.ROLE_MEMBER
 
         super().save(*args, **kwargs)

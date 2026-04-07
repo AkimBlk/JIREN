@@ -17,7 +17,6 @@ class ProjectForm(forms.ModelForm):
     members = forms.ModelMultipleChoiceField(
         queryset=User.objects.order_by("username"),
         required=False,
-        help_text="Choose the project members. Use Ctrl or Cmd to select multiple users",
         widget=forms.SelectMultiple(attrs={"class": "form-control"}),
     )
 
@@ -35,6 +34,8 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.help_text = None
         if self.instance.pk:
             self.fields["members"].initial = self.instance.members.values_list("user_id", flat=True)
 

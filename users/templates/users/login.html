@@ -1,22 +1,75 @@
-{% extends "blog/base.html" %}
-{% load crispy_forms_tags %}
+{% extends "users/auth_base.html" %}
+
+{% block title_text %}Sign In{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center" style="min-height:60vh; align-items:center;">
-    <div class="col-md-5 col-lg-4">
-        <div class="helb-card" style="text-align:center;">
-            <span class="material-symbols-outlined" style="font-size:48px; color:var(--helb-on-primary-container); margin-bottom:1rem;">lock_open</span>
-            <h3 style="font-weight:800; margin-bottom:1.5rem;">Log In</h3>
-            <form method="POST">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button class="btn btn-primary btn-block mt-3" type="submit">
-                    <span class="material-symbols-outlined" style="font-size:16px;">login</span> Log In
-                </button>
-            </form>
-            <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid rgba(195,198,208,0.15);">
-                <small class="text-muted">Need access? Contact your Super Admin for an invitation.</small>
+<section class="helb-auth-shell helb-auth-shell--center">
+    <div class="helb-auth-card helb-auth-card--compact helb-auth-card--login">
+        <div class="helb-auth-brand">
+            <div class="helb-auth-brand__mark">
+                <span class="material-symbols-outlined">school</span>
+            </div>
+            <div class="helb-auth-brand__copy">
+                <strong>HELB JIREN</strong>
+                <span>Academic Atelier</span>
             </div>
         </div>
+
+        <div class="helb-auth-heading">
+            <h1>Sign In</h1>
+            <p>Access your Atelier workspace.</p>
+        </div>
+
+        <form method="post" class="helb-auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="helb-auth-field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">person</span>
+                    {{ form.username }}
+                </div>
+                {% for error in form.username.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="{{ form.password.id_for_label }}" class="mb-0">Password</label>
+                    <span class="helb-auth-inline-link">Secure access</span>
+                </div>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">lock</span>
+                    {{ form.password }}
+                </div>
+                {% for error in form.password.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <button class="btn btn-primary btn-block helb-auth-submit" type="submit">
+                Sign in
+            </button>
+        </form>
+
     </div>
-</div>
+
+    <footer class="helb-auth-support">
+        <p>Need access? Contact your platform administrator.</p>
+        <div class="helb-auth-language-switch" aria-hidden="true">
+            <button type="button" class="helb-auth-language-switch__item helb-auth-language-switch__item--active">English</button>
+            <button type="button" class="helb-auth-language-switch__item">French</button>
+            <button type="button" class="helb-auth-language-switch__item">Dutch</button>
+        </div>
+    </footer>
+</section>
 {% endblock content %}

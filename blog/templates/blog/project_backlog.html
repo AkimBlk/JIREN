@@ -1,208 +1,231 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
-<div class="helb-card mb-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h2 class="mb-1" style="font-weight:800;">
-        <span class="material-symbols-outlined" style="font-size:28px; color:var(--helb-on-primary-container); vertical-align:-4px;">reorder</span>
-        Product Backlog
-      </h2>
-      <p class="text-muted mb-0">{{ project.name }} &mdash; Stories and bugs not in an active sprint, sorted by relative priority.</p>
+<section class="atelier-page-header">
+  <div>
+    <div class="stitch-meta-row">
+      {% if project.code_prefix %}<span class="atelier-code-chip">{{ project.code_prefix }}</span>{% endif %}
+      <span class="stitch-meta-row__text">{{ project.name }} backlog orchestration</span>
     </div>
-
-    <div class="d-flex" style="gap:0.5rem;">
-      {% if user_is_admin %}
-        <a class="btn btn-outline-primary btn-sm" href="{% url 'sprint-admin' project.pk %}">
-          <span class="material-symbols-outlined" style="font-size:16px;">sprint</span> Manage sprints
-        </a>
-      {% endif %}
-    </div>
+    <h1 class="atelier-page-header__title">Product Backlog</h1>
+    <p class="atelier-page-header__subtitle">Shape epics, monitor the active sprint, and sequence the next delivery wave for {{ project.name }}.</p>
   </div>
 
-  <div class="d-flex justify-content-end mb-3">
-    <form method="get" class="d-flex align-items-center" style="gap:0.5rem;">
-      <select name="tag" id="tag" class="form-control form-control-sm" style="width:auto;" onchange="this.form.submit()">
+  <div class="atelier-page-header__actions">
+    {% if user_is_admin and all_projects %}
+      <select class="form-control stitch-toolbar-select" onchange="window.location='/project/'+this.value+'/backlog/'" aria-label="Switch project">
+        {% for p in all_projects %}
+          <option value="{{ p.pk }}" {% if p.pk == project.pk %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    <form method="get" class="stitch-toolbar-form">
+      <select name="tag" id="tag" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
         <option value="">All tags</option>
         {% for tag in available_tags %}
           <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
         {% endfor %}
       </select>
       {% if selected_tag %}
-        <a href="{% url 'project-backlog' project.pk %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+        <a href="{% url 'project-backlog' project.pk %}" class="btn btn-outline-secondary">Clear</a>
       {% endif %}
-      <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
+      {% if user_can_manage_sprints %}
+        <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-primary">Sprint</a>
+      {% endif %}
+      <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
     </form>
   </div>
+</section>
 
-  {% if selected_tag %}
-    <div class="alert alert-light mb-3">
-      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:-3px;">filter_alt</span>
-      Filtering backlog tickets by tag <strong>#{{ selected_tag.name }}</strong>.
-    </div>
-  {% endif %}
-</div>
+{% if selected_tag %}
+  <div class="atelier-inline-note mb-4">
+    <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
+    Filtering backlog tickets by <strong>#{{ selected_tag.name }}</strong>.
+  </div>
+{% endif %}
 
-<!-- Epics -->
-<div class="helb-card-sm mb-4">
-  <h5 class="mb-3" style="font-weight:700;">
-    <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">category</span>
-    Epics
-  </h5>
+<section class="stitch-section">
+  <div class="stitch-section__header">
+    <h2>Active Epics</h2>
+    <span>{{ backlog_summary.epic_count }} strategic tracks</span>
+  </div>
+
   {% if epics %}
-    <div class="row">
+    <div class="stitch-epic-grid">
       {% for epic in epics %}
-        <div class="col-md-6 mb-3">
-          <div style="background:var(--helb-surface-container-low); border-radius:var(--helb-radius-md); padding:1rem 1.25rem;">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                {% if epic.display_color %}
-                  <span class="badge mr-2" style="background-color: {{ epic.display_color }}; color: #fff;">EPIC</span>
-                {% else %}
-                  <span class="badge badge-primary mr-2">EPIC</span>
-                {% endif %}
-                <a href="{% url 'ticket-detail' epic.pk %}"><strong>{{ epic.title }}</strong></a>
-              </div>
-              <span class="badge badge-light">{{ epic.get_status_display }}</span>
-            </div>
-            <p class="text-muted small mb-0 mt-2">{{ epic.description|default:"No description."|truncatechars:120 }}</p>
-            {% include "blog/ticket_tags.html" with ticket=epic %}
+        <article class="stitch-epic-card" style="--epic-accent: {{ epic.display_color|default:'#942F88' }};">
+          <div class="stitch-epic-card__top">
+            <span class="atelier-badge atelier-badge--epic">Epic</span>
+            <span class="stitch-epic-card__accent"></span>
           </div>
-        </div>
+          <a href="{% url 'ticket-detail' epic.pk %}" class="stitch-epic-card__title">{{ epic.title }}</a>
+          <p class="stitch-epic-card__copy">{{ epic.description|default:"No description yet."|truncatechars:130 }}</p>
+          <div class="stitch-epic-card__footer">
+            <span>{{ epic.story_count }} linked tickets</span>
+            {% include "blog/includes/tag_chips.html" with ticket=epic %}
+          </div>
+        </article>
       {% endfor %}
     </div>
   {% else %}
-    <p class="text-muted mb-0">No epic in this project.</p>
+    <div class="atelier-empty-state atelier-empty-state--table">
+      <span class="material-symbols-outlined atelier-empty-state__icon">category</span>
+      <h3 class="atelier-empty-state__title">No active epic</h3>
+      <p class="atelier-empty-state__copy">Create an epic to anchor the next backlog themes.</p>
+    </div>
   {% endif %}
-</div>
+</section>
 
-<!-- Prioritized Product Backlog -->
-<div class="helb-card-sm mb-4">
-  <h5 class="mb-3" style="font-weight:700;">
-    <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">format_list_numbered</span>
-    Prioritized Product Backlog
-  </h5>
-  {% if backlog_items %}
-    {% for item in backlog_items %}
-      <div class="d-flex justify-content-between align-items-center mb-2" style="background:var(--helb-surface-container-low); border-radius:var(--helb-radius-sm); padding:0.75rem 1rem;">
-        <div class="d-flex align-items-center">
-          <div class="mr-3 text-muted" style="min-width:40px; font-weight:700;">#{{ forloop.counter }}</div>
-          <div>
-            {% if item.issue_type == 'STORY' %}
-              <span class="badge badge-success mr-1">STORY</span>
-            {% elif item.issue_type == 'BUG' %}
-              <span class="badge badge-danger mr-1">BUG</span>
-            {% elif item.issue_type == 'TASK' %}
-              <span class="badge badge-secondary mr-1">TASK</span>
-            {% endif %}
-            <a href="{% url 'ticket-detail' item.pk %}">{{ item.title }}</a>
-            {% if item.epic %}
-              <div class="small text-muted mt-1">
-                Epic: <a href="{% url 'ticket-detail' item.epic.pk %}" style="color: {{ item.epic.display_color }};">{{ item.epic.title }}</a>
-              </div>
-            {% else %}
-              <div class="small text-muted mt-1">Epic: None</div>
-            {% endif %}
-            {% if item.assignee %}
-              <div class="small text-muted">Assigned: {{ item.assignee.username }}</div>
-            {% else %}
-              <div class="small text-muted">Assigned: Unassigned</div>
-            {% endif %}
-            {% if item.sprint %}
-              <div class="small text-muted">Sprint: {{ item.sprint.name }} ({{ item.sprint.get_status_display }})</div>
-            {% endif %}
-            {% include "blog/ticket_tags.html" with ticket=item %}
-          </div>
-        </div>
-        <div class="d-flex align-items-center" style="gap:0.5rem;">
-          <span class="badge badge-light mr-1">{{ item.get_priority_display }}</span>
-          <span class="badge badge-light mr-2">{{ item.get_status_display }}</span>
-          {% if user_is_admin %}
-            <form method="post" action="{% url 'move-backlog-ticket' item.pk 'up' %}" class="d-inline">
-              {% csrf_token %}
-              <button class="btn btn-outline-secondary btn-sm" type="submit" style="padding:0.2rem 0.5rem;">
-                <span class="material-symbols-outlined" style="font-size:16px;">arrow_upward</span>
-              </button>
-            </form>
-            <form method="post" action="{% url 'move-backlog-ticket' item.pk 'down' %}" class="d-inline">
-              {% csrf_token %}
-              <button class="btn btn-outline-secondary btn-sm" type="submit" style="padding:0.2rem 0.5rem;">
-                <span class="material-symbols-outlined" style="font-size:16px;">arrow_downward</span>
-              </button>
-            </form>
-          {% endif %}
-        </div>
-      </div>
-    {% endfor %}
-  {% else %}
-    <p class="text-muted mb-0">No items in the product backlog.</p>
-  {% endif %}
-</div>
-
-<!-- Sprint Backlog -->
-<h5 class="mb-3" style="font-weight:700;">
-  <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">sprint</span>
-  Sprint Backlog
-</h5>
-{% if sprint_blocks %}
-  {% for sprint, tickets in sprint_blocks %}
-    <div class="helb-card-sm mb-3">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <div>
-          <strong>{{ sprint.name }}</strong>
-          <span class="badge badge-light ml-2">{{ sprint.get_status_display }}</span>
-          <div class="small text-muted mt-1">{{ sprint.start_date|date:"d M Y"|default:"-" }} - {{ sprint.end_date|date:"d M Y"|default:"-" }}</div>
-        </div>
-        <div class="d-flex" style="gap:0.5rem;">
-          {% if user_is_admin and sprint.status == 'PLANNED' %}
-            <form method="post" action="{% url 'sprint-start' sprint.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-success" type="submit">
-                <span class="material-symbols-outlined" style="font-size:14px;">play_arrow</span> Start
-              </button>
-            </form>
-          {% elif user_is_admin and sprint.status == 'ACTIVE' %}
-            <form method="post" action="{% url 'sprint-close' sprint.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-outline-danger" type="submit">
-                <span class="material-symbols-outlined" style="font-size:14px;">stop</span> Close
-              </button>
-            </form>
-          {% endif %}
-        </div>
-      </div>
-
-      {% if tickets %}
-        {% for ticket in tickets %}
-          <div class="d-flex justify-content-between align-items-center mb-2" style="background:var(--helb-surface-container-low); border-radius:var(--helb-radius-sm); padding:0.625rem 0.875rem;">
-            <div>
-              {% if ticket.issue_type == 'STORY' %}
-                <span class="badge badge-success mr-1">STORY</span>
-              {% elif ticket.issue_type == 'BUG' %}
-                <span class="badge badge-danger mr-1">BUG</span>
-              {% elif ticket.issue_type == 'EPIC' %}
-                <span class="badge mr-1" style="background-color: {{ ticket.display_color }}; color: #fff;">EPIC</span>
-              {% endif %}
-              <a href="{% url 'ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
-              {% if ticket.epic %}
-                <span class="small text-muted ml-1">
-                  Epic: <a href="{% url 'ticket-detail' ticket.epic.pk %}" style="color: {{ ticket.epic.display_color }};">{{ ticket.epic.title }}</a>
-                </span>
-              {% endif %}
-              {% include "blog/ticket_tags.html" %}
-            </div>
-            <div>
-              <span class="badge badge-light mr-1">{{ ticket.get_priority_display }}</span>
-              <span class="badge badge-light">{{ ticket.get_status_display }}</span>
-            </div>
-          </div>
-        {% endfor %}
-      {% else %}
-        <p class="text-muted mb-0">No tickets in this sprint.</p>
+{% if active_sprint_overview.sprint %}
+  <section class="stitch-section">
+    <div class="stitch-section__header">
+      <h2>Current Sprint</h2>
+      {% if user_can_manage_sprints and active_sprint_overview.sprint.status == 'ACTIVE' %}
+        <form method="post" action="{% url 'sprint-close' active_sprint_overview.sprint.pk %}" class="helb-inline-form">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger btn-sm" type="submit">Close sprint</button>
+        </form>
       {% endif %}
     </div>
-  {% endfor %}
-{% else %}
-  <p class="text-muted">No sprint yet.</p>
+
+    <article class="stitch-sprint-panel">
+      <div class="stitch-sprint-panel__header">
+        <div>
+          <div class="stitch-chip-row">
+            <span class="atelier-status-pill atelier-status-pill--active">Active</span>
+            <span class="stitch-meta-row__text">{{ active_sprint_overview.sprint.start_date|date:"d M" }} — {{ active_sprint_overview.sprint.end_date|date:"d M" }}</span>
+          </div>
+          <h3>{{ active_sprint_overview.sprint.name }}</h3>
+        </div>
+        <div class="stitch-sprint-panel__stats">
+          <span>{{ active_sprint_overview.sprint.total_story_points }}/{{ active_sprint_overview.sprint.capacity|default:active_sprint_overview.sprint.configured_capacity }} pts</span>
+          <div class="stitch-progress">
+            <div class="stitch-progress__value" data-progress="{{ active_sprint_overview.progress }}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stitch-sprint-ticket-list">
+        {% for ticket in active_sprint_overview.tickets %}
+          <article class="stitch-sprint-ticket">
+            <div>
+              <div class="stitch-chip-row stitch-chip-row--compact">
+                {% if ticket.issue_type == 'EPIC' %}
+                  <span class="atelier-badge atelier-badge--epic">Epic</span>
+                {% elif ticket.issue_type == 'BUG' %}
+                  <span class="atelier-badge atelier-badge--bug">Bug</span>
+                {% elif ticket.issue_type == 'STORY' %}
+                  <span class="atelier-badge atelier-badge--story">Story</span>
+                {% else %}
+                  <span class="atelier-badge atelier-badge--task">Task</span>
+                {% endif %}
+                <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
+              </div>
+              <a href="{% url 'ticket-detail' ticket.pk %}" class="stitch-sprint-ticket__title">{{ ticket.title }}</a>
+            </div>
+            <div class="stitch-sprint-ticket__meta">
+              {% if user_can_manage_sprints %}
+                <form method="post" action="{% url 'move-backlog-ticket' ticket.pk 'up' %}" class="helb-inline-form">
+                  {% csrf_token %}
+                  <button class="stitch-icon-button" type="submit" aria-label="Move up">
+                    <span class="material-symbols-outlined">expand_less</span>
+                  </button>
+                </form>
+                <form method="post" action="{% url 'move-backlog-ticket' ticket.pk 'down' %}" class="helb-inline-form">
+                  {% csrf_token %}
+                  <button class="stitch-icon-button" type="submit" aria-label="Move down">
+                    <span class="material-symbols-outlined">expand_more</span>
+                  </button>
+                </form>
+              {% endif %}
+              <span>{{ ticket.get_priority_display }}</span>
+              {% if ticket.assignee %}
+                <img src="{{ ticket.assignee.profile.image.url }}" alt="{{ ticket.assignee.username }}" class="atelier-user-inline__avatar">
+              {% endif %}
+            </div>
+          </article>
+        {% empty %}
+          <p class="stitch-muted-note mb-0">No ticket is assigned to this sprint yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
 {% endif %}
+
+<section class="stitch-section">
+  <div class="stitch-section__header">
+    <h2>Prioritized Backlog</h2>
+    <span>{{ backlog_summary.backlog_count }} queued tickets</span>
+  </div>
+
+  {% if backlog_items %}
+    <div class="stitch-backlog-list">
+      {% for item in backlog_items %}
+        <article class="stitch-backlog-item">
+          <div class="stitch-backlog-item__rank">{{ forloop.counter|stringformat:"02d" }}</div>
+          <div class="stitch-backlog-item__body">
+            <div class="stitch-chip-row stitch-chip-row--compact">
+              {% if item.issue_type == 'EPIC' %}
+                <span class="atelier-badge atelier-badge--epic">Epic</span>
+              {% elif item.issue_type == 'BUG' %}
+                <span class="atelier-badge atelier-badge--bug">Bug</span>
+              {% elif item.issue_type == 'STORY' %}
+                <span class="atelier-badge atelier-badge--story">Story</span>
+              {% else %}
+                <span class="atelier-badge atelier-badge--task">Task</span>
+              {% endif %}
+              <span class="atelier-status-pill atelier-status-pill--{% if item.status == 'DONE' %}done{% elif item.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ item.get_status_display }}</span>
+            </div>
+            <a href="{% url 'ticket-detail' item.pk %}" class="stitch-backlog-item__title">{{ item.title }}</a>
+            <div class="stitch-backlog-item__meta">
+              {% if item.epic %}<span>Epic: {{ item.epic.title }}</span>{% endif %}
+              <span>{% if item.assignee %}Assigned to {{ item.assignee.get_full_name|default:item.assignee.username }}{% else %}Unassigned{% endif %}</span>
+              <span>{{ item.get_priority_display }}</span>
+            </div>
+            {% include "blog/includes/tag_chips.html" with ticket=item %}
+          </div>
+          <div class="stitch-backlog-item__controls">
+            {% if user_can_manage_sprints %}
+              <form method="post" action="{% url 'move-backlog-ticket' item.pk 'up' %}" class="helb-inline-form">
+                {% csrf_token %}
+                <button class="stitch-icon-button" type="submit" aria-label="Move up">
+                  <span class="material-symbols-outlined">expand_less</span>
+                </button>
+              </form>
+              <form method="post" action="{% url 'move-backlog-ticket' item.pk 'down' %}" class="helb-inline-form">
+                {% csrf_token %}
+                <button class="stitch-icon-button" type="submit" aria-label="Move down">
+                  <span class="material-symbols-outlined">expand_more</span>
+                </button>
+              </form>
+            {% endif %}
+            {% if item.assignee %}
+              <img src="{{ item.assignee.profile.image.url }}" alt="{{ item.assignee.username }}" class="atelier-user-inline__avatar">
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="atelier-empty-state atelier-empty-state--table">
+      <span class="material-symbols-outlined atelier-empty-state__icon">list_alt</span>
+      <h3 class="atelier-empty-state__title">Backlog is empty</h3>
+      <p class="atelier-empty-state__copy">Create a story, bug, or task to start planning the next sprint.</p>
+    </div>
+  {% endif %}
+</section>
+
+<section class="stitch-archive-callout">
+  <div>
+    <span class="stitch-archive-callout__eyebrow">Sprint history</span>
+    <strong class="stitch-archive-callout__title">{{ backlog_summary.closed_sprint_count }} archived sprint{{ backlog_summary.closed_sprint_count|pluralize }}</strong>
+    <p class="stitch-muted-note mb-0">Review previous sprints and create the next one from the sprint workspace.</p>
+  </div>
+  <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-outline-primary">Open sprint history</a>
+</section>
+<script>
+document.querySelectorAll('.stitch-progress__value[data-progress]').forEach(function(el) {
+  el.style.width = (parseFloat(el.dataset.progress) || 0) + '%';
+});
+</script>
 {% endblock content %}

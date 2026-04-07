@@ -1,0 +1,40 @@
+<div class="git-accordion-branches">
+  {% if git_branches %}
+    <ul class="git-accordion-branches__list">
+      {% for branch in git_branches|slice:":10" %}
+      <li class="git-accordion-branches__item {% if branch.is_default %}git-accordion-branches__item--default{% endif %}">
+        <div class="git-accordion-branches__header">
+          <span class="git-accordion-branches__name">
+            {% if branch.is_default %}
+              <strong>{{ branch.name }} (default)</strong>
+            {% else %}
+              {{ branch.name }}
+            {% endif %}
+          </span>
+          <button
+            class="copy-btn git-accordion-branches__copy"
+            data-clipboard="{{ branch.last_commit_sha }}"
+            aria-label="Copy commit SHA">
+            📋
+          </button>
+        </div>
+        <div class="git-accordion-branches__meta">
+          <code class="git-accordion-branches__sha">{{ branch.last_commit_sha }}</code>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% if git_branches|length > 10 %}
+    <div class="git-accordion-branches__footer">
+      <a href="{{ git_info.url }}/branches" target="_blank" rel="noopener" class="git-accordion-link">
+        View all {{ git_branches|length }} branches ↗
+      </a>
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="git-accordion-empty-state">
+      <p>No branches found</p>
+    </div>
+  {% endif %}
+</div>

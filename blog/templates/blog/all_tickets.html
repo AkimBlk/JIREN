@@ -1,35 +1,41 @@
 {% extends "blog/base.html" %}
 
 {% block content %}
-<div class="mb-4">
-  <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
-    <h2 class="mb-0" style="font-weight:800;">
-      <span class="material-symbols-outlined" style="font-size:28px; color:var(--helb-on-primary-container); vertical-align:-4px;">confirmation_number</span>
-      All Tickets
-    </h2>
-    <form method="get" class="d-flex align-items-center mt-2 mt-md-0" style="gap:0.5rem;">
-      <select name="tag" id="tag" class="form-control form-control-sm" style="width:auto;" onchange="this.form.submit()">
+<section class="atelier-page-header">
+  <div>
+    <h1 class="atelier-page-header__title">All Tickets</h1>
+    <p class="atelier-page-header__subtitle">Manage and track your global team's engineering velocity.</p>
+  </div>
+  <div class="atelier-page-header__actions stitch-ledger-toolbar">
+    <form method="get" class="stitch-ledger-filter">
+      <span class="material-symbols-outlined">filter_alt</span>
+      <label class="sr-only" for="tag">Filter by tag</label>
+      <select name="tag" id="tag" class="form-control atelier-select-inline stitch-ledger-filter__select" onchange="this.form.submit()">
         <option value="">All tags</option>
         {% for tag in available_tags %}
           <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
         {% endfor %}
       </select>
+      <span class="material-symbols-outlined stitch-ledger-filter__chevron">expand_more</span>
       {% if selected_tag %}
-        <a href="{% url 'all-tickets' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+        <a href="{% url 'all-tickets' %}" class="btn btn-outline-secondary">Clear</a>
       {% endif %}
-      <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></noscript>
+      <noscript><button type="submit" class="btn btn-outline-secondary">Filter</button></noscript>
     </form>
+    <a href="?{% if selected_tag %}tag={{ selected_tag.pk }}&amp;{% endif %}export=csv" class="btn stitch-ledger-export">Export Report</a>
   </div>
+</section>
 
-  {% if selected_tag %}
-    <div class="alert alert-light mb-3">
-      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:-3px;">filter_alt</span>
-      Filtering tickets by tag <strong>#{{ selected_tag.name }}</strong>.
-    </div>
-  {% endif %}
+{% if selected_tag %}
+  <div class="atelier-inline-note mb-4">
+    <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
+    Filtering tickets by tag <strong>#{{ selected_tag.name }}</strong>.
+  </div>
+{% endif %}
 
-  <div class="helb-card-sm" style="overflow-x:auto; padding:0;">
-    <table class="table table-hover mb-0">
+<div class="atelier-table-shell stitch-ledger-shell">
+  <div class="table-responsive">
+    <table class="table atelier-table atelier-table--tickets stitch-ledger-table mb-0">
       <thead>
         <tr>
           <th>ID</th>
@@ -44,53 +50,83 @@
       <tbody>
         {% for ticket in tickets %}
           <tr>
-            <td class="text-muted" style="font-weight:600;">
-              <span class="material-symbols-outlined" style="font-size:14px;">tag</span>
-              {{ ticket.id }}
+            <td class="atelier-mono-cell">
+              {{ ticket.project.code_prefix|default:"TKT" }}-{{ ticket.id }}
             </td>
             <td>
               {% if ticket.issue_type == 'EPIC' %}
-                <span class="badge" style="background-color: #604dcc; color: white;">Epic</span>
+                <span class="atelier-badge atelier-badge--epic">Epic</span>
               {% elif ticket.issue_type == 'BUG' %}
-                <span class="badge badge-danger">Bug</span>
+                <span class="atelier-badge atelier-badge--bug">Bug</span>
               {% elif ticket.issue_type == 'STORY' %}
-                <span class="badge badge-success">Story</span>
-              {% elif ticket.issue_type == 'TASK' %}
-                <span class="badge badge-secondary">Task</span>
+                <span class="atelier-badge atelier-badge--story">Story</span>
+              {% else %}
+                <span class="atelier-badge atelier-badge--task">Task</span>
               {% endif %}
             </td>
             <td>
-              <a href="{% url 'ticket-detail' ticket.id %}" style="font-weight:600;">{{ ticket.title }}</a>
+              <a href="{% url 'ticket-detail' ticket.id %}" class="atelier-ticket-title">{{ ticket.title }}</a>
+              <div class="atelier-ticket-meta">
+                <span>Author: {{ ticket.author.username }}</span>
+                {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
+                {% if ticket.epic %}<span class="epic-color-text">Epic: {{ ticket.epic.title }}</span>{% endif %}
+              </div>
             </td>
             <td>
               {% if ticket.assignee %}
-                <div class="d-flex align-items-center" style="gap:0.35rem;">
-                  <img class="rounded-circle" style="width:22px; height:22px; object-fit:cover;" src="{{ ticket.assignee.profile.image.url }}">
-                  <small>{{ ticket.assignee.username }}</small>
+                <div class="atelier-user-inline">
+                  <img class="atelier-user-inline__avatar" src="{{ ticket.assignee.profile.image.url }}" alt="{{ ticket.assignee.username }}">
+                  <div>
+                    <strong>{{ ticket.assignee.get_full_name|default:ticket.assignee.username }}</strong>
+                  </div>
                 </div>
               {% else %}
-                <small class="text-muted">Unassigned</small>
+                <span class="atelier-badge atelier-badge--muted">Unassigned</span>
               {% endif %}
             </td>
-            <td><span class="badge badge-light">{{ ticket.get_status_display }}</span></td>
             <td>
-              <small class="text-muted">
-                {{ ticket.project.name }}
-                {% if ticket.sprint %}<br>{{ ticket.sprint.name }}{% endif %}
-              </small>
+              {% if ticket.status == 'IN_PROGRESS' %}
+                <span class="stitch-ledger-status"><span class="stitch-status-orb stitch-status-orb--green"></span><span>In Progress</span></span>
+              {% elif ticket.status == 'DONE' %}
+                <span class="stitch-ledger-status"><span class="stitch-status-orb stitch-status-orb--blue"></span><span>Done</span></span>
+              {% elif ticket.priority == 'HIGH' %}
+                <span class="stitch-ledger-status"><span class="stitch-status-orb stitch-status-orb--red"></span><span>{{ ticket.get_priority_display }}</span></span>
+              {% else %}
+                <span class="stitch-ledger-status"><span class="stitch-status-orb stitch-status-orb--amber"></span><span>{{ ticket.get_status_display }}</span></span>
+              {% endif %}
             </td>
-            <td>{% include "blog/ticket_tags.html" %}</td>
+            <td>
+              <div class="atelier-project-ref">
+                <strong>{{ ticket.project.name }}</strong>
+                {% if ticket.project.code_prefix %}<small>{{ ticket.project.code_prefix }}</small>{% endif %}
+              </div>
+            </td>
+            <td>{% include "blog/includes/tag_chips.html" with ticket=ticket %}</td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7" class="text-center py-4 text-muted">
-              <span class="material-symbols-outlined" style="font-size:36px;">search_off</span>
-              <p class="mt-2 mb-0">No tickets yet.</p>
+            <td colspan="7">
+              <div class="atelier-empty-state atelier-empty-state--table">
+                <span class="material-symbols-outlined atelier-empty-state__icon">search_off</span>
+                <h3 class="atelier-empty-state__title">No tickets found</h3>
+                <p class="atelier-empty-state__copy">Adjust the current filter or create a new ticket to populate the ledger.</p>
+              </div>
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  <div class="stitch-ledger-footer">
+    <span>SHOWING 1 - {{ tickets|length }} OF {{ ticket_summary.total }} RESULTS</span>
+    <div class="stitch-ledger-pagination" aria-hidden="true">
+      <span class="stitch-ledger-page-button stitch-ledger-page-button--disabled">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </span>
+      <span class="stitch-ledger-page-button stitch-ledger-page-button--active">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </span>
+    </div>
   </div>
 </div>
 {% endblock content %}

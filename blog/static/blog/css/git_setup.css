@@ -1,0 +1,100 @@
+/* Git Setup Modal and Provider Buttons Styling */
+
+.git-setup-placeholder__card {
+  border: 2px dashed var(--helb-outline-variant);
+  background-color: var(--helb-surface-variant);
+  opacity: 0.8;
+  padding: 1.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.git-setup-placeholder__header {
+  margin-bottom: 1.5rem;
+}
+
+.git-setup-placeholder__title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.git-setup-placeholder__title > span {
+  font-size: 20px;
+  color: var(--helb-on-primary-container);
+}
+
+.git-setup-placeholder__subtitle {
+  font-size: 0.9rem;
+  color: var(--helb-on-surface-variant);
+  margin: 0;
+}
+
+.git-setup-placeholder__providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.git-setup-provider-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: white;
+  border: 2px solid var(--helb-outline);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  color: var(--helb-on-surface);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.git-setup-provider-btn:hover {
+  border-color: var(--helb-primary);
+  background-color: var(--helb-primary-container);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.2);
+}
+
+.git-setup-provider-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.git-setup-provider-icon.github::before { content: "🐙"; }
+.git-setup-provider-icon.gitlab::before { content: "🦊"; }
+.git-setup-provider-icon.gitea::before { content: "🍵"; }
+
+.git-setup-provider-name {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .git-setup-placeholder__providers {
+    gap: 0.5rem;
+    justify-content: space-around;
+  }
+
+  .git-setup-provider-btn {
+    padding: 0.75rem;
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .git-setup-provider-icon {
+    width: 36px;
+    height: 36px;
+  }
+}

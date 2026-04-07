@@ -16,7 +16,7 @@
             data-tag-id="{{ tag.id }}"
             data-tag-name="{{ tag.name }}"
             title="Remove tag"
-            style="background: none; border: none; color: white; font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
+            style="background: none; border: none; color: var(--helb-on-surface); font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
             ×
           </button>
         </span>
@@ -39,7 +39,7 @@
     {# Hidden form for adding tags with dropdown #}
     <div id="add-tag-form-{{ ticket.id }}" style="display: none; margin-top: 0.5rem;" class="border bg-light p-3 rounded">
       <div class="form-group">
-        <label for="tag-select-{{ ticket.id }}" class="small font-weight-bold">Select tag or create new:</label>
+        <label for="tag-select-{{ ticket.id }}" class="small font-weight-bold">Tag</label>
         <div class="input-group">
           <select 
             class="custom-select custom-select-sm"
@@ -64,12 +64,11 @@
             </button>
           </div>
         </div>
-        <small class="form-text text-muted d-block mt-1">Or type to create a new tag:</small>
         <input 
           type="text" 
           class="form-control form-control-sm mt-2" 
           id="tag-input-{{ ticket.id }}" 
-          placeholder="New tag name..."
+          placeholder="Tag name"
           data-ticket-id="{{ ticket.id }}"
           data-project-id="{{ ticket.project.id }}"
           autocomplete="off">
@@ -165,7 +164,7 @@ async function addTagFromSelect(ticketId, projectId) {
     // Use typed name
     tagName = input.value.trim();
   } else {
-    showMessage(ticketId, 'Please select or enter a tag name', 'danger');
+    showMessage(ticketId, 'Enter a tag name.', 'danger');
     return;
   }
 
@@ -184,7 +183,7 @@ async function addTagFromSelect(ticketId, projectId) {
     
     if (response.ok) {
       updateTagsDisplay(ticketId, data.tags);
-      showMessage(ticketId, `Tag "${tagName}" added successfully!`, 'success');
+      showMessage(ticketId, `Tag "${tagName}" added.`, 'success');
       toggleTagForm(ticketId, false);
       delete tagCache[projectId];
     } else {
@@ -243,7 +242,7 @@ function updateTagsDisplay(ticketId, tags) {
           data-tag-id="${tag.id}"
           data-project-id="{{ ticket.project.id }}"
           title="Remove tag"
-          style="background: none; border: none; color: white; font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
+          style="background: none; border: none; color: var(--helb-on-surface); font-size: 1.2em; cursor: pointer; padding: 0 0.25rem; margin-left: 0.5rem;">
           ×
         </button>
       </span>
@@ -348,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .badge-info {
-  background-color: #17a2b8 !important;
-  color: white;
+  background-color: var(--helb-secondary-container) !important;
+  color: var(--helb-on-secondary-container);
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
 }

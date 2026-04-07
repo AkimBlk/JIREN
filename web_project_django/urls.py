@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, reverse_lazy
 
+from users.forms import StyledAuthenticationForm, StyledPasswordChangeForm
 from users import views as user_views
 
 urlpatterns = [
@@ -13,11 +14,19 @@ urlpatterns = [
     path("invite/", user_views.invite_user, name="invite-user"),
     path("manage-roles/", user_views.manage_roles, name="manage-roles"),
     path("update-role/<int:pk>/", user_views.update_role, name="update-role"),
-    path("login/", auth_views.LoginView.as_view(template_name="users/login.html"), name="login"),
+    path(
+        "login/",
+        auth_views.LoginView.as_view(
+            authentication_form=StyledAuthenticationForm,
+            template_name="users/login.html",
+        ),
+        name="login",
+    ),
     path("logout/", user_views.custom_logout, name="logout"),
     path(
         "password-change/",
         auth_views.PasswordChangeView.as_view(
+            form_class=StyledPasswordChangeForm,
             template_name="users/password_change.html",
             success_url=reverse_lazy("profile"),
         ),

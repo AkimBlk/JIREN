@@ -7,6 +7,9 @@ from django.views.generic import DetailView
 from ..models import Project, Sprint, Ticket
 from .permissions import visible_projects
 
+PERCENTAGE_MULTIPLIER = 100
+DECIMAL_PRECISION = 2
+
 
 class ProjectStatisticsView(LoginRequiredMixin, DetailView):
     model = Project
@@ -18,10 +21,9 @@ class ProjectStatisticsView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        project = self.object
 
         closed_sprints = list(
-            project.sprints.filter(status=Sprint.STATUS_CLOSED)
+            self.object.sprints.filter(status=Sprint.STATUS_CLOSED)
             .prefetch_related("tickets")
             .order_by("start_date")
         )
@@ -35,8 +37,11 @@ class ProjectStatisticsView(LoginRequiredMixin, DetailView):
             capacity = sprint.configured_capacity()
 
             consumption = 0
-            if capacity:
-                consumption = round((done_points / capacity) * 100, 2)
+            if capacity > 0:
+                consumption = round(
+                    (done_points / capacity) * PERCENTAGE_MULTIPLIER,
+                    DECIMAL_PRECISION,
+                )
 
             velocity_labels.append(sprint.name)
             velocity_values.append(done_points)
@@ -50,6 +55,7 @@ class ProjectStatisticsView(LoginRequiredMixin, DetailView):
         ctx["consumption_values"] = consumption_values
         ctx["burndown"] = burndown
         ctx["selected_sprint"] = selected_sprint
+        ctx["has_statistics_data"] = bool(closed_sprints)
 
         return ctx
 
@@ -61,36 +67,40 @@ class ProjectStatisticsView(LoginRequiredMixin, DetailView):
         )
 
     def _burndown_data(self, sprint):
-
         tickets = list(sprint.tickets.all())
+        total_points = sum(t.story_points or 0 for t in tickets)
+
+        if not total_points:
+            return None
 
         days = []
-        day = sprint.start_date
+        current_day = sprint.start_date
+        while current_day <= sprint.end_date:
+            days.append(current_day)
+            current_day += timedelta(days=1)
 
-        while day <= sprint.end_date:
-            days.append(day)
-            day += timedelta(days=1)
+        day_count = len(days)
+        if day_count < 2:
+            return None
 
-        total_points = sum(t.story_points or 0 for t in tickets)
+        ideal_step = total_points / (day_count - 1)
 
         ideal = []
         actual = []
+        done_so_far = sum(
+            t.story_points or 0
+            for t in tickets
+            if t.status == Ticket.STATUS_DONE
+        )
+        remaining = max(total_points - done_so_far, 0)
 
-        remaining = total_points
-
-        for i, day in enumerate(days):
-
-            ideal_remaining = total_points - ((total_points / (len(days)-1)) * i) if len(days) > 1 else 0
-            ideal.append(round(ideal_remaining, 2))
-
-            done_today = sum(
-                t.story_points or 0
-                for t in tickets
-                if t.status == Ticket.STATUS_DONE
-            )
-
-            remaining = max(total_points - done_today, 0)
-            actual.append(remaining)
+        # Build an honest approximation: sprint starts at total_points and
+        # declines linearly to remaining at the end (historical snapshots are
+        # not stored; this avoids the misleading flat-line artefact).
+        burn_step = (total_points - remaining) / (day_count - 1) if day_count > 1 else 0
+        for i in range(day_count):
+            ideal.append(round(total_points - (ideal_step * i), DECIMAL_PRECISION))
+            actual.append(round(total_points - (burn_step * i), DECIMAL_PRECISION))
 
         return {
             "labels": [d.strftime("%d/%m") for d in days],

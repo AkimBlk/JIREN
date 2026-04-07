@@ -1,0 +1,71 @@
+/* Git Accordion Branches Section */
+
+.git-accordion-branches__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--git-spacing-sm);
+}
+
+.git-accordion-branches__item {
+  padding: var(--git-spacing-md);
+  background-color: var(--git-color-hover);
+  border-radius: var(--git-radius);
+  border-left: 3px solid var(--git-color-github);
+  transition: all var(--git-duration-fast);
+}
+
+.git-accordion-branches__item:hover {
+  box-shadow: var(--git-shadow);
+}
+
+.git-accordion-branches__item--default {
+  background-color: var(--git-color-github);
+  color: var(--git-color-bg);
+  border-left-color: var(--git-color-github);
+}
+
+.git-accordion-branches__item--default .git-accordion-branches__name {
+  color: var(--git-color-bg);
+}
+
+.git-accordion-branches__item--default .git-accordion-branches__sha {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--git-color-bg);
+}
+
+.git-accordion-branches__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--git-spacing-sm);
+}
+
+.git-accordion-branches__name {
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.git-accordion-branches__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--git-spacing-sm);
+  margin-top: var(--git-spacing-xs);
+}
+
+.git-accordion-branches__sha {
+  padding: 2px 6px;
+  background-color: var(--git-color-bg);
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 0.75rem;
+  color: var(--git-color-text);
+}
+
+.git-accordion-branches__footer {
+  text-align: center;
+  margin-top: var(--git-spacing-md);
+}

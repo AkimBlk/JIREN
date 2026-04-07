@@ -81,5 +81,3 @@ def update_ticket_remaining_load(request, pk):
         messages.error(request, "; ".join(form.errors.get("remaining_load", ["Invalid remaining load."])))
 
     return redirect("ticket-detail", pk=ticket.pk)
-
-
