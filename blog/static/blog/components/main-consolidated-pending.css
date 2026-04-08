@@ -5491,3 +5491,59 @@ select.custom-select-sm {
   padding: 0.45rem 2rem 0.45rem 0.75rem;
   border-radius: 0.85rem;
 }
+
+/* Project detail right column: keep it active while scrolling */
+.stitch-project-side {
+  position: sticky !important;
+  top: calc(var(--navbar-height) + 1.35rem) !important;
+  height: calc(100vh - var(--navbar-height) - 1.75rem);
+  max-height: calc(100vh - var(--navbar-height) - 1.75rem);
+  display: flex !important;
+  flex-direction: column;
+  padding-right: 0.35rem;
+  overflow: hidden;
+}
+
+.stitch-project-side::-webkit-scrollbar {
+  width: 8px;
+}
+
+.stitch-project-side::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--helb-outline) 55%, transparent);
+  border-radius: 999px;
+}
+
+.stitch-project-side .stitch-quick-panel {
+  flex: 0 0 auto;
+}
+
+.stitch-project-side .stitch-member-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.stitch-project-side .stitch-repository-card {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+@media (max-width: 1199px) {
+  .stitch-project-side {
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    display: grid !important;
+    padding-right: 0;
+  }
+
+  .stitch-project-side .stitch-member-panel {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .stitch-project-side .stitch-repository-card {
+    margin-top: 0;
+  }
+}
