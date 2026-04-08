@@ -33,7 +33,8 @@
               class="btn btn-sm btn-outline-primary commit-link-trigger"
               data-link-url-template="{% url 'ticket-link-commit' 0 %}"
               data-commit-sha="{{ commit.hash }}"
-              data-commit-message="{{ commit.message }}">
+              data-commit-message="{{ commit.message }}"
+              data-commit-url="{{ commit.url }}">
               Link to ticket
             </button>
             <span class="commit-linked-badge d-none" aria-live="polite"></span>

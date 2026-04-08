@@ -86,6 +86,7 @@ class Ticket(models.Model):
     )
     linked_commit_sha = models.CharField(max_length=40, blank=True, default="")
     linked_commit_message = models.CharField(max_length=255, blank=True, default="")
+    linked_commit_url = models.URLField(blank=True, default="")
     origin_commit_sha = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:

@@ -232,10 +232,12 @@ def link_commit_to_ticket(request, pk):
 
     sha = str(payload.get("sha") or request.POST.get("sha") or "").strip()[:40]
     message = str(payload.get("message") or request.POST.get("message") or "").strip()[:255]
+    commit_url = str(payload.get("url") or request.POST.get("url") or "").strip()[:500]
     if not sha:
         return JsonResponse({"ok": False, "error": "Missing commit SHA."}, status=400)
 
     ticket.linked_commit_sha = sha
     ticket.linked_commit_message = message
-    ticket.save(update_fields=["linked_commit_sha", "linked_commit_message"])
+    ticket.linked_commit_url = commit_url
+    ticket.save(update_fields=["linked_commit_sha", "linked_commit_message", "linked_commit_url"])
     return JsonResponse({"ok": True})

@@ -873,8 +873,6 @@
       }
     });
 
-    setupRichTextEditor();
-
     function getSelectedIssueType() {
       const selectedInput = document.querySelector('input[name="issue_type"]:checked');
       return selectedInput ? selectedInput.value : "";
@@ -884,13 +882,6 @@
       const type = getSelectedIssueType();
       if (!type) {
         return;
-      }
-
-      // Update description template based on issue type
-      const descriptionField = document.getElementById("id_description");
-      if (descriptionField && !descriptionField.value) {
-        const template = TEMPLATES[type] || TEMPLATES.STORY;
-        descriptionField.placeholder = template;
       }
 
       const isEpic = type === "EPIC";
