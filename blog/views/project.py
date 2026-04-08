@@ -27,8 +27,8 @@ class ProjectHomeView(LoginRequiredMixin, ListView):
         return (
             visible_projects(self.request.user)
             .select_related("manager")
+            .prefetch_related("members__user")
             .annotate(
-                member_count=Count("members", distinct=True),
                 ticket_count=Count("tickets", distinct=True),
                 active_sprint_count=Count(
                     "sprints",
@@ -49,6 +49,7 @@ class ProjectHomeView(LoginRequiredMixin, ListView):
 
         for project in projects:
             members = sorted(project.members.all(), key=lambda membership: membership.user.username)
+            project.member_count = len(members)
             preview_members = members[:4]
             project.preview_members = preview_members
             project.remaining_member_count = max(project.member_count - len(preview_members), 0)

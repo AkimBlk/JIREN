@@ -59,10 +59,11 @@
                     <small>PNG, JPG up to 5 MB</small>
                     <span class="btn btn-outline-secondary">Browse Files</span>
                 </label>
-                {# File input off-screen — visually hidden, label trigger preserved #}
+
                 <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
                     {{ p_form.image }}
                 </div>
+
                 {% if p_form.image.errors %}
                     <ul class="list-unstyled">
                         {% for error in p_form.image.errors %}
@@ -70,6 +71,7 @@
                         {% endfor %}
                     </ul>
                 {% endif %}
+
                 <button class="btn btn-primary" type="submit" id="profile-save-btn">Save profile</button>
             </form>
         </section>
@@ -206,8 +208,8 @@
     <section class="atelier-role-section">
         <div class="atelier-role-section__header">
             <div>
-                <h2 class="atelier-page-header__title atelier-page-header__title--section">Manage User Roles</h2>
-                <p class="atelier-page-header__subtitle">Govern access and permission levels across the Atelier.</p>
+                <h2 class="atelier-page-header__title atelier-page-header__title--section">Platform Users</h2>
+                <p class="atelier-page-header__subtitle">Overview of registered accounts and current roles.</p>
             </div>
             <div class="atelier-page-header__actions">
                 <a href="{% url 'invite-user' %}" class="btn btn-primary">
@@ -222,24 +224,33 @@
                 <table class="table atelier-table atelier-table--roles mb-0">
                     <thead>
                         <tr>
+                            <th>User</th>
                             <th>Username</th>
-                            <th>Email Address</th>
-                            <th>Current Role</th>
-                            <th>Action</th>
+                            <th>Role</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for profile in role_profiles %}
                         <tr>
-                            <td>
-                                <div class="atelier-user-cell">
-                                    <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}" class="atelier-user-cell__avatar">
-                                    <div>
-                                        <strong class="atelier-user-cell__name">{{ profile.user.get_full_name|default:profile.user.username }}</strong>
+                            <td style="vertical-align: middle;">
+                                <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                                    <img
+                                        src="{{ profile.image.url }}"
+                                        alt="{{ profile.user.username }}"
+                                        style="width:40px; height:40px; border-radius:9999px; object-fit:cover; flex-shrink:0;"
+                                    >
+
+                                    <div style="display:flex; flex-direction:column; justify-content:center; min-width:0;">
+                                        <strong style="display:block; margin:0; line-height:1.2;">
+                                            {{ profile.user.get_full_name|default:profile.user.username }}
+                                        </strong>
+                                        <small style="display:block; margin:2px 0 0 0; line-height:1.2; color:var(--helb-on-surface-variant);">
+                                            {{ profile.user.email|default:"No email set" }}
+                                        </small>
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ profile.user.email|default:"No email set" }}</td>
+                            <td class="atelier-mono-cell">{{ profile.user.username }}</td>
                             <td>
                                 {% if profile.role == 'admin' %}
                                     <span class="atelier-badge atelier-badge--admin">Admin</span>
@@ -247,13 +258,10 @@
                                     <span class="atelier-badge atelier-badge--member">Member</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-secondary">Change Role</a>
-                            </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4">
+                            <td colspan="3">
                                 <div class="atelier-empty-state atelier-empty-state--table">
                                     <span class="material-symbols-outlined atelier-empty-state__icon">group_off</span>
                                     <h3 class="atelier-empty-state__title">No profiles found</h3>
@@ -278,10 +286,8 @@
 
   if (!input || !dropzone) return;
 
-  /* Make input invisible but still functional */
   input.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;';
 
-  /* Show filename after selection */
   input.addEventListener('change', function () {
     if (this.files && this.files.length > 0) {
       const name = this.files[0].name;
@@ -290,20 +296,20 @@
     }
   });
 
-  /* Drag & drop support */
   dropzone.addEventListener('dragover', function (e) {
     e.preventDefault();
     dropzone.classList.add('atelier-identity-dropzone--drag');
   });
+
   dropzone.addEventListener('dragleave', function () {
     dropzone.classList.remove('atelier-identity-dropzone--drag');
   });
+
   dropzone.addEventListener('drop', function (e) {
     e.preventDefault();
     dropzone.classList.remove('atelier-identity-dropzone--drag');
     const dt = e.dataTransfer;
     if (dt && dt.files.length > 0) {
-      /* Assign dropped files to the input */
       const dataTransfer = new DataTransfer();
       dataTransfer.items.add(dt.files[0]);
       input.files = dataTransfer.files;

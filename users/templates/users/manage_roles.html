@@ -4,7 +4,7 @@
     <div>
         <span class="atelier-page-header__eyebrow">Governance</span>
         <h1 class="atelier-page-header__title">Manage User Roles</h1>
-        <p class="atelier-page-header__subtitle">Review and update platform roles.</p>
+        <p class="atelier-page-header__subtitle">Review platform roles.</p>
     </div>
     <div class="atelier-page-header__actions">
         <a href="{% url 'invite-user' %}" class="btn btn-primary">
@@ -40,7 +40,6 @@
                     <th>User</th>
                     <th>Username</th>
                     <th>Role</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,9 +48,13 @@
                     <td>
                         <div class="atelier-user-cell">
                             <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}" class="atelier-user-cell__avatar">
-                            <div>
-                                <strong class="atelier-user-cell__name">{{ profile.user.get_full_name|default:profile.user.username }}</strong>
-                                <small class="atelier-user-cell__email">{{ profile.user.email|default:"No email set" }}</small>
+                            <div class="atelier-user-cell__info">
+                                <strong class="atelier-user-cell__name">
+                                    {{ profile.user.get_full_name|default:profile.user.username }}
+                                </strong>
+                                <small class="atelier-user-cell__email">
+                                    {{ profile.user.email|default:"No email set" }}
+                                </small>
                             </div>
                         </div>
                     </td>
@@ -63,16 +66,10 @@
                             <span class="atelier-badge atelier-badge--member">Member</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <a href="{% url 'update-role' profile.user.id %}" class="btn btn-sm btn-outline-secondary">
-                            <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
-                            Change Role
-                        </a>
-                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4">
+                    <td colspan="3">
                         <div class="atelier-empty-state atelier-empty-state--table">
                             <span class="material-symbols-outlined atelier-empty-state__icon">group_off</span>
                             <h3 class="atelier-empty-state__title">No profiles found</h3>

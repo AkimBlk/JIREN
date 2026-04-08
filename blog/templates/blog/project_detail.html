@@ -15,9 +15,6 @@
     </div>
 
     <div class="stitch-project-actions">
-        {% if user_can_manage_sprints %}
-            <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-outline-primary">Sprints</a>
-        {% endif %}
         {% if user_is_admin %}
             <a href="{% url 'project-update' project.pk %}" class="btn stitch-btn-orange">Edit</a>
             <a href="{% url 'project-delete' project.pk %}" class="btn btn-outline-danger">Delete</a>
@@ -126,14 +123,28 @@
                                 {% endif %}
                                 <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
                             </div>
-                            <a href="{% url 'ticket-detail' ticket.pk %}" class="stitch-ticket-row__title">{{ ticket.title }}</a>
+
+                            <a href="{% url 'ticket-detail' ticket.pk %}"
+                               class="stitch-ticket-row__title"
+                               {% if ticket.issue_type == 'EPIC' and ticket.display_color %}
+                               style="color: {{ ticket.display_color }};"
+                               {% endif %}>
+                                {{ ticket.title }}
+                            </a>
+
                             <div class="stitch-ticket-row__meta">
                                 {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
-                                {% if ticket.epic %}<span>Epic: {{ ticket.epic.title }}</span>{% endif %}
-                                {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}<span>{{ ticket.remaining_load }} remaining</span>{% endif %}
+                                {% if ticket.epic %}
+                                    <span style="color: {{ ticket.epic.display_color }};">Epic: {{ ticket.epic.title }}</span>
+                                {% endif %}
+                                {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}
+                                    <span>{{ ticket.remaining_load }} remaining</span>
+                                {% endif %}
                             </div>
+
                             {% include "blog/includes/tag_chips.html" with ticket=ticket %}
                         </div>
+
                         <div class="stitch-ticket-row__aside">
                             {% if ticket.assignee %}
                                 <span>Assigned to</span>
@@ -180,7 +191,7 @@
             <div class="stitch-quick-panel__actions">
                 <a href="{% url 'project-backlog' project.pk %}" class="btn stitch-btn-orange">View Backlog</a>
                 <a href="{% url 'ticket-create' %}?project={{ project.pk }}" class="btn stitch-btn-green">Create New Ticket</a>
-                <a href="{% url 'sprint-admin' project.pk %}" class="btn stitch-btn-ghost">Sprint</a>
+                <a href="{% url 'sprint-admin' project.pk %}" class="btn stitch-btn-orange">Sprint</a>
                 {% if active_sprint %}
                     <a href="{% url 'project-active-sprint' project.pk %}" class="btn stitch-btn-ghost">Active Sprint</a>
                 {% else %}
@@ -192,7 +203,7 @@
         <article class="stitch-member-panel">
             <div class="stitch-panel-head">
                 <h3>Project Members</h3>
-                {% if user_is_admin %}<a href="{% url 'manage-roles' %}">Manage</a>{% endif %}
+                {% if user_is_admin %}<span class="stitch-muted-note">Admin view</span>{% endif %}
             </div>
             <div class="stitch-member-list">
                 {% for membership in members|slice:":6" %}
@@ -221,7 +232,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const chartCanvas = document.getElementById("projectChart");
     if (!chartCanvas) return;
 
-    // Retrieve data from script tags
     const velocityLabelsElem = document.getElementById("velocityLabelsData");
     const velocityValuesElem = document.getElementById("velocityValuesData");
     const consumptionValuesElem = document.getElementById("consumptionValuesData");
@@ -355,10 +365,8 @@ document.addEventListener("DOMContentLoaded", function() {
         chartCanvas.style.height = "350px";
     }
 
-    // Initialize with velocity chart
     createVelocityChart();
 
-    // Handle radio button changes
     document.querySelectorAll('input[name="chart_type"]').forEach(radio => {
         radio.addEventListener("change", function() {
             if (this.value === "velocity") createVelocityChart();

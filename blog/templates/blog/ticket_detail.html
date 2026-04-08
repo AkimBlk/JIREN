@@ -11,13 +11,25 @@
 
 <section class="stitch-ticket-layout">
   <div class="stitch-ticket-main">
+
     <div class="stitch-ticket-heading">
       <div class="stitch-ticket-kicker">
-        <span class="atelier-status-pill atelier-status-pill--{% if object.status == 'DONE' %}done{% elif object.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ object.get_status_display }}</span>
+        <span class="atelier-status-pill atelier-status-pill--{% if object.status == 'DONE' %}done{% elif object.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">
+          {{ object.get_status_display }}
+        </span>
         <span class="stitch-meta-row__text">Project / {{ object.project.name }}</span>
       </div>
-      <h1 class="stitch-ticket-title">{{ object.title }}</h1>
-      <p class="stitch-ticket-subtitle">ID: {{ object.project.code_prefix|default:'HELB' }}-{{ object.id }} • Created {{ object.date_posted|date:"d M Y" }}</p>
+
+      <h1 class="stitch-ticket-title"
+          {% if object.issue_type == 'EPIC' and object.display_color %}
+          style="color: {{ object.display_color }};"
+          {% endif %}>
+          {{ object.title }}
+      </h1>
+
+      <p class="stitch-ticket-subtitle">
+        ID: {{ object.project.code_prefix|default:'HELB' }}-{{ object.id }} • Created {{ object.date_posted|date:"d M Y" }}
+      </p>
     </div>
 
     <article class="stitch-ticket-card">
@@ -28,7 +40,9 @@
         </h3>
         {% if can_edit_ticket %}<a href="{% url 'ticket-update' object.id %}">Edit Markdown</a>{% endif %}
       </div>
-      <div class="article-content ticket-description">{{ object.description|render_ticket_description }}</div>
+      <div class="article-content ticket-description">
+        {{ object.description|render_ticket_description }}
+      </div>
     </article>
 
     {% if blocked_by_tickets or blocks_tickets or related_tickets %}
@@ -39,6 +53,7 @@
         </h3>
 
         <div class="stitch-linked-grid">
+
           <div>
             <p class="stitch-link-label stitch-link-label--error">Blocked By</p>
             {% for ticket in blocked_by_tickets %}
@@ -82,6 +97,7 @@
               {% endfor %}
             </div>
           </div>
+
         </div>
       </article>
     {% endif %}
@@ -111,9 +127,10 @@
           <span class="material-symbols-outlined">format_list_bulleted</span>
           Stories in this Epic
         </h3>
+
         <div class="stitch-ticket-list">
           {% for child in object.stories.all %}
-            <article class="stitch-ticket-row {% if child.issue_type == 'BUG' %}stitch-ticket-row--bug{% elif child.issue_type == 'STORY' %}stitch-ticket-row--story{% else %}stitch-ticket-row--task{% endif %}">
+            <article class="stitch-ticket-row">
               <div>
                 <div class="stitch-chip-row stitch-chip-row--compact">
                   {% if child.issue_type == 'STORY' %}
@@ -124,121 +141,150 @@
                     <span class="atelier-badge atelier-badge--task">Task</span>
                   {% endif %}
                 </div>
-                <a href="{% url 'ticket-detail' child.id %}" class="stitch-ticket-row__title">{{ child.title }}</a>
+
+                <a href="{% url 'ticket-detail' child.id %}" class="stitch-ticket-row__title">
+                  {{ child.title }}
+                </a>
+
               </div>
+
               <div class="stitch-ticket-row__aside">
-                <span class="atelier-status-pill atelier-status-pill--{% if child.status == 'DONE' %}done{% elif child.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ child.get_status_display }}</span>
+                <span class="atelier-status-pill atelier-status-pill--{% if child.status == 'DONE' %}done{% elif child.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">
+                  {{ child.get_status_display }}
+                </span>
               </div>
             </article>
           {% empty %}
             <p class="stitch-muted-note">No linked ticket yet.</p>
           {% endfor %}
         </div>
+
       </article>
     {% endif %}
+
   </div>
 
+
   <aside class="stitch-ticket-sidebar">
+
     <article class="stitch-ticket-sidebar-card">
-      <h3 class="stitch-card-title mb-4">Metadata &amp; Details</h3>
+      <h3 class="stitch-card-title mb-4">Metadata & Details</h3>
+
       <div class="stitch-ticket-meta-list">
+
         <div class="stitch-ticket-meta-row">
           <span>Type</span>
+
           {% if object.issue_type == 'EPIC' %}
-            <span class="atelier-badge atelier-badge--epic">Epic</span>
+            <span class="atelier-badge atelier-badge--epic"
+                  {% if object.display_color %}
+                  style="background: {{ object.display_color }}; border-color: {{ object.display_color }}; color:#fff;"
+                  {% endif %}>
+              Epic
+            </span>
+
           {% elif object.issue_type == 'STORY' %}
             <span class="atelier-badge atelier-badge--story">Story</span>
+
           {% elif object.issue_type == 'BUG' %}
             <span class="atelier-badge atelier-badge--bug">Bug</span>
+
           {% else %}
             <span class="atelier-badge atelier-badge--task">Task</span>
           {% endif %}
         </div>
+
         <div class="stitch-ticket-meta-row">
           <span>Priority</span>
           <strong>{{ object.get_priority_display }}</strong>
         </div>
+
         <div class="stitch-ticket-meta-row">
           <span>Project</span>
-          <a href="{% url 'project-detail' object.project.pk %}">{{ object.project.name }}</a>
+          <a href="{% url 'project-detail' object.project.pk %}">
+            {{ object.project.name }}
+          </a>
         </div>
+
         <div class="stitch-ticket-meta-row">
           <span>Sprint</span>
           {% if object.sprint %}
-            <a href="{% url 'sprint-admin' object.project.pk %}">{{ object.sprint.name }}</a>
+            <a href="{% url 'sprint-admin' object.project.pk %}">
+              {{ object.sprint.name }}
+            </a>
           {% else %}
             <strong>No sprint</strong>
           {% endif %}
         </div>
+
         <div class="stitch-ticket-meta-row">
           <span>Epic</span>
           {% if object.epic %}
-            <a href="{% url 'ticket-detail' object.epic.id %}" class="epic-color-text">{{ object.epic.title }}</a>
+            <a href="{% url 'ticket-detail' object.epic.id %}"
+               class="epic-color-text"
+               style="color: {{ object.epic.display_color }};">
+               {{ object.epic.title }}
+            </a>
           {% else %}
             <strong>None</strong>
           {% endif %}
         </div>
+
         <div class="stitch-ticket-meta-row stitch-ticket-meta-row--stacked">
           <span>Tags</span>
           {% include "blog/includes/tag_chips.html" with ticket=object show_empty=True %}
         </div>
+
         <div class="stitch-ticket-meta-row">
           <span>Story Points</span>
           <strong>{{ object.story_points }}</strong>
         </div>
-        {% if object.issue_type == 'STORY' or object.issue_type == 'BUG' or object.issue_type == 'TASK' %}
-          <div class="stitch-ticket-meta-row">
-            <span>Initial Load</span>
-            <strong>{{ object.initial_load }}</strong>
-          </div>
-          <div class="stitch-ticket-meta-row stitch-ticket-meta-row--stacked">
-            <span>Remaining Load</span>
-            {% if can_update_remaining_load %}
-              <form method="post" action="{% url 'ticket-update-remaining-load' object.pk %}" class="stitch-inline-form">
-                {% csrf_token %}
-                <div class="stitch-inline-form__field">{{ remaining_load_form.remaining_load }}</div>
-                <button type="submit" class="btn btn-primary btn-sm">Update</button>
-              </form>
-            {% else %}
-              <strong>{{ object.remaining_load }}</strong>
-            {% endif %}
-          </div>
-          <div class="stitch-ticket-meta-row">
-            <span>Completed Load</span>
-            <strong>{{ object.completed_load }}</strong>
-          </div>
-        {% endif %}
+
         <div class="stitch-ticket-meta-row">
           <span>Links</span>
           <strong>{{ ticket_summary.link_count }}</strong>
         </div>
+
       </div>
 
       {% if can_edit_ticket %}
         <div class="stitch-sidebar-actions">
-          <a class="btn stitch-btn-orange" href="{% url 'ticket-update' object.id %}">Edit Ticket</a>
-          <a class="btn btn-outline-danger" href="{% url 'ticket-delete' object.id %}">Delete</a>
+          <a class="btn stitch-btn-orange" href="{% url 'ticket-update' object.id %}">
+            Edit Ticket
+          </a>
+          <a class="btn btn-outline-danger" href="{% url 'ticket-delete' object.id %}">
+            Delete
+          </a>
         </div>
       {% endif %}
+
     </article>
 
     <article class="stitch-ticket-assignee-card">
       <span class="stitch-ticket-assignee-card__label">Assignee</span>
+
       <div class="stitch-ticket-assignee-card__content">
+
         {% if object.assignee %}
-          <img src="{{ object.assignee.profile.image.url }}" alt="{{ object.assignee.username }}" class="atelier-user-inline__avatar">
+          <img src="{{ object.assignee.profile.image.url }}" class="atelier-user-inline__avatar">
+
           <div>
             <strong>{{ object.assignee.get_full_name|default:object.assignee.username }}</strong>
             <small>{{ object.assignee.username }}</small>
           </div>
+
         {% else %}
           <div>
             <strong>Unassigned</strong>
             <small>No owner yet</small>
           </div>
         {% endif %}
+
       </div>
+
     </article>
+
   </aside>
+
 </section>
 {% endblock content %}
