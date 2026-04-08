@@ -84,6 +84,9 @@ class Ticket(models.Model):
         help_text="Hex color for epic tickets.",
         validators=[RegexValidator(regex=r"^#(?:[0-9a-fA-F]{6})$", message="Valid hex: #AABBCC")],
     )
+    linked_commit_sha = models.CharField(max_length=40, blank=True, default="")
+    linked_commit_message = models.CharField(max_length=255, blank=True, default="")
+    origin_commit_sha = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:
         ordering = ["backlog_order", "date_posted", "id"]

@@ -1,0 +1,167 @@
+<style>
+  .rich-editor-source--enhanced { display: none; }
+  .rich-editor-shell {
+    background: var(--helb-surface-container-lowest);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    resize: vertical;
+    overflow: auto;
+    min-height: 260px;
+  }
+  .rich-editor-shell.is-focused {
+    border-color: var(--helb-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--helb-secondary) 25%, transparent);
+  }
+  .rich-editor-toolbar {
+    display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.75rem;
+    border-bottom: 1px solid var(--helb-outline-variant);
+    background: var(--helb-surface-container-low);
+  }
+  .rich-editor-toolbar button {
+    min-width: 2.25rem; padding: 0.35rem 0.65rem;
+    border: 1px solid var(--helb-outline-variant); border-radius: 0.35rem;
+    background: var(--helb-surface-container-lowest); color: var(--helb-on-surface);
+    font-size: 0.95rem; line-height: 1.2;
+  }
+  .rich-editor-surface {
+    min-height: 180px; padding: 1rem;
+    outline: none; line-height: 1.6; color: var(--helb-on-surface);
+  }
+  .rich-editor-surface:empty:before {
+    content: attr(data-placeholder); color: var(--helb-outline);
+  }
+  .rich-editor-surface img {
+    display: block; max-width: 100%; height: auto;
+    margin: 1rem 0; border-radius: 0.5rem;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const textareas = document.querySelectorAll('textarea[data-rich-text-source="true"]');
+    textareas.forEach(function (textarea) {
+      if (textarea.classList.contains("rich-editor-source--enhanced")) return;
+
+      const shell = document.createElement("div");
+      shell.className = "rich-editor-shell";
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "rich-editor-toolbar";
+
+      const editor = document.createElement("div");
+      editor.className = "rich-editor-surface";
+      editor.contentEditable = "true";
+      editor.setAttribute("data-placeholder", textarea.getAttribute("placeholder") || "Description");
+
+      const imageInput = document.createElement("input");
+      imageInput.type = "file";
+      imageInput.accept = "image/png,image/jpeg,image/jpg,image/gif,image/webp";
+      imageInput.multiple = true;
+      imageInput.className = "d-none";
+
+      let savedRange = null;
+
+      function syncTextarea() {
+        const html = editor.innerHTML.trim();
+        textarea.value = html && html !== "<br>" ? html : "";
+      }
+
+      function saveSelection() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        if (editor.contains(range.commonAncestorContainer)) {
+          savedRange = range.cloneRange();
+        }
+      }
+
+      function restoreSelection() {
+        if (!savedRange) return;
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+
+      function runCommand(command, value) {
+        editor.focus();
+        restoreSelection();
+        document.execCommand(command, false, value);
+        syncTextarea();
+        saveSelection();
+      }
+
+      function createToolbarButton(label, title, handler) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.title = title;
+        button.addEventListener("click", handler);
+        toolbar.appendChild(button);
+      }
+
+      function insertImage(dataUrl, fileName) {
+        editor.focus();
+        const image = document.createElement("img");
+        image.src = dataUrl;
+        image.alt = fileName || "Inserted image";
+        const selection = window.getSelection();
+        const range = selection && selection.rangeCount ? selection.getRangeAt(0) : document.createRange();
+        if (!selection || !selection.rangeCount) {
+          range.selectNodeContents(editor);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        range.deleteContents();
+        range.insertNode(image);
+        range.setStartAfter(image);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        syncTextarea();
+      }
+
+      createToolbarButton("B", "Bold", function () { runCommand("bold"); });
+      createToolbarButton("I", "Italic", function () { runCommand("italic"); });
+      createToolbarButton("U", "Underline", function () { runCommand("underline"); });
+      createToolbarButton("UL", "Bulleted list", function () { runCommand("insertUnorderedList"); });
+      createToolbarButton("OL", "Numbered list", function () { runCommand("insertOrderedList"); });
+      createToolbarButton("Link", "Insert link", function () {
+        const url = window.prompt("Enter a link URL");
+        if (url) runCommand("createLink", url);
+      });
+      createToolbarButton("Image", "Insert image", function () { imageInput.click(); });
+
+      imageInput.addEventListener("change", function () {
+        Array.from(imageInput.files || []).forEach(function (file) {
+          if (!file.type.startsWith("image/")) return;
+          if (file.size > 5 * 1024 * 1024) return;
+          const reader = new FileReader();
+          reader.addEventListener("load", function () { insertImage(reader.result, file.name); });
+          reader.readAsDataURL(file);
+        });
+        imageInput.value = "";
+      });
+
+      editor.innerHTML = textarea.value || "";
+      textarea.classList.add("rich-editor-source--enhanced");
+      textarea.insertAdjacentElement("afterend", shell);
+      shell.appendChild(toolbar);
+      shell.appendChild(editor);
+      shell.appendChild(imageInput);
+
+      editor.addEventListener("focus", function () { shell.classList.add("is-focused"); saveSelection(); });
+      editor.addEventListener("blur", function () { shell.classList.remove("is-focused"); syncTextarea(); saveSelection(); });
+      editor.addEventListener("input", syncTextarea);
+      ["keyup", "mouseup", "touchend"].forEach(function (eventName) {
+        editor.addEventListener(eventName, saveSelection);
+      });
+
+      if (textarea.form) {
+        textarea.form.addEventListener("submit", syncTextarea);
+      }
+      syncTextarea();
+    });
+  });
+</script>

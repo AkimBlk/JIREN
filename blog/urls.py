@@ -22,6 +22,7 @@ from .views import (
     api_ticket_add_tag,
     api_ticket_remove_tag,
     move_backlog_ticket,
+    link_commit_to_ticket,
     project_active_sprint,
     project_tags,
     reorder_backlog,
@@ -38,6 +39,7 @@ urlpatterns = [
     path("ticket/new/", TicketCreateView.as_view(), name="ticket-create"),
     path("ticket/<int:pk>/update/", TicketUpdateView.as_view(), name="ticket-update"),
     path("ticket/<int:pk>/delete/", TicketDeleteView.as_view(), name="ticket-delete"),
+    path("ticket/<int:pk>/link-commit/", link_commit_to_ticket, name="ticket-link-commit"),
     path("ticket/attachment/<int:pk>/delete/", views.delete_ticket_attachment, name="ticket-attachment-delete"),
     path("ticket/<int:pk>/status/", views.update_ticket_status, name="ticket-update-status"),
     path(

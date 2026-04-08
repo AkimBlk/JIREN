@@ -32,6 +32,7 @@ from .ticket import (
     TicketListView,
     TicketUpdateView,
     delete_ticket_attachment,
+    link_commit_to_ticket,
     update_ticket_remaining_load,
     update_ticket_status,
 )
@@ -59,6 +60,7 @@ __all__ = [
     "delete_projects",
     "delete_sprint",
     "delete_ticket_attachment",
+    "link_commit_to_ticket",
     "move_backlog_ticket",
     "project_active_sprint",
     "reorder_sprint_tickets",

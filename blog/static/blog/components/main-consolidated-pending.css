@@ -2527,6 +2527,9 @@ html[data-theme="dark"] .stitch-backlog-item,
 html[data-theme="dark"] .stitch-sprint-ticket {
   border-color: rgba(144, 160, 183, 0.28);
 }
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
 
 
 body,
@@ -4375,7 +4378,7 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.15rem;
   border-radius: 1.35rem;
   background: var(--helb-surface-container-lowest);
-  border: 1px solid var(--helb-outline-variant);
+  border: 1px solid var(--helb-outline);
   box-shadow: var(--helb-shadow-sm);
   align-items: flex-start;
   transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
@@ -4397,7 +4400,7 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.1rem;
   border-radius: 1.55rem;
   background: color-mix(in srgb, var(--helb-surface-container-lowest) 90%, transparent);
-  border: 1px solid var(--helb-outline-variant);
+  border: 1px solid var(--helb-outline);
   box-shadow: var(--helb-shadow-sm);
   transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
 }
@@ -5302,6 +5305,7 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.15rem;
   border-radius: 1.35rem;
   background: var(--helb-surface-container-lowest);
+  border: 1px solid var(--helb-outline);
   box-shadow: var(--helb-shadow-sm);
   align-items: flex-start;
 }
@@ -5322,6 +5326,7 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.1rem;
   border-radius: 1.55rem;
   background: color-mix(in srgb, var(--helb-surface-container-lowest) 90%, transparent);
+  border: 1px solid var(--helb-outline);
   box-shadow: var(--helb-shadow-sm);
 }
 

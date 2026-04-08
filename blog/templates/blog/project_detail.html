@@ -219,12 +219,6 @@
                 <button type="button" class="stitch-muted-note mb-0 btn btn-link p-0 mt-1" id="show-all-members">
                     +{{ members|length|add:"-6" }} more collaborators
                 </button>
-                <script>
-                  document.getElementById('show-all-members').addEventListener('click', function () {
-                    document.querySelectorAll('.stitch-member-chip--hidden').forEach(function (el) { el.classList.remove('d-none'); });
-                    this.remove();
-                  });
-                </script>
             {% endif %}
         </article>
 
@@ -380,6 +374,74 @@ document.addEventListener("DOMContentLoaded", function() {
             if (this.value === "velocity") createVelocityChart();
             else if (this.value === "consumption") createConsumptionChart();
             else if (this.value === "burndown") createBurndownChart();
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const showAllMembersButton = document.getElementById("show-all-members");
+    if (showAllMembersButton) {
+        showAllMembersButton.addEventListener("click", function () {
+            document.querySelectorAll(".stitch-member-chip--hidden").forEach(function (element) {
+                element.classList.remove("d-none");
+            });
+            this.remove();
+        });
+    }
+
+    const getCsrfToken = function () {
+        const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : "";
+    };
+
+    document.querySelectorAll(".commit-link-trigger").forEach(function (button) {
+        button.addEventListener("click", async function () {
+            const container = button.closest(".git-accordion-activity__linker");
+            const ticketSelect = container ? container.querySelector(".commit-link-ticket-select") : null;
+            const badge = container ? container.querySelector(".commit-linked-badge") : null;
+            const ticketId = ticketSelect ? ticketSelect.value : "";
+            if (!ticketId) {
+                if (badge) {
+                    badge.textContent = "Select a ticket first";
+                    badge.classList.remove("d-none", "commit-linked-badge--success");
+                    badge.classList.add("commit-linked-badge--error");
+                }
+                return;
+            }
+
+            const urlTemplate = button.dataset.linkUrlTemplate || "";
+            const url = urlTemplate.replace("/0/", "/" + ticketId + "/");
+            const payload = {
+                sha: button.dataset.commitSha || "",
+                message: button.dataset.commitMessage || "",
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCsrfToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await response.json();
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.error || "Unable to link commit");
+                }
+                if (badge) {
+                    badge.textContent = "Commit linked";
+                    badge.classList.remove("d-none", "commit-linked-badge--error");
+                    badge.classList.add("commit-linked-badge--success");
+                }
+            } catch (error) {
+                if (badge) {
+                    badge.textContent = error.message || "Unable to link commit";
+                    badge.classList.remove("d-none", "commit-linked-badge--success");
+                    badge.classList.add("commit-linked-badge--error");
+                }
+            }
         });
     });
 });

@@ -44,6 +44,11 @@ class SprintUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return next_url
         return reverse("sprint-admin", kwargs={"pk": self.object.project.pk})
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.object.project
+        return kwargs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["capacity_rows"] = capacity_rows(
@@ -79,7 +84,7 @@ def sprint_admin(request, pk):
 
     context = {
         "project": project,
-        "form": SprintAdminForm(),
+        "form": SprintAdminForm(project=project),
         "capacity_rows": capacity_rows(project),
         "sprints": [(sprint, SprintStatusForm(sprint=sprint)) for sprint in project.sprints.all()],
         "title": "Sprint Administration",
@@ -88,7 +93,7 @@ def sprint_admin(request, pk):
 
 
 def _handle_sprint_creation(request, project):
-    form = SprintAdminForm(request.POST)
+    form = SprintAdminForm(request.POST, project=project)
     rows = capacity_rows(project, post_data=request.POST)
 
     if form.is_valid():

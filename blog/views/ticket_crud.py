@@ -1,9 +1,12 @@
+import json
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -11,7 +14,6 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from ..forms import RemainingLoadUpdateForm, TicketForm
 from ..models import Sprint, Ticket, TicketAttachment, TicketLink
-from ..services.git_service import GitService
 from .permissions import can_edit_ticket, project_assignees, visible_projects
 from .queries import project_linkable_tickets, ticket_form_project_data
 
@@ -78,6 +80,10 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
+        for field_name in ("story_points", "initial_load", "remaining_load"):
+            if field_name in form.fields:
+                form.fields[field_name].initial = None
+                form.initial[field_name] = ""
         project_id = self.request.GET.get("project") or self.request.POST.get("project")
         visible = visible_projects(self.request.user)
         self._reset_form_querysets(form, visible)
@@ -127,20 +133,8 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx["ticket_project_data"] = ticket_form_project_data(self.request.user)
         ctx["existing_attachments"] = []
-        ctx["recent_commits"] = self._get_recent_commits_for_project()
+        ctx["origin_sha"] = self.request.GET.get("origin_sha", "")
         return ctx
-
-    def _get_recent_commits_for_project(self) -> list:
-        """Return up to 10 recent commits for the pre-selected project (if it has a linked git repo)."""
-        project_id = self.request.GET.get("project") or self.request.POST.get("project")
-        if not project_id:
-            return []
-        try:
-            project = visible_projects(self.request.user).get(pk=project_id)
-            git_service = GitService(project.git_repository)
-            return git_service.get_recent_commits(limit=10)
-        except Exception:
-            return []
 
 
 class TicketUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -222,3 +216,26 @@ def delete_ticket_attachment(request, pk):
     attachment.delete()
     messages.success(request, "Attachment deleted.")
     return redirect("ticket-update", pk=ticket.pk)
+
+
+@login_required
+@require_POST
+def link_commit_to_ticket(request, pk):
+    ticket = get_object_or_404(Ticket.objects.select_related("project"), pk=pk)
+    if not visible_projects(request.user).filter(pk=ticket.project_id).exists():
+        return JsonResponse({"ok": False, "error": "Access denied."}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+    except json.JSONDecodeError:
+        payload = {}
+
+    sha = str(payload.get("sha") or request.POST.get("sha") or "").strip()[:40]
+    message = str(payload.get("message") or request.POST.get("message") or "").strip()[:255]
+    if not sha:
+        return JsonResponse({"ok": False, "error": "Missing commit SHA."}, status=400)
+
+    ticket.linked_commit_sha = sha
+    ticket.linked_commit_message = message
+    ticket.save(update_fields=["linked_commit_sha", "linked_commit_message"])
+    return JsonResponse({"ok": True})
