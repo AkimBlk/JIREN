@@ -120,7 +120,8 @@ class TicketForm(forms.ModelForm):
         fields = [
             "issue_type", "title", "description", "project", "sprint", "epic",
             "assignee", "status", "priority", "tags_input", "blocked_by_tickets",
-            "relates_to_tickets", "story_points", "initial_load", "remaining_load", "color",
+            "relates_to_tickets", "story_points", "origin_commit_sha",
+            "initial_load", "remaining_load", "color",
         ]
         widgets = {
             "issue_type": forms.RadioSelect(),
@@ -137,6 +138,10 @@ class TicketForm(forms.ModelForm):
             field.help_text = None
         self.fields["blocked_by_tickets"].label_from_instance = self._ticket_label
         self.fields["relates_to_tickets"].label_from_instance = self._ticket_label
+        for field_name in ("story_points", "initial_load", "remaining_load"):
+            self.fields[field_name].widget.attrs["placeholder"] = "0"
+            if not self.is_bound and not self.instance.pk:
+                self.fields[field_name].initial = None
 
         if self.instance.pk:
             self._init_tags_field()
@@ -210,6 +215,12 @@ class TicketForm(forms.ModelForm):
             )
 
         return story_points
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("issue_type") != Ticket.ISSUE_TYPE_BUG:
+            cleaned_data["origin_commit_sha"] = ""
+        return cleaned_data
 
     def save(self, commit=True):
         ticket = super().save(commit=False)

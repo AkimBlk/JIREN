@@ -27,6 +27,11 @@ class ProjectForm(forms.ModelForm):
             "start_date", "end_date", "members",
         ]
         widgets = {
+            "description": RichTextTextarea(attrs={
+                "rows": 8,
+                "data-rich-text-source": "true",
+                "class": "form-control",
+            }),
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
         }
@@ -37,6 +42,30 @@ class ProjectForm(forms.ModelForm):
             field.help_text = None
         if self.instance.pk:
             self.fields["members"].initial = self.instance.members.values_list("user_id", flat=True)
+
+    def clean_code_prefix(self):
+        code_prefix = (self.cleaned_data.get("code_prefix") or "").strip().upper()
+        return code_prefix or None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self.instance.capacity_mode = Project.CAPACITY_MODE_PER_USER
+        self.instance.global_capacity = None
+        return cleaned_data
+
+    def clean_description(self):
+        from ..rich_text import sanitize_rich_text
+        return sanitize_rich_text(self.cleaned_data.get("description", ""))
+
+    def save(self, commit=True):
+        project = super().save(commit=False)
+        # These fields are no longer user-configurable in the form.
+        project.capacity_mode = Project.CAPACITY_MODE_PER_USER
+        project.global_capacity = None
+        if commit:
+            project.save()
+            self.save_m2m()
+        return project
 
     def sync_members(self, project, manager):
         selected_users = list(self.cleaned_data.get("members", []))
@@ -50,15 +79,41 @@ class ProjectForm(forms.ModelForm):
 
 
 class SprintAdminForm(forms.ModelForm):
+    workload_unit = forms.ChoiceField(choices=Project.WORKLOAD_UNIT_CHOICES)
+
     class Meta:
         model = Sprint
-        fields = ["name", "start_date", "end_date", "objective", "capacity"]
+        fields = ["name", "start_date", "end_date", "objective", "workload_unit", "capacity_mode", "capacity"]
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
-            "objective": forms.Textarea(attrs={"rows": 3}),
+            "objective": RichTextTextarea(attrs={
+                "rows": 6,
+                "data-rich-text-source": "true",
+                "class": "form-control",
+            }),
             "capacity": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
         }
+
+    def __init__(self, *args, project=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.project = project
+        if project and not self.is_bound:
+            self.fields["workload_unit"].initial = project.workload_unit
+
+    def save(self, commit=True):
+        sprint = super().save(commit=False)
+        if self.project:
+            self.project.workload_unit = self.cleaned_data["workload_unit"]
+            self.project.save(update_fields=["workload_unit"])
+        if commit:
+            sprint.save()
+            self.save_m2m()
+        return sprint
+
+    def clean_objective(self):
+        from ..rich_text import sanitize_rich_text
+        return sanitize_rich_text(self.cleaned_data.get("objective", ""))
 
 
 class SprintStatusForm(forms.Form):

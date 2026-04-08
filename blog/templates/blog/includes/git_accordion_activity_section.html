@@ -14,12 +14,31 @@
               class="copy-btn git-accordion-activity__copy"
               data-clipboard="{{ commit.hash }}"
               aria-label="Copy commit SHA">
-              📋 {{ commit.hash }}
+              Copy {{ commit.hash }}
             </button>
             <time class="git-accordion-activity__time" data-timestamp="{{ commit.timestamp }}">
               {{ commit.timestamp }}
             </time>
           </div>
+          {% if commit_link_tickets %}
+          <div class="git-accordion-activity__linker">
+            <select class="form-control form-control-sm commit-link-ticket-select" aria-label="Select ticket">
+              <option value="">Select ticket</option>
+              {% for ticket in commit_link_tickets %}
+                <option value="{{ ticket.pk }}">#{{ ticket.pk }} - {{ ticket.title }}</option>
+              {% endfor %}
+            </select>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary commit-link-trigger"
+              data-link-url-template="{% url 'ticket-link-commit' 0 %}"
+              data-commit-sha="{{ commit.hash }}"
+              data-commit-message="{{ commit.message }}">
+              Link to ticket
+            </button>
+            <span class="commit-linked-badge d-none" aria-live="polite"></span>
+          </div>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -28,7 +47,7 @@
     {% if git_commits|length > 5 %}
     <div class="git-accordion-activity__footer">
       <a href="{{ git_info.url }}/commits" target="_blank" rel="noopener" class="git-accordion-link">
-        View all commits ↗
+        View all commits
       </a>
     </div>
     {% endif %}

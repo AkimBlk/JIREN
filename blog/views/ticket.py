@@ -9,6 +9,7 @@ from .ticket_crud import (
     TicketDetailView,
     TicketUpdateView,
     delete_ticket_attachment,
+    link_commit_to_ticket,
 )
 from .ticket_list import AllTicketsListView, TicketListView
 
@@ -21,6 +22,7 @@ __all__ = [
     "TicketListView",
     "TicketUpdateView",
     "delete_ticket_attachment",
+    "link_commit_to_ticket",
     "update_ticket_remaining_load",
     "update_ticket_status",
 ]

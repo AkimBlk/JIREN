@@ -25,7 +25,7 @@
       </h4>
     </div>
 
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" data-origin-sha="{{ origin_sha|default:'' }}">
       {% csrf_token %}
 
       {% if form.errors %}
@@ -84,26 +84,6 @@
 
           {{ form.description|as_crispy_field }}
 
-          {# ── Recent commits panel — visible only on create when project has a git repo ── #}
-          {% if not object and recent_commits %}
-          <div class="tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-overflow-hidden tw-mt-2 tw-mb-2">
-            <div class="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-2 tw-bg-[var(--helb-surface-container-low)] tw-border-b tw-border-[var(--helb-outline-variant)]">
-              <span class="material-symbols-outlined tw-text-base tw-text-[var(--helb-on-surface-variant)]">commit</span>
-              <span class="tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wider tw-text-[var(--helb-on-surface-variant)]">Recent commits — click to pre-fill title</span>
-            </div>
-            <ul class="tw-list-none tw-m-0 tw-p-0 tw-divide-y tw-divide-[var(--helb-outline-variant)] tw-max-h-64 tw-overflow-y-auto" id="recentCommitsList">
-              {% for commit in recent_commits %}
-              <li class="commit-row tw-flex tw-items-start tw-gap-3 tw-px-4 tw-py-2.5 tw-cursor-pointer
-                          hover:tw-bg-[var(--helb-surface-container)] tw-transition-colors tw-duration-100"
-                  data-message="{{ commit.message|truncatechars:120 }}"
-                  title="{{ commit.message }}">
-                <code class="tw-text-xs tw-font-mono tw-text-[var(--helb-secondary)] tw-shrink-0 tw-mt-0.5 tw-select-none">{{ commit.hash }}</code>
-                <span class="tw-text-xs tw-text-[var(--helb-on-surface-variant)] tw-line-clamp-2">{{ commit.message|truncatechars:120 }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
         </div>
 
         {# RIGHT COLUMN — Fields (2/5) #}
@@ -119,6 +99,9 @@
           {% endif %}
           {{ form.priority|as_crispy_field }}
           {{ form.story_points|as_crispy_field }}
+          <div id="origin-commit-block" hidden>
+            {{ form.origin_commit_sha|as_crispy_field }}
+          </div>
         </div>
       </div>
 
@@ -201,7 +184,7 @@
     outline: none; line-height: 1.6; color: var(--helb-on-surface);
   }
   .rich-editor-surface:empty:before {
-    content: attr(data-placeholder); color: var(--helb-outline);
+    content: attr(data-placeholder); color: var(--helb-outline); white-space: pre-line;
   }
   .rich-editor-surface img {
     display: block; max-width: 100%; height: auto;
@@ -280,6 +263,7 @@
   };
 
   document.addEventListener("DOMContentLoaded", function () {
+    const IS_CREATE_FORM = {% if object %}false{% else %}true{% endif %};
 
     /* ── Issue type pills ── */
     (function setupIssueTypePills() {
@@ -495,10 +479,10 @@
       }
 
       const IS_CREATE = {% if object %}false{% else %}true{% endif %};
-      const DEFAULT_DESCRIPTION = `<p>En tant qu'utilisateur,<br>je veux<br>afin de</p><p>Description développeur</p><p><br></p><p>Règles métier</p><p><br></p><p>Done quand</p>`;
+      const CREATE_PLACEHOLDER = `As a user,\nI want\nso that\n\nDeveloper description\n\n\n\nBusiness rules\n\n\n\nDone when`;
+      editor.setAttribute("data-placeholder", IS_CREATE ? CREATE_PLACEHOLDER : "Description");
 
-      editor.innerHTML = textarea.value || (IS_CREATE ? DEFAULT_DESCRIPTION : "");
-      if (IS_CREATE && !textarea.value) { textarea.value = editor.innerHTML; }
+      editor.innerHTML = textarea.value || "";
       textarea.classList.add("rich-editor-source--enhanced");
       textarea.setAttribute("aria-hidden", "true");
       textarea.insertAdjacentElement("afterend", shell);
@@ -875,8 +859,19 @@
     const storyPointsInput = document.getElementById("id_story_points");
     const initialLoadInput = document.getElementById("id_initial_load");
     const remainingLoadInput = document.getElementById("id_remaining_load");
+    const originCommitBlock = document.getElementById("origin-commit-block");
+    const originCommitInput = document.getElementById("id_origin_commit_sha");
     const colorInput = document.getElementById("id_color");
     const colorWrapper = document.getElementById("div_id_color_wrapper");
+    const ticketForm = document.querySelector('form[data-origin-sha]');
+
+    [storyPointsInput, initialLoadInput, remainingLoadInput].forEach(function (input) {
+      if (!input) return;
+      input.placeholder = "0";
+      if (IS_CREATE_FORM && String(input.value).trim() === "0") {
+        input.value = "";
+      }
+    });
 
     setupRichTextEditor();
 
@@ -928,6 +923,16 @@
       if (storyPointsWrapper) {
         storyPointsWrapper.style.display = supportsStoryPoints ? "" : "none";
       }
+      if (IS_CREATE_FORM && supportsStoryPoints && storyPointsInput && String(storyPointsInput.value).trim() === "0") {
+        storyPointsInput.value = "";
+      }
+
+      if (originCommitBlock) {
+        originCommitBlock.hidden = type !== "BUG";
+      }
+      if (originCommitInput && type !== "BUG") {
+        originCommitInput.value = "";
+      }
 
       if (initialLoadWrapper) {
         initialLoadWrapper.style.display = supportsLoad ? "" : "none";
@@ -935,6 +940,14 @@
 
       if (remainingLoadWrapper) {
         remainingLoadWrapper.style.display = supportsLoad ? "" : "none";
+      }
+      if (IS_CREATE_FORM && supportsLoad) {
+        if (initialLoadInput && String(initialLoadInput.value).trim() === "0") {
+          initialLoadInput.value = "";
+        }
+        if (remainingLoadInput && String(remainingLoadInput.value).trim() === "0") {
+          remainingLoadInput.value = "";
+        }
       }
 
       if (colorInput) {
@@ -1015,26 +1028,11 @@
       });
       syncIssueTypeRestrictions();
     }
-  });
-</script>
 
-{% if not object and recent_commits %}
-<script>
-(function () {
-  var titleInput = document.getElementById('id_title');
-  var rows = document.querySelectorAll('#recentCommitsList .commit-row');
-  rows.forEach(function (row) {
-    row.addEventListener('click', function () {
-      if (!titleInput) return;
-      var msg = (row.dataset.message || '').split('\n')[0].trim();
-      titleInput.value = msg;
-      titleInput.focus();
-      rows.forEach(function (r) { r.style.background = ''; });
-      row.style.background = 'var(--helb-secondary-container)';
-    });
+    if (ticketForm && originCommitInput && !originCommitInput.value) {
+      originCommitInput.value = ticketForm.dataset.originSha || "";
+    }
   });
-})();
 </script>
-{% endif %}
 
 {% endblock content %}

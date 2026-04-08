@@ -124,10 +124,21 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const capacityModeSelect = document.getElementById("id_capacity_mode");
     const capacityFieldWrapper = document.getElementById("div_id_capacity");
     const perUserBlock = document.getElementById("perUserCapacityBlock");
-    if (perUserBlock) perUserBlock.style.display = "none";
-    if (capacityFieldWrapper) capacityFieldWrapper.style.display = "";
+
+    function syncCapacityMode() {
+      const isPerUser = capacityModeSelect && capacityModeSelect.value === "PER_USER";
+      if (perUserBlock) perUserBlock.style.display = isPerUser ? "" : "none";
+      if (capacityFieldWrapper) capacityFieldWrapper.style.display = isPerUser ? "none" : "";
+    }
+
+    if (capacityModeSelect) {
+      capacityModeSelect.addEventListener("change", syncCapacityMode);
+    }
+    syncCapacityMode();
   });
 </script>
+{% include "blog/includes/rich_text_editor_assets.html" %}
 {% endblock content %}

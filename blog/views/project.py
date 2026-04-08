@@ -106,6 +106,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
             .prefetch_related("tags")
             .order_by("backlog_order", "id")
         )
+        ctx["commit_link_tickets"] = project_tickets.only("id", "title").order_by("backlog_order", "id")
         ctx["available_tags"] = available_tags
         ctx["selected_tag"] = selected_tag
         ctx["user_is_admin"] = is_admin(self.request.user)

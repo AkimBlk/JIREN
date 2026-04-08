@@ -95,3 +95,61 @@
   text-align: center;
   margin-top: var(--git-spacing-md);
 }
+
+.git-accordion-activity__linker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--git-spacing-sm);
+  margin-top: var(--git-spacing-sm);
+}
+
+.commit-link-ticket-select {
+  min-width: 220px;
+  flex: 1;
+}
+
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary {
+  background-color: var(--helb-surface-container-high) !important;
+  color: var(--helb-primary-container) !important;
+  border: 1px solid var(--helb-primary-container) !important;
+  white-space: nowrap;
+}
+
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:hover,
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:focus {
+  background-color: var(--helb-primary-container) !important;
+  color: var(--helb-surface-container-lowest) !important;
+  border-color: var(--helb-primary-container) !important;
+}
+
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary {
+  background-color: var(--helb-surface-container-high) !important;
+  color: #ffffff !important;
+  border-color: var(--helb-outline) !important;
+}
+
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:hover,
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:focus {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #ffffff !important;
+}
+
+.commit-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.commit-linked-badge--success {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.commit-linked-badge--error {
+  color: #842029;
+  background: #f8d7da;
+}
