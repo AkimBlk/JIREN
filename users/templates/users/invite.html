@@ -1,5 +1,6 @@
 {% extends "blog/base.html" %}
 {% load crispy_forms_tags %}
+
 {% block content %}
 <section class="atelier-page-header">
     <div>
@@ -44,6 +45,7 @@
             <span class="material-symbols-outlined">mail</span>
             Create invitation
         </h3>
+
         <form method="POST" class="atelier-form-stack">
             {% csrf_token %}
             {{ form|crispy }}
@@ -62,15 +64,16 @@
             </h3>
             <span class="atelier-panel__caption">Pending links stay available until used.</span>
         </div>
+
         <div class="table-responsive">
-            <table class="table atelier-table atelier-table--roles mb-0">
+            <table class="table atelier-table atelier-table--roles mb-0" style="table-layout: fixed; width: 100%;">
                 <thead>
                     <tr>
                         <th>Email</th>
                         <th>Username</th>
                         <th>Project</th>
                         <th>Status</th>
-                        <th>Invite Link</th>
+                        <th style="width: 48%;">Invite Link</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,8 +85,10 @@
                                 <small>{{ inv.get_role_assigned_display }}</small>
                             </div>
                         </td>
+
                         <td class="atelier-mono-cell">{{ inv.username }}</td>
                         <td>{{ inv.project.name|default:"Site-wide access" }}</td>
+
                         <td>
                             {% if inv.used %}
                                 <span class="atelier-status-pill atelier-status-pill--done">Used</span>
@@ -91,9 +96,53 @@
                                 <span class="atelier-status-pill atelier-status-pill--planned">Pending</span>
                             {% endif %}
                         </td>
-                        <td>
+
+                        <td style="max-width: 0;">
                             {% if not inv.used %}
-                                <code class="atelier-inline-code">{{ request.scheme }}://{{ request.get_host }}{% url 'register' %}?token={{ inv.token }}</code>
+                                <div style="display:flex; align-items:center; gap:8px; width:100%; min-width:0;">
+                                    <input
+                                        id="invite-link-{{ inv.id }}"
+                                        type="text"
+                                        readonly
+                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'register' %}?token={{ inv.token }}"
+                                        style="
+                                            flex:1;
+                                            min-width:0;
+                                            width:100%;
+                                            background:#10233f;
+                                            border:none;
+                                            border-radius:999px;
+                                            padding:10px 14px;
+                                            color:#cfd8e3;
+                                            font-family:monospace;
+                                            font-size:13px;
+                                            overflow:hidden;
+                                            text-overflow:ellipsis;
+                                            white-space:nowrap;
+                                        "
+                                    >
+
+                                    <button
+                                        type="button"
+                                        onclick="copyInviteLink('invite-link-{{ inv.id }}', this)"
+                                        title="Copy invitation link"
+                                        style="
+                                            flex:0 0 auto;
+                                            width:38px;
+                                            height:38px;
+                                            border-radius:12px;
+                                            border:1px solid rgba(255,255,255,0.18);
+                                            background:transparent;
+                                            color:#dbe4ef;
+                                            display:inline-flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            cursor:pointer;
+                                        "
+                                    >
+                                        <span class="material-symbols-outlined" style="font-size:18px; line-height:1;">content_copy</span>
+                                    </button>
+                                </div>
                             {% else %}
                                 <span class="atelier-badge atelier-badge--muted">Unavailable</span>
                             {% endif %}
@@ -115,4 +164,33 @@
         </div>
     </section>
 </div>
+
+<script>
+async function copyInviteLink(id, button) {
+    const input = document.getElementById(id);
+    const text = input.value;
+
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (err) {
+        input.select();
+        input.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+    }
+
+    const originalBg = button.style.background;
+    const originalBorder = button.style.borderColor;
+    const originalTitle = button.title;
+
+    button.style.background = "rgba(76, 175, 80, 0.18)";
+    button.style.borderColor = "rgba(76, 175, 80, 0.45)";
+    button.title = "Copied!";
+
+    setTimeout(() => {
+        button.style.background = originalBg;
+        button.style.borderColor = originalBorder;
+        button.title = originalTitle;
+    }, 1200);
+}
+</script>
 {% endblock %}
