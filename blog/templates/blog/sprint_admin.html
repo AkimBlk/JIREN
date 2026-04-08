@@ -46,10 +46,6 @@
                 <p class="stitch-muted-note mb-0">{{ sprint.objective|default:"No sprint objective set yet." }}</p>
               </div>
               <div>
-                <span class="stitch-info-bar__label">Template</span>
-                <strong>{{ sprint.get_ticket_template_display }}</strong>
-              </div>
-              <div>
                 <span class="stitch-info-bar__label">Capacity</span>
                 <strong>
                   {% if sprint.capacity_mode == 'GLOBAL' %}
@@ -128,21 +124,10 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const modeField = document.getElementById("id_capacity_mode");
     const capacityFieldWrapper = document.getElementById("div_id_capacity");
     const perUserBlock = document.getElementById("perUserCapacityBlock");
-
-    function toggleCapacityMode() {
-      if (!modeField) return;
-      const isPerUser = modeField.value === "PER_USER";
-      if (capacityFieldWrapper) capacityFieldWrapper.style.display = isPerUser ? "none" : "";
-      if (perUserBlock) perUserBlock.style.display = isPerUser ? "" : "none";
-    }
-
-    if (modeField) {
-      modeField.addEventListener("change", toggleCapacityMode);
-      toggleCapacityMode();
-    }
+    if (perUserBlock) perUserBlock.style.display = "none";
+    if (capacityFieldWrapper) capacityFieldWrapper.style.display = "";
   });
 </script>
 {% endblock content %}

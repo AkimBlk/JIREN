@@ -1,10 +1,14 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, UpdateView
 
 from ..forms import SprintAdminForm, SprintStatusForm
@@ -273,3 +277,54 @@ def _find_swap_target(backlog_items, current_index, direction):
     if direction == "down" and current_index < len(backlog_items) - 1:
         return backlog_items[current_index + 1]
     return None
+
+
+@login_required
+@require_POST
+def reorder_backlog(request, project_pk):
+    from ..models import Ticket
+
+    project = get_object_or_404(visible_projects(request.user), pk=project_pk)
+    if not can_manage_sprints(request.user, project):
+        return JsonResponse({"error": "Access denied."}, status=403)
+
+    try:
+        ordered_ids = json.loads(request.body).get("order", [])
+        ordered_ids = [int(pk) for pk in ordered_ids]
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid payload."}, status=400)
+
+    backlog_pks = set(project_backlog_queryset(project).values_list("pk", flat=True))
+    if not all(pk in backlog_pks for pk in ordered_ids):
+        return JsonResponse({"error": "Invalid ticket IDs."}, status=400)
+
+    with transaction.atomic():
+        for position, pk in enumerate(ordered_ids):
+            Ticket.objects.filter(pk=pk).update(backlog_order=position)
+
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def reorder_sprint_tickets(request, sprint_pk):
+    from ..models import Sprint, Ticket
+
+    sprint = get_object_or_404(Sprint, pk=sprint_pk)
+    if not can_manage_sprints(request.user, sprint.project):
+        return JsonResponse({"error": "Access denied."}, status=403)
+
+    try:
+        ordered_ids = [int(pk) for pk in json.loads(request.body).get("order", [])]
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid payload."}, status=400)
+
+    sprint_pks = set(Ticket.objects.filter(sprint=sprint).values_list("pk", flat=True))
+    if not all(pk in sprint_pks for pk in ordered_ids):
+        return JsonResponse({"error": "Invalid ticket IDs."}, status=400)
+
+    with transaction.atomic():
+        for position, pk in enumerate(ordered_ids):
+            Ticket.objects.filter(pk=pk).update(backlog_order=position)
+
+    return JsonResponse({"ok": True})

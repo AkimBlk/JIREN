@@ -52,21 +52,8 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const modeField = document.getElementById("id_capacity_mode");
-    const capacityFieldWrapper = document.getElementById("div_id_capacity");
     const perUserBlock = document.getElementById("perUserCapacityBlock");
-
-    function toggleCapacityMode() {
-      if (!modeField) return;
-      const isPerUser = modeField.value === "PER_USER";
-      if (capacityFieldWrapper) capacityFieldWrapper.style.display = isPerUser ? "none" : "";
-      if (perUserBlock) perUserBlock.style.display = isPerUser ? "" : "none";
-    }
-
-    if (modeField) {
-      modeField.addEventListener("change", toggleCapacityMode);
-      toggleCapacityMode();
-    }
+    if (perUserBlock) perUserBlock.style.display = "none";
   });
 </script>
 {% endblock content %}

@@ -150,12 +150,11 @@
 
       {# ── Submit Button ────────────────────────────────────────── #}
       <div class="tw-px-6 tw-py-4 tw-flex tw-gap-3">
-        <button type="submit" class="tw-px-6 tw-py-2 tw-bg-[var(--helb-primary)] tw-text-[var(--helb-on-primary)] tw-rounded tw-font-semibold tw-transition-all hover:tw-shadow-lg">
+        <button type="submit" class="btn btn-primary">
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">{% if object %}save{% else %}add_circle{% endif %}</span>
           {% if object %}Update{% else %}Create{% endif %}
         </button>
-        <a href="{% url 'kanban' %}" class="tw-px-6 tw-py-2 tw-border tw-border-[var(--helb-outline-variant)] tw-text-[var(--helb-on-surface)] tw-rounded tw-font-semibold tw-transition-all hover:tw-bg-[var(--helb-surface-container)]">
-          Cancel
-        </a>
+        <a href="{% url 'kanban' %}" class="btn btn-outline-secondary">Cancel</a>
       </div>
     </form>
   </div>
@@ -495,7 +494,11 @@
       } catch (error) {
       }
 
-      editor.innerHTML = textarea.value || "";
+      const IS_CREATE = {% if object %}false{% else %}true{% endif %};
+      const DEFAULT_DESCRIPTION = `<p>En tant qu'utilisateur,<br>je veux<br>afin de</p><p>Description développeur</p><p><br></p><p>Règles métier</p><p><br></p><p>Done quand</p>`;
+
+      editor.innerHTML = textarea.value || (IS_CREATE ? DEFAULT_DESCRIPTION : "");
+      if (IS_CREATE && !textarea.value) { textarea.value = editor.innerHTML; }
       textarea.classList.add("rich-editor-source--enhanced");
       textarea.setAttribute("aria-hidden", "true");
       textarea.insertAdjacentElement("afterend", shell);
