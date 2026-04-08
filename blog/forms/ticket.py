@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from ..models import Tag, Ticket, TicketLink
 from ..models.tag import normalize_tag_name
+from ..rich_text import sanitize_rich_text
 
 
 # Description templates by issue type
@@ -167,7 +168,7 @@ class TicketForm(forms.ModelForm):
         ]
 
     def clean_description(self):
-        return str(self.cleaned_data.get("description", "") or "").strip()
+        return sanitize_rich_text(self.cleaned_data.get("description", ""))
 
     def clean_tags_input(self):
         raw_value = self.cleaned_data.get("tags_input", "")

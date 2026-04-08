@@ -304,6 +304,17 @@
     })();
     function setupRichTextEditor() {
       const textarea = document.getElementById("id_description");
+      const CREATE_TEMPLATE_HTML = `
+        <p>As a user,</p>
+        <p>I want</p>
+        <p>so that</p>
+        <p><br></p>
+        <p>Developer description</p>
+        <p><br></p>
+        <p>Business rules</p>
+        <p><br></p>
+        <p>Done when</p>
+      `;
 
       if (!textarea) {
         return;
@@ -478,11 +489,13 @@
       } catch (error) {
       }
 
-      const IS_CREATE = {% if object %}false{% else %}true{% endif %};
-      const CREATE_PLACEHOLDER = `As a user,\nI want\nso that\n\nDeveloper description\n\n\n\nBusiness rules\n\n\n\nDone when`;
-      editor.setAttribute("data-placeholder", IS_CREATE ? CREATE_PLACEHOLDER : "Description");
+      editor.setAttribute("data-placeholder", "Description");
 
-      editor.innerHTML = textarea.value || "";
+      if (IS_CREATE_FORM && !String(textarea.value || "").trim()) {
+        editor.innerHTML = CREATE_TEMPLATE_HTML;
+      } else {
+        editor.innerHTML = textarea.value || "";
+      }
       textarea.classList.add("rich-editor-source--enhanced");
       textarea.setAttribute("aria-hidden", "true");
       textarea.insertAdjacentElement("afterend", shell);
@@ -872,6 +885,8 @@
         input.value = "";
       }
     });
+
+    setupRichTextEditor();
 
     function getSelectedIssueType() {
       const selectedInput = document.querySelector('input[name="issue_type"]:checked');
