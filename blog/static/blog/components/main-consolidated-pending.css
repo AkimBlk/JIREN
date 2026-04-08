@@ -2523,6 +2523,11 @@ html[data-theme="dark"] {
   --helb-shadow-md: 0px 20px 40px rgba(2, 14, 33, 0.40);
   --helb-shadow-lg: 0px 20px 40px rgba(2, 14, 33, 0.50);
 }
+html[data-theme="dark"] .stitch-backlog-item,
+html[data-theme="dark"] .stitch-sprint-ticket {
+  border-color: rgba(144, 160, 183, 0.28);
+}
+
 
 body,
 .dropdown-menu,
@@ -4370,8 +4375,10 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.15rem;
   border-radius: 1.35rem;
   background: var(--helb-surface-container-lowest);
+  border: 1px solid var(--helb-outline-variant);
   box-shadow: var(--helb-shadow-sm);
   align-items: flex-start;
+  transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
 }
 
 .stitch-sprint-ticket__title,
@@ -4390,7 +4397,9 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   padding: 1rem 1.1rem;
   border-radius: 1.55rem;
   background: color-mix(in srgb, var(--helb-surface-container-lowest) 90%, transparent);
+  border: 1px solid var(--helb-outline-variant);
   box-shadow: var(--helb-shadow-sm);
+  transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
 }
 
 .stitch-backlog-item__rank {
@@ -4416,6 +4425,37 @@ html[data-theme="dark"] .stitch-sprint-panel__header h3 {
   align-items: center;
   gap: 0.6rem;
 }
+
+.stitch-dnd--dragging {
+  opacity: 0.45;
+  cursor: grabbing !important;
+  transform: rotate(1deg) scale(1.02);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.28) !important;
+  border-color: var(--helb-primary) !important;
+}
+
+.stitch-dnd--selected {
+  transform: scale(1.015);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18), 0 0 0 2px var(--helb-primary);
+  border-color: var(--helb-primary) !important;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.stitch-dnd--drop-above { border-top: 2.5px solid var(--helb-primary) !important; }
+.stitch-dnd--drop-below { border-bottom: 2.5px solid var(--helb-primary) !important; }
+
+.stitch-drag-handle {
+  cursor: grab;
+  font-size: 1.4rem;
+  padding: 0.2rem;
+  color: var(--helb-outline);
+  user-select: none;
+  transition: color 0.12s;
+}
+.stitch-drag-handle:hover { color: var(--helb-primary); }
+
+.stitch-backlog-item--draggable,
+.stitch-sprint-ticket--draggable { cursor: default; }
 
 .stitch-archive-callout {
   padding: 1.4rem 1.6rem;

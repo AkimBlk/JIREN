@@ -303,3 +303,28 @@ def reorder_backlog(request, project_pk):
             Ticket.objects.filter(pk=pk).update(backlog_order=position)
 
     return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def reorder_sprint_tickets(request, sprint_pk):
+    from ..models import Sprint, Ticket
+
+    sprint = get_object_or_404(Sprint, pk=sprint_pk)
+    if not can_manage_sprints(request.user, sprint.project):
+        return JsonResponse({"error": "Access denied."}, status=403)
+
+    try:
+        ordered_ids = [int(pk) for pk in json.loads(request.body).get("order", [])]
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Invalid payload."}, status=400)
+
+    sprint_pks = set(Ticket.objects.filter(sprint=sprint).values_list("pk", flat=True))
+    if not all(pk in sprint_pks for pk in ordered_ids):
+        return JsonResponse({"error": "Invalid ticket IDs."}, status=400)
+
+    with transaction.atomic():
+        for position, pk in enumerate(ordered_ids):
+            Ticket.objects.filter(pk=pk).update(backlog_order=position)
+
+    return JsonResponse({"ok": True})

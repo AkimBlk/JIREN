@@ -59,7 +59,7 @@
             <span class="stitch-epic-card__accent"></span>
           </div>
           <a href="{% url 'ticket-detail' epic.pk %}" class="stitch-epic-card__title">{{ epic.title }}</a>
-          <p class="stitch-epic-card__copy">{{ epic.description|default:"No description yet."|truncatechars:130 }}</p>
+          <p class="stitch-epic-card__copy">{{ epic.description|striptags|default:"No description yet."|truncatechars:130 }}</p>
           <div class="stitch-epic-card__footer">
             <span>{{ epic.story_count }} linked tickets</span>
             {% include "blog/includes/tag_chips.html" with ticket=epic %}
@@ -105,9 +105,12 @@
         </div>
       </div>
 
-      <div class="stitch-sprint-ticket-list">
+      <div class="stitch-sprint-ticket-list" id="sprint-sortable"
+           {% if user_can_manage_sprints %}data-reorder-url="{% url 'sprint-tickets-reorder' active_sprint_overview.sprint.pk %}"{% endif %}>
         {% for ticket in active_sprint_overview.tickets %}
-          <article class="stitch-sprint-ticket">
+          <article class="stitch-sprint-ticket{% if user_can_manage_sprints %} stitch-sprint-ticket--draggable{% endif %}"
+                   draggable="{% if user_can_manage_sprints %}true{% else %}false{% endif %}"
+                   data-ticket-id="{{ ticket.pk }}">
             <div>
               <div class="stitch-chip-row stitch-chip-row--compact">
                 {% if ticket.issue_type == 'EPIC' %}
@@ -125,18 +128,7 @@
             </div>
             <div class="stitch-sprint-ticket__meta">
               {% if user_can_manage_sprints %}
-                <form method="post" action="{% url 'move-backlog-ticket' ticket.pk 'up' %}" class="helb-inline-form">
-                  {% csrf_token %}
-                  <button class="stitch-icon-button" type="submit" aria-label="Move up">
-                    <span class="material-symbols-outlined">expand_less</span>
-                  </button>
-                </form>
-                <form method="post" action="{% url 'move-backlog-ticket' ticket.pk 'down' %}" class="helb-inline-form">
-                  {% csrf_token %}
-                  <button class="stitch-icon-button" type="submit" aria-label="Move down">
-                    <span class="material-symbols-outlined">expand_more</span>
-                  </button>
-                </form>
+                <span class="material-symbols-outlined stitch-drag-handle" aria-label="Drag to reorder">drag_indicator</span>
               {% endif %}
               <span>{{ ticket.get_priority_display }}</span>
               {% if ticket.assignee %}
@@ -221,62 +213,92 @@ document.querySelectorAll('.stitch-progress__value[data-progress]').forEach(func
 });
 
 (function () {
-  const list = document.getElementById('backlog-sortable');
-  if (!list || !list.dataset.reorderUrl) return;
-
+  const DRAG_CLASS     = 'stitch-dnd--dragging';
+  const ABOVE_CLASS    = 'stitch-dnd--drop-above';
+  const BELOW_CLASS    = 'stitch-dnd--drop-below';
+  const SELECTED_CLASS = 'stitch-dnd--selected';
+  const ITEM_SEL       = '[data-ticket-id]';
   const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-  let draggedItem = null;
 
-  function orderedIds() {
-    return Array.from(list.querySelectorAll('.stitch-backlog-item[data-ticket-id]'))
+  function clearIndicators(list) {
+    list.querySelectorAll('.' + ABOVE_CLASS + ', .' + BELOW_CLASS)
+        .forEach(el => el.classList.remove(ABOVE_CLASS, BELOW_CLASS));
+  }
+
+  function orderedIds(list) {
+    return Array.from(list.querySelectorAll(ITEM_SEL))
       .map(el => parseInt(el.dataset.ticketId, 10));
   }
 
-  function persistOrder() {
-    fetch(list.dataset.reorderUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-      body: JSON.stringify({ order: orderedIds() }),
-    }).then(r => r.json()).then(d => {
-      if (!d.ok) console.error('Backlog reorder failed', d);
-    }).catch(err => console.error('Backlog reorder error', err));
+  async function persistOrder(list) {
+    try {
+      const res = await fetch(list.dataset.reorderUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        body: JSON.stringify({ order: orderedIds(list) }),
+      });
+      const data = await res.json();
+      if (!data.ok) console.error('Reorder failed', data);
+    } catch (err) { console.error('Reorder error', err); }
   }
 
-  function refreshRanks() {
+  function refreshRanks(list) {
     list.querySelectorAll('.stitch-backlog-item__rank').forEach((el, i) => {
       el.textContent = String(i + 1).padStart(2, '0');
     });
   }
 
-  list.addEventListener('dragstart', function (e) {
-    draggedItem = e.target.closest('.stitch-backlog-item[data-ticket-id]');
-    if (!draggedItem) return;
-    draggedItem.classList.add('stitch-backlog-item--dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
+  function initDnDList(list) {
+    if (!list || !list.dataset.reorderUrl) return;
+    let draggedItem = null, dropTarget = null, dropBefore = true;
 
-  list.addEventListener('dragend', function () {
-    if (draggedItem) draggedItem.classList.remove('stitch-backlog-item--dragging');
-    list.querySelectorAll('.stitch-backlog-item').forEach(el => el.classList.remove('stitch-backlog-item--dragover'));
-    draggedItem = null;
-  });
+    list.addEventListener('mousedown', e => {
+      const item = e.target.closest(ITEM_SEL);
+      if (item) item.classList.add(SELECTED_CLASS);
+    });
 
-  list.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    const target = e.target.closest('.stitch-backlog-item[data-ticket-id]');
-    if (!target || target === draggedItem) return;
-    list.querySelectorAll('.stitch-backlog-item').forEach(el => el.classList.remove('stitch-backlog-item--dragover'));
-    target.classList.add('stitch-backlog-item--dragover');
-    const rect = target.getBoundingClientRect();
-    const insertBefore = e.clientY < rect.top + rect.height / 2;
-    list.insertBefore(draggedItem, insertBefore ? target : target.nextSibling);
-    refreshRanks();
-  });
+    list.addEventListener('mouseup', () => {
+      list.querySelectorAll('.' + SELECTED_CLASS)
+          .forEach(el => el.classList.remove(SELECTED_CLASS));
+    });
 
-  list.addEventListener('drop', function (e) {
-    e.preventDefault();
-    persistOrder();
-  });
+    list.addEventListener('dragstart', e => {
+      draggedItem = e.target.closest(ITEM_SEL);
+      if (!draggedItem) return;
+      draggedItem.classList.remove(SELECTED_CLASS);
+      draggedItem.classList.add(DRAG_CLASS);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    list.addEventListener('dragend', () => {
+      draggedItem?.classList.remove(DRAG_CLASS);
+      clearIndicators(list);
+      draggedItem = dropTarget = null;
+    });
+
+    list.addEventListener('dragover', e => {
+      e.preventDefault();
+      const target = e.target.closest(ITEM_SEL);
+      if (!target || target === draggedItem) return;
+      const { top, height } = target.getBoundingClientRect();
+      dropBefore = e.clientY < top + height / 2;
+      dropTarget = target;
+      clearIndicators(list);
+      target.classList.add(dropBefore ? ABOVE_CLASS : BELOW_CLASS);
+    });
+
+    list.addEventListener('drop', e => {
+      e.preventDefault();
+      clearIndicators(list);
+      if (!draggedItem || !dropTarget) return;
+      list.insertBefore(draggedItem, dropBefore ? dropTarget : dropTarget.nextSibling);
+      refreshRanks(list);
+      persistOrder(list);
+    });
+  }
+
+  initDnDList(document.getElementById('sprint-sortable'));
+  initDnDList(document.getElementById('backlog-sortable'));
 })();
 </script>
 {% endblock content %}
