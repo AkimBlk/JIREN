@@ -248,7 +248,11 @@
         <div class="stitch-ticket-meta-row stitch-ticket-meta-row--stacked">
           <span>Linked Commit</span>
           <div class="stitch-chip-row stitch-chip-row--compact">
-            <span class="atelier-empty-chip">{{ object.linked_commit_sha|slice:":8" }}</span>
+            {% if object.linked_commit_url %}
+              <a href="{{ object.linked_commit_url }}" target="_blank" rel="noopener" class="atelier-empty-chip">{{ object.linked_commit_sha|slice:":8" }}</a>
+            {% else %}
+              <span class="atelier-empty-chip">{{ object.linked_commit_sha|slice:":8" }}</span>
+            {% endif %}
             {% if object.linked_commit_message %}<small>{{ object.linked_commit_message }}</small>{% endif %}
           </div>
         </div>

@@ -3,7 +3,6 @@ import re
 from django import forms
 from django.db.models import Q
 
-from .project import RichTextTextarea
 from ..models import Tag, Ticket, TicketLink
 from ..models.tag import normalize_tag_name
 from ..rich_text import sanitize_rich_text
@@ -125,9 +124,8 @@ class TicketForm(forms.ModelForm):
         ]
         widgets = {
             "issue_type": forms.RadioSelect(),
-            "description": RichTextTextarea(attrs={
+            "description": forms.Textarea(attrs={
                 "rows": 10,
-                "data-rich-text-source": "true",
                 "class": "tw-w-full tw-px-3 tw-py-2 tw-border tw-border-[var(--helb-outline-variant)] tw-rounded tw-bg-[var(--helb-surface-container-low)] tw-text-[var(--helb-on-surface)] tw-text-sm focus:tw-outline-none focus:tw-border-[var(--helb-primary)] focus:tw-ring-1 focus:tw-ring-[var(--helb-primary)]",
             }),
         }

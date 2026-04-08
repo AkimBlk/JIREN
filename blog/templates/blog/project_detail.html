@@ -415,6 +415,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const payload = {
                 sha: button.dataset.commitSha || "",
                 message: button.dataset.commitMessage || "",
+                url: button.dataset.commitUrl || "",
             };
 
             try {

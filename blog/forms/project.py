@@ -27,9 +27,8 @@ class ProjectForm(forms.ModelForm):
             "start_date", "end_date", "members",
         ]
         widgets = {
-            "description": RichTextTextarea(attrs={
+            "description": forms.Textarea(attrs={
                 "rows": 8,
-                "data-rich-text-source": "true",
                 "class": "form-control",
             }),
             "start_date": forms.DateInput(attrs={"type": "date"}),
@@ -54,8 +53,7 @@ class ProjectForm(forms.ModelForm):
         return cleaned_data
 
     def clean_description(self):
-        from ..rich_text import sanitize_rich_text
-        return sanitize_rich_text(self.cleaned_data.get("description", ""))
+        return str(self.cleaned_data.get("description", "") or "").strip()
 
     def save(self, commit=True):
         project = super().save(commit=False)

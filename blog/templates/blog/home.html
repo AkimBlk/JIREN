@@ -3,11 +3,21 @@
 {% block content %}
 <section class="atelier-page-header">
     <div>
-        <h1 class="atelier-page-header__title">Active Sprint</h1>
-        <p class="atelier-page-header__subtitle">Track the live delivery flow across the active sprint board.</p>
-    </div>
-
-    {% if projects %}
+        <h1 class="atelier-page-header__title">
+            {% if active_sprint and selected_project %}
+                {{ active_sprint.name }} - {{ selected_project.name }}
+            {% else %}
+                Active Sprint
+            {% endif %}
+        </h1>
+        <p class="atelier-page-header__subtitle">
+            {% if active_sprint %}
+                {{ active_sprint.start_date|date:"d/m/Y" }} -> {{ active_sprint.end_date|date:"d/m/Y" }}
+            {% else %}
+                Track the live delivery flow across the active sprint board.
+            {% endif %}
+        </p>
+        {% if projects %}
         <form method="get" class="stitch-toolbar-form">
             <select name="project" id="project" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
                 {% for project in projects %}
@@ -34,7 +44,8 @@
             {% endif %}
             <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
         </form>
-    {% endif %}
+        {% endif %}
+    </div>
 </section>
 
 {% if not selected_project %}
@@ -52,25 +63,6 @@
         <a href="{% url 'project-backlog' selected_project.pk %}" class="btn btn-outline-primary">Open backlog</a>
     </section>
 {% else %}
-    <section class="stitch-info-bar">
-        <div>
-            <span class="stitch-info-bar__label">Project</span>
-            <strong class="stitch-info-bar__value">{{ selected_project.name }}</strong>
-        </div>
-        <div>
-            <span class="stitch-info-bar__label">Sprint</span>
-            <strong class="stitch-info-bar__value">{{ active_sprint.name }}</strong>
-        </div>
-        <div>
-            <span class="stitch-info-bar__label">Dates</span>
-            <strong class="stitch-info-bar__value">{{ active_sprint.start_date|date:"d M Y" }} — {{ active_sprint.end_date|date:"d M Y" }}</strong>
-        </div>
-        <div>
-            <span class="stitch-info-bar__label">Template</span>
-            <strong class="stitch-info-bar__value">{{ active_sprint.get_ticket_template_display }}</strong>
-        </div>
-    </section>
-
     {% if selected_tag %}
         <div class="atelier-inline-note mb-4">
             <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
@@ -90,13 +82,7 @@
             <div class="kanban-col" id="col-TODO" data-status="TODO">
                 {% for ticket in tickets %}
                     {% if ticket.status == 'TODO' and ticket.issue_type != 'EPIC' %}
-                        {% if active_sprint.ticket_template == 'ticket_card_alt' %}
-                            {% include "blog/ticket_card_alt.html" %}
-                        {% elif active_sprint.ticket_template == 'ticket_card_compact' %}
-                            {% include "blog/ticket_card_compact.html" %}
-                        {% else %}
-                            {% include "blog/ticket_card.html" %}
-                        {% endif %}
+                        {% include "blog/ticket_card.html" %}
                     {% endif %}
                 {% endfor %}
             </div>
@@ -113,13 +99,7 @@
             <div class="kanban-col kanban-col--progress" id="col-IN_PROGRESS" data-status="IN_PROGRESS">
                 {% for ticket in tickets %}
                     {% if ticket.status == 'IN_PROGRESS' and ticket.issue_type != 'EPIC' %}
-                        {% if active_sprint.ticket_template == 'ticket_card_alt' %}
-                            {% include "blog/ticket_card_alt.html" %}
-                        {% elif active_sprint.ticket_template == 'ticket_card_compact' %}
-                            {% include "blog/ticket_card_compact.html" %}
-                        {% else %}
-                            {% include "blog/ticket_card.html" %}
-                        {% endif %}
+                        {% include "blog/ticket_card.html" %}
                     {% endif %}
                 {% endfor %}
             </div>
@@ -136,13 +116,7 @@
             <div class="kanban-col" id="col-DONE" data-status="DONE">
                 {% for ticket in tickets %}
                     {% if ticket.status == 'DONE' and ticket.issue_type != 'EPIC' %}
-                        {% if active_sprint.ticket_template == 'ticket_card_alt' %}
-                            {% include "blog/ticket_card_alt.html" %}
-                        {% elif active_sprint.ticket_template == 'ticket_card_compact' %}
-                            {% include "blog/ticket_card_compact.html" %}
-                        {% else %}
-                            {% include "blog/ticket_card.html" %}
-                        {% endif %}
+                        {% include "blog/ticket_card.html" %}
                     {% endif %}
                 {% endfor %}
             </div>
@@ -242,3 +216,4 @@
 })();
 </script>
 {% endblock content %}
+
