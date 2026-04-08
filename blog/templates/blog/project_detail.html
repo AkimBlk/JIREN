@@ -206,8 +206,8 @@
                 {% if user_is_admin %}<span class="stitch-muted-note">Admin view</span>{% endif %}
             </div>
             <div class="stitch-member-list">
-                {% for membership in members|slice:":6" %}
-                    <div class="stitch-member-chip">
+                {% for membership in members %}
+                    <div class="stitch-member-chip{% if forloop.counter > 6 %} stitch-member-chip--hidden d-none{% endif %}">
                         <img src="{{ membership.user.profile.image.url }}" alt="{{ membership.user.username }}" class="atelier-user-inline__avatar">
                         <span>{{ membership.user.get_full_name|default:membership.user.username }}</span>
                     </div>
@@ -216,7 +216,15 @@
                 {% endfor %}
             </div>
             {% if members|length > 6 %}
-                <p class="stitch-muted-note mb-0">+{{ members|length|add:"-6" }} more collaborators</p>
+                <button type="button" class="stitch-muted-note mb-0 btn btn-link p-0 mt-1" id="show-all-members">
+                    +{{ members|length|add:"-6" }} more collaborators
+                </button>
+                <script>
+                  document.getElementById('show-all-members').addEventListener('click', function () {
+                    document.querySelectorAll('.stitch-member-chip--hidden').forEach(function (el) { el.classList.remove('d-none'); });
+                    this.remove();
+                  });
+                </script>
             {% endif %}
         </article>
 

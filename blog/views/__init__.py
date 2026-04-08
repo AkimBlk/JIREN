@@ -16,6 +16,7 @@ from .sprint import (
     SprintUpdateView,
     delete_sprint,
     move_backlog_ticket,
+    reorder_backlog,
     sprint_admin,
     sprint_close,
     sprint_start,

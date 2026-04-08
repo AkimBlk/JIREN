@@ -164,7 +164,6 @@ class SprintAssignmentTests(TestCase):
                 "start_date": "2026-05-01",
                 "end_date": "2026-05-14",
                 "capacity": 10,
-                "ticket_template": Sprint.TEMPLATE_CLASSIC,
             },
         )
         self.assertEqual(response.status_code, 302)

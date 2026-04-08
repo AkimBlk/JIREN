@@ -24,8 +24,7 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = [
             "code_prefix", "name", "description",
-            "start_date", "end_date", "workload_unit",
-            "sprint_duration_days", "capacity_mode", "global_capacity", "members",
+            "start_date", "end_date", "members",
         ]
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
@@ -53,12 +52,11 @@ class ProjectForm(forms.ModelForm):
 class SprintAdminForm(forms.ModelForm):
     class Meta:
         model = Sprint
-        fields = ["name", "start_date", "end_date", "objective", "capacity", "ticket_template"]
+        fields = ["name", "start_date", "end_date", "objective", "capacity"]
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
             "objective": forms.Textarea(attrs={"rows": 3}),
-            "ticket_template": forms.Select(attrs={"class": "form-control"}),
             "capacity": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
         }
 

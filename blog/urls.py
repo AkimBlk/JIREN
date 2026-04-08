@@ -24,6 +24,7 @@ from .views import (
     move_backlog_ticket,
     project_active_sprint,
     project_tags,
+    reorder_backlog,
     sprint_admin,
     sprint_close,
     sprint_start,
@@ -63,6 +64,11 @@ urlpatterns = [
         "ticket/<int:pk>/backlog/move/<str:direction>/",
         move_backlog_ticket,
         name="move-backlog-ticket",
+    ),
+    path(
+        "project/<int:project_pk>/backlog/reorder/",
+        reorder_backlog,
+        name="backlog-reorder",
     ),
 
     path("sprints/admin/", SprintAdminIndexView.as_view(), name="sprint-admin-index"),
