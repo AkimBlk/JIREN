@@ -3,7 +3,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,7 +13,7 @@ from django.views.generic import ListView, UpdateView
 
 from ..forms import SprintAdminForm, SprintStatusForm
 from ..models import Project, Sprint
-from .permissions import can_manage_sprints, is_admin, visible_projects
+from .permissions import can_manage_sprints, is_admin, require_project_contributor, visible_projects
 from .queries import capacity_rows, project_backlog_queryset, save_sprint_user_capacities
 
 
@@ -74,10 +74,7 @@ class SprintUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 @login_required
 def sprint_admin(request, pk):
     project = get_object_or_404(visible_projects(request.user), pk=pk)
-
-    if not can_manage_sprints(request.user, project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+    require_project_contributor(request.user, project)
 
     if request.method == "POST":
         return _handle_sprint_creation(request, project)
@@ -120,12 +117,18 @@ def _handle_sprint_creation(request, project):
     return render(request, "blog/sprint_admin.html", context)
 
 
+def _resolve_sprint_pk(pk=None, spk=None):
+    return spk or pk
+
+
 @login_required
-def sprint_start(request, pk):
-    sprint = get_object_or_404(Sprint.objects.select_related("project"), pk=pk)
-    if not can_manage_sprints(request.user, sprint.project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+def sprint_start(request, pk=None, spk=None):
+    sprint_pk = _resolve_sprint_pk(pk=pk, spk=spk)
+    sprint = get_object_or_404(
+        Sprint.objects.select_related("project").filter(project__in=visible_projects(request.user)),
+        pk=sprint_pk,
+    )
+    require_project_contributor(request.user, sprint.project)
     if request.method != "POST":
         return redirect("project-backlog", pk=sprint.project_id)
     try:
@@ -137,11 +140,13 @@ def sprint_start(request, pk):
 
 
 @login_required
-def sprint_close(request, pk):
-    sprint = get_object_or_404(Sprint.objects.select_related("project"), pk=pk)
-    if not can_manage_sprints(request.user, sprint.project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+def sprint_close(request, pk=None, spk=None):
+    sprint_pk = _resolve_sprint_pk(pk=pk, spk=spk)
+    sprint = get_object_or_404(
+        Sprint.objects.select_related("project").filter(project__in=visible_projects(request.user)),
+        pk=sprint_pk,
+    )
+    require_project_contributor(request.user, sprint.project)
     if request.method != "POST":
         return redirect("project-backlog", pk=sprint.project_id)
     try:
@@ -154,10 +159,11 @@ def sprint_close(request, pk):
 
 @login_required
 def update_sprint_status(request, pk):
-    sprint = get_object_or_404(Sprint.objects.select_related("project"), pk=pk)
-    if not can_manage_sprints(request.user, sprint.project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+    sprint = get_object_or_404(
+        Sprint.objects.select_related("project").filter(project__in=visible_projects(request.user)),
+        pk=pk,
+    )
+    require_project_contributor(request.user, sprint.project)
     if request.method != "POST":
         return redirect("sprint-admin", pk=sprint.project_id)
 
@@ -193,10 +199,11 @@ def _apply_sprint_status_transition(sprint, new_status, request):
 
 @login_required
 def delete_sprint(request, pk):
-    sprint = get_object_or_404(Sprint.objects.select_related("project"), pk=pk)
-    if not can_manage_sprints(request.user, sprint.project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+    sprint = get_object_or_404(
+        Sprint.objects.select_related("project").filter(project__in=visible_projects(request.user)),
+        pk=pk,
+    )
+    require_project_contributor(request.user, sprint.project)
 
     if request.method == "POST":
         if sprint.status == Sprint.STATUS_ACTIVE:
@@ -214,7 +221,7 @@ def move_backlog_ticket(request, pk, direction):
     from ..models import Ticket
 
     ticket = get_object_or_404(
-        Ticket.objects.select_related("project", "sprint"),
+        Ticket.objects.select_related("project", "sprint").filter(project__in=visible_projects(request.user)),
         pk=pk,
         issue_type__in=[
             Ticket.ISSUE_TYPE_STORY,
@@ -222,9 +229,7 @@ def move_backlog_ticket(request, pk, direction):
             Ticket.ISSUE_TYPE_TASK,
         ],
     )
-    if not can_manage_sprints(request.user, ticket.project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+    require_project_contributor(request.user, ticket.project)
 
     if ticket.sprint_id:
         ordered_items = list(
@@ -290,7 +295,9 @@ def reorder_backlog(request, project_pk):
     from ..models import Ticket
 
     project = get_object_or_404(visible_projects(request.user), pk=project_pk)
-    if not can_manage_sprints(request.user, project):
+    try:
+        require_project_contributor(request.user, project)
+    except PermissionDenied:
         return JsonResponse({"error": "Access denied."}, status=403)
 
     try:
@@ -315,8 +322,13 @@ def reorder_backlog(request, project_pk):
 def reorder_sprint_tickets(request, sprint_pk):
     from ..models import Sprint, Ticket
 
-    sprint = get_object_or_404(Sprint, pk=sprint_pk)
-    if not can_manage_sprints(request.user, sprint.project):
+    sprint = get_object_or_404(
+        Sprint.objects.select_related("project").filter(project__in=visible_projects(request.user)),
+        pk=sprint_pk,
+    )
+    try:
+        require_project_contributor(request.user, sprint.project)
+    except PermissionDenied:
         return JsonResponse({"error": "Access denied."}, status=403)
 
     try:

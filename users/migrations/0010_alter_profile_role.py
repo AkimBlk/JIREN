@@ -3,6 +3,20 @@
 from django.db import migrations, models
 
 
+def migrate_profile_member_to_contributor(apps, schema_editor):
+    Profile = apps.get_model("users", "Profile")
+    Invitation = apps.get_model("users", "Invitation")
+    Profile.objects.filter(role="member").update(role="contributor")
+    Invitation.objects.filter(role_assigned="member").update(role_assigned="contributor")
+
+
+def migrate_profile_member_to_contributor_reverse(apps, schema_editor):
+    Profile = apps.get_model("users", "Profile")
+    Invitation = apps.get_model("users", "Invitation")
+    Profile.objects.filter(role="contributor").update(role="member")
+    Invitation.objects.filter(role_assigned="contributor").update(role_assigned="member")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,9 +24,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            migrate_profile_member_to_contributor,
+            migrate_profile_member_to_contributor_reverse,
+        ),
         migrations.AlterField(
             model_name='profile',
             name='role',
-            field=models.CharField(choices=[('admin', 'Admin'), ('member', 'Member')], default='member', max_length=20),
+            field=models.CharField(
+                choices=[("admin", "Admin"), ("contributor", "Contributor")],
+                default="contributor",
+                max_length=20,
+            ),
+        ),
+        migrations.AlterField(
+            model_name="invitation",
+            name="role_assigned",
+            field=models.CharField(
+                choices=[("contributor", "Project contributor")],
+                default="contributor",
+                max_length=20,
+            ),
         ),
     ]

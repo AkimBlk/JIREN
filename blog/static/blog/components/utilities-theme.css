@@ -3307,3 +3307,100 @@ html:not([data-theme="dark"]) .atelier-role-table-shell {
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
 }
+
+/* Dashboard project card split: left metadata, right status */
+.atelier-project-card__meta-split--dashboard {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(12.5rem, 1fr);
+  border: 1px solid var(--helb-outline-variant);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--helb-surface-container-lowest);
+}
+
+.atelier-project-card__meta-split--dashboard .atelier-project-card__meta-grid--dashboard {
+  margin-top: 0;
+  padding: 1rem 1.1rem;
+  border-top: 0;
+  gap: 0;
+}
+
+.atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item {
+  padding-right: 1rem;
+}
+
+.atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item + .atelier-project-card__meta-item {
+  padding-left: 1rem;
+  padding-right: 0;
+  border-left: 1px solid var(--helb-outline-variant);
+}
+
+.atelier-project-card__status-panel--dashboard {
+  display: grid;
+  align-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-left: 1px solid var(--helb-outline-variant);
+  background: var(--helb-surface-container-low);
+}
+
+.atelier-project-card__status-panel--dashboard .atelier-project-card__status-row {
+  justify-content: flex-start;
+}
+
+@media (max-width: 991.98px) {
+  .atelier-project-card__meta-split--dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .atelier-project-card__meta-split--dashboard .atelier-project-card__meta-grid--dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item {
+    padding-right: 0;
+  }
+
+  .atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item + .atelier-project-card__meta-item {
+    border-left: 0;
+    border-top: 1px solid var(--helb-outline-variant);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    padding-left: 0;
+  }
+
+  .atelier-project-card__status-panel--dashboard {
+    border-left: 0;
+    border-top: 1px solid var(--helb-outline-variant);
+  }
+}
+
+html:not([data-theme="dark"]) .atelier-project-card__meta-split--dashboard,
+html:not([data-theme="dark"]) .atelier-project-card__status-panel--dashboard {
+  border-color: var(--helb-outline);
+}
+
+html:not([data-theme="dark"]) .atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item + .atelier-project-card__meta-item {
+  border-left-color: var(--helb-outline);
+}
+
+@media (max-width: 991.98px) {
+  html:not([data-theme="dark"]) .atelier-project-card__meta-split--dashboard .atelier-project-card__meta-item + .atelier-project-card__meta-item {
+    border-top-color: var(--helb-outline);
+  }
+}
+
+/* Keep the separator above description in both themes */
+.atelier-project-card__description--dashboard {
+  border-top: 1px solid rgba(195, 198, 208, 0.16) !important;
+  padding-top: 0.95rem;
+}
+
+html:not([data-theme="dark"]) .atelier-project-card__description--dashboard {
+  border-top-color: rgba(20, 37, 58, 0.18) !important;
+}
+
+html[data-theme="dark"] .atelier-project-card__description--dashboard {
+  border-top-color: rgba(237, 243, 247, 0.2) !important;
+}

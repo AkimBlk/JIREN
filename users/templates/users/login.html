@@ -10,7 +10,7 @@
                 <span class="material-symbols-outlined">school</span>
             </div>
             <div class="helb-auth-brand__copy">
-                <strong>HELB JIREN</strong>
+                <strong>JIREN</strong>
                 <span>Academic Atelier</span>
             </div>
         </div>
@@ -32,12 +32,12 @@
             {% endif %}
 
             <div class="helb-auth-field">
-                <label for="{{ form.username.id_for_label }}">Username</label>
+                <label for="{{ form.email.id_for_label }}">Email or username</label>
                 <div class="helb-auth-input">
-                    <span class="material-symbols-outlined">person</span>
-                    {{ form.username }}
+                    <span class="material-symbols-outlined">mail</span>
+                    {{ form.email }}
                 </div>
-                {% for error in form.username.errors %}
+                {% for error in form.email.errors %}
                     <small class="text-danger d-block mt-2">{{ error }}</small>
                 {% endfor %}
             </div>

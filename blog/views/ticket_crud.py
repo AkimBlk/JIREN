@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied, RequestDataTooBig
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -14,19 +15,49 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from ..forms import RemainingLoadUpdateForm, TicketForm
 from ..models import Sprint, Ticket, TicketAttachment, TicketLink
-from .permissions import can_edit_ticket, project_assignees, visible_projects
+from .permissions import (
+    can_contribute,
+    can_create_tickets,
+    can_edit_ticket,
+    project_assignees,
+    require_project_contributor,
+    visible_projects,
+)
 from .queries import project_linkable_tickets, ticket_form_project_data
+
+
+def _filter_by_project_from_route(queryset, route_kwargs):
+    project_id = route_kwargs.get("pk")
+    ticket_id = route_kwargs.get("tpk")
+    if project_id and ticket_id:
+        return queryset.filter(project_id=project_id)
+    return queryset
+
+
+UPLOAD_TOO_LARGE_ERROR_MESSAGE = "File too large. Max upload size exceeded."
+
+
+class UploadSizeGuardMixin:
+    upload_too_large_error_message = UPLOAD_TOO_LARGE_ERROR_MESSAGE
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except RequestDataTooBig:
+            messages.error(request, self.upload_too_large_error_message)
+            return redirect(request.path)
 
 
 class TicketDetailView(LoginRequiredMixin, DetailView):
     model = Ticket
 
     def get_queryset(self):
-        return (
+        queryset = (
             Ticket.objects.filter(project__in=visible_projects(self.request.user))
             .select_related("project", "sprint", "epic", "author", "assignee")
             .prefetch_related("attachments", "tags")
         )
+        return _filter_by_project_from_route(queryset, self.kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -73,10 +104,17 @@ class TicketDetailView(LoginRequiredMixin, DetailView):
         ]
 
 
-class TicketCreateView(LoginRequiredMixin, CreateView):
+class TicketCreateView(UploadSizeGuardMixin, LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Ticket
     form_class = TicketForm
     template_name = "blog/ticket_form.html"
+
+    def test_func(self):
+        project_id = self._resolve_project_id()
+        if not project_id:
+            return can_create_tickets(self.request.user)
+        project = visible_projects(self.request.user).filter(pk=project_id).first()
+        return bool(project and can_contribute(self.request.user, project))
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -84,13 +122,24 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
             if field_name in form.fields:
                 form.fields[field_name].initial = None
                 form.initial[field_name] = ""
-        project_id = self.request.GET.get("project") or self.request.POST.get("project")
+        project_id = self._resolve_project_id()
         visible = visible_projects(self.request.user)
         self._reset_form_querysets(form, visible)
         if project_id:
             self._set_form_querysets_for_project(form, visible, project_id)
         if "color" in form.fields:
-            form.fields["color"].widget = forms.TextInput(attrs={"type": "color"})
+            selected_issue_type = (
+                form.data.get("issue_type")
+                if form.is_bound
+                else (form.initial.get("issue_type") or Ticket.ISSUE_TYPE_STORY)
+            )
+            color_attrs = {"type": "color"}
+            if selected_issue_type != Ticket.ISSUE_TYPE_EPIC:
+                color_attrs["disabled"] = "disabled"
+                if not form.is_bound:
+                    form.fields["color"].initial = None
+                    form.initial["color"] = ""
+            form.fields["color"].widget = forms.TextInput(attrs=color_attrs)
         form.fields.pop("status", None)
         return form
 
@@ -101,6 +150,12 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         form.fields["assignee"].queryset = get_user_model().objects.none()
         form.fields["blocked_by_tickets"].queryset = Ticket.objects.none()
         form.fields["relates_to_tickets"].queryset = Ticket.objects.none()
+
+    def _resolve_project_id(self):
+        route_project_id = self.kwargs.get("pk")
+        if route_project_id:
+            return route_project_id
+        return self.request.GET.get("project") or self.request.POST.get("project")
 
     def _set_form_querysets_for_project(self, form, visible, project_id):
         project = visible.filter(pk=project_id).first()
@@ -115,6 +170,7 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         form.fields["relates_to_tickets"].queryset = linkable
 
     def form_valid(self, form):
+        require_project_contributor(self.request.user, form.instance.project)
         form.instance.status = Ticket.STATUS_TODO
         if form.instance.issue_type != Ticket.ISSUE_TYPE_EPIC:
             form.instance.color = None
@@ -137,17 +193,18 @@ class TicketCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
 
-class TicketUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class TicketUpdateView(UploadSizeGuardMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Ticket
     form_class = TicketForm
     template_name = "blog/ticket_form.html"
 
     def get_queryset(self):
-        return (
+        queryset = (
             Ticket.objects.filter(project__in=visible_projects(self.request.user))
             .select_related("project")
             .prefetch_related("tags")
         )
+        return _filter_by_project_from_route(queryset, self.kwargs)
 
     def test_func(self):
         return can_edit_ticket(self.request.user, self.get_object())
@@ -165,7 +222,15 @@ class TicketUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         form.fields["blocked_by_tickets"].queryset = linkable
         form.fields["relates_to_tickets"].queryset = linkable
         if "color" in form.fields:
-            form.fields["color"].widget = forms.TextInput(attrs={"type": "color"})
+            selected_issue_type = (
+                form.data.get("issue_type")
+                if form.is_bound
+                else (form.initial.get("issue_type") or form.instance.issue_type)
+            )
+            color_attrs = {"type": "color"}
+            if selected_issue_type != Ticket.ISSUE_TYPE_EPIC:
+                color_attrs["disabled"] = "disabled"
+            form.fields["color"].widget = forms.TextInput(attrs=color_attrs)
         return form
 
     def get_context_data(self, **kwargs):
@@ -191,9 +256,10 @@ class TicketDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = "/"
 
     def get_queryset(self):
-        return Ticket.objects.filter(
+        queryset = Ticket.objects.filter(
             project__in=visible_projects(self.request.user)
         ).select_related("project")
+        return _filter_by_project_from_route(queryset, self.kwargs)
 
     def test_func(self):
         return can_edit_ticket(self.request.user, self.get_object())
@@ -224,6 +290,10 @@ def link_commit_to_ticket(request, pk):
     ticket = get_object_or_404(Ticket.objects.select_related("project"), pk=pk)
     if not visible_projects(request.user).filter(pk=ticket.project_id).exists():
         return JsonResponse({"ok": False, "error": "Access denied."}, status=403)
+    try:
+        require_project_contributor(request.user, ticket.project)
+    except PermissionDenied:
+        return JsonResponse({"ok": False, "error": "Contributor role required."}, status=403)
 
     try:
         payload = json.loads(request.body.decode("utf-8")) if request.body else {}

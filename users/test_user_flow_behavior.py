@@ -72,9 +72,13 @@ class UserFlowBehaviorTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("login"))
         self.assertTrue(self.invitation.used)
-        self.assertEqual(created_user.profile.role, "member")
+        self.assertEqual(created_user.profile.role, Profile.ROLE_CONTRIBUTOR)
         self.assertTrue(
-            ProjectMember.objects.filter(project=self.project, user=created_user).exists()
+            ProjectMember.objects.filter(
+                project=self.project,
+                user=created_user,
+                role=ProjectMember.ROLE_CONTRIBUTOR,
+            ).exists()
         )
 
     def test_invite_user_rejects_non_admins(self):
@@ -92,7 +96,7 @@ class UserFlowBehaviorTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("blog-home"))
 
-    def test_invite_user_creates_member_invitation_for_platform_admin(self):
+    def test_invite_user_creates_contributor_invitation_for_platform_admin(self):
         request = prepare_request_with_messages(
             self.factory.post(
                 reverse("invite-user"),
@@ -110,7 +114,7 @@ class UserFlowBehaviorTests(TestCase):
         invitation = Invitation.objects.get(username="fresh-user")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("invite-user"))
-        self.assertEqual(invitation.role_assigned, Invitation.ROLE_MEMBER)
+        self.assertEqual(invitation.role_assigned, Invitation.ROLE_CONTRIBUTOR)
         self.assertEqual(invitation.created_by, self.admin)
 
     def test_register_rejects_missing_token(self):
@@ -162,12 +166,12 @@ class UserFlowBehaviorTests(TestCase):
 
     def test_profile_preserves_contributor_role_for_non_admin_users(self):
         contributor = User.objects.create_user(username="contributor-user", password="secret123")
-        contributor.profile.role = Profile.ROLE_CONTRIBUTEUR
+        contributor.profile.role = Profile.ROLE_CONTRIBUTOR
         contributor.profile.save()
 
         contributor.profile.refresh_from_db()
 
-        self.assertEqual(contributor.profile.role, Profile.ROLE_CONTRIBUTEUR)
+        self.assertEqual(contributor.profile.role, Profile.ROLE_CONTRIBUTOR)
 
     def test_profile_page_uses_editorial_profile_layout(self):
         self.client.force_login(self.admin)
@@ -204,10 +208,7 @@ class UserFlowBehaviorTests(TestCase):
         Root   : Internal role key named/stored in French, violating English-only rule.
         Fix    : Renamed to ROLE_CONTRIBUTOR = "contributor" with data migration.
         """
-        self.assertFalse(
-            hasattr(Profile, 'ROLE_CONTRIBUTEUR') and Profile.ROLE_CONTRIBUTEUR == 'contributeur',
-            "DB role value must be 'contributor', not 'contributeur'",
-        )
+        self.assertFalse(hasattr(Profile, "ROLE_CONTRIBUTEUR"))
         self.assertEqual(Profile.ROLE_CONTRIBUTOR, 'contributor')
 
     def test_contributor_profile_is_persisted_with_english_key(self):

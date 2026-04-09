@@ -1,0 +1,107 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<section class="helb-card mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start" style="gap: 1rem;">
+    <div>
+      <p class="mb-2" style="font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--helb-outline);">Help Center</p>
+      <h1 class="mb-2" style="font-weight: 800; letter-spacing: -0.02em;">Get Started In 5 Minutes</h1>
+      <p class="mb-0 text-muted" style="max-width: 56ch;">
+        This page is designed for first-time users: clear steps, key rules, and quick answers.
+        Start here whenever you are unsure what to do next.
+      </p>
+    </div>
+    <div class="d-flex align-items-center" style="gap: 0.6rem;">
+      <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--helb-on-primary-container);">schedule</span>
+      <strong>~5 min read</strong>
+    </div>
+  </div>
+</section>
+
+<section class="helb-card-sm mb-3">
+  <h2 class="mb-3" style="font-size: 1.2rem; font-weight: 750;">1. First Steps</h2>
+  <ol class="mb-0 pl-3" style="display: grid; gap: 0.75rem;">
+    <li><strong>Open your project list.</strong> Pick an existing project or create one if you are an admin.</li>
+    <li><strong>Create a sprint.</strong> Define objective, dates, and capacity.</li>
+    <li><strong>Create tickets.</strong> Use Epic, Story, Bug, or Task with clear titles and owners.</li>
+    <li><strong>Run the work.</strong> Move tickets through Kanban: To Do -> In Progress -> Done.</li>
+    <li><strong>Track outcomes.</strong> Use Analytics and project views to monitor progress.</li>
+  </ol>
+</section>
+
+<section class="helb-card-sm mb-3">
+  <h2 class="mb-3" style="font-size: 1.2rem; font-weight: 750;">2. Where To Go</h2>
+  <div class="row">
+    <div class="col-md-6 mb-3 mb-md-0">
+      <div class="p-3" style="border-radius: 0.75rem; background: var(--helb-surface-container-low);">
+        <h3 class="mb-2" style="font-size: 1rem; font-weight: 700;">Projects</h3>
+        <p class="mb-0 text-muted">Create and manage projects, members, and overall scope.</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p-3" style="border-radius: 0.75rem; background: var(--helb-surface-container-low);">
+        <h3 class="mb-2" style="font-size: 1rem; font-weight: 700;">Backlog</h3>
+        <p class="mb-0 text-muted">Prioritize work and prepare what should enter the next sprint.</p>
+      </div>
+    </div>
+  </div>
+  <div class="row mt-3">
+    <div class="col-md-6 mb-3 mb-md-0">
+      <div class="p-3" style="border-radius: 0.75rem; background: var(--helb-surface-container-low);">
+        <h3 class="mb-2" style="font-size: 1rem; font-weight: 700;">Sprint / Kanban</h3>
+        <p class="mb-0 text-muted">Execute work in progress and keep ticket states up to date.</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p-3" style="border-radius: 0.75rem; background: var(--helb-surface-container-low);">
+        <h3 class="mb-2" style="font-size: 1rem; font-weight: 700;">Tickets</h3>
+        <p class="mb-0 text-muted">View and update issue details, links, tags, and attachments.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="helb-card-sm mb-3">
+  <h2 class="mb-3" style="font-size: 1.2rem; font-weight: 750;">3. Rules That Prevent Most Errors</h2>
+  <ul class="mb-0 pl-3" style="display: grid; gap: 0.55rem;">
+    <li>Only one <strong>active sprint</strong> is allowed per project.</li>
+    <li>A <strong>Task</strong> should be linked to a parent Story or Bug.</li>
+    <li>Keep ticket status flow simple: <strong>To Do -> In Progress -> Done</strong>.</li>
+    <li>If you cannot edit something, verify your <strong>role/permissions</strong> first.</li>
+  </ul>
+</section>
+
+<section class="helb-card-sm mb-3">
+  <h2 class="mb-3" style="font-size: 1.2rem; font-weight: 750;">4. Quick Questions</h2>
+  <details class="mb-2">
+    <summary style="cursor: pointer; font-weight: 700;">I cannot create a project. Why?</summary>
+    <p class="mt-2 mb-0 text-muted">Project creation is restricted to users with admin privileges.</p>
+  </details>
+  <details class="mb-2">
+    <summary style="cursor: pointer; font-weight: 700;">Why is Kanban empty?</summary>
+    <p class="mt-2 mb-0 text-muted">Kanban shows tickets from the active sprint. Start a sprint and assign tickets to it.</p>
+  </details>
+  <details>
+    <summary style="cursor: pointer; font-weight: 700;">How do I track delivery health quickly?</summary>
+    <p class="mt-2 mb-0 text-muted">Use project details + analytics to monitor progress, capacity, and completion trends.</p>
+  </details>
+</section>
+
+<section class="helb-card-sm">
+  <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap: 0.75rem;">
+    <div>
+      <h2 class="mb-1" style="font-size: 1.1rem; font-weight: 750;">Need Next-Step Guidance?</h2>
+      <p class="mb-0 text-muted">Start with the core workflows and build habits gradually.</p>
+    </div>
+    <div class="d-flex flex-wrap" style="gap: 0.5rem;">
+      {% if user.is_authenticated %}
+      <a class="btn btn-outline-secondary" href="{% url 'all-tickets' %}">Open Tickets</a>
+      <a class="btn btn-primary" href="{% url 'project-list' %}">Open Projects</a>
+      {% else %}
+      <a class="btn btn-outline-secondary" href="{% url 'register' %}">Create Account</a>
+      <a class="btn btn-primary" href="{% url 'login' %}">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock content %}

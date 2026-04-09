@@ -3,6 +3,18 @@
 from django.db import migrations, models
 
 
+def migrate_project_member_role_forward(apps, schema_editor):
+    ProjectMember = apps.get_model("blog", "ProjectMember")
+    ProjectMember.objects.filter(role="member").update(role="contributor")
+    ProjectMember.objects.filter(role="read-only").update(role="read_only")
+
+
+def migrate_project_member_role_reverse(apps, schema_editor):
+    ProjectMember = apps.get_model("blog", "ProjectMember")
+    ProjectMember.objects.filter(role="contributor").update(role="member")
+    ProjectMember.objects.filter(role="read_only").update(role="read-only")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,6 +22,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            migrate_project_member_role_forward,
+            migrate_project_member_role_reverse,
+        ),
+        migrations.AlterField(
+            model_name="projectmember",
+            name="role",
+            field=models.CharField(
+                choices=[
+                    ("admin", "Admin"),
+                    ("contributor", "Contributor"),
+                    ("read_only", "Read only"),
+                ],
+                default="contributor",
+                max_length=20,
+            ),
+        ),
         migrations.AddField(
             model_name='ticket',
             name='linked_commit_url',

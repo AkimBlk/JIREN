@@ -11,7 +11,16 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from ..forms import ProjectForm
 from ..models import Project, ProjectMember, Sprint, Tag, Ticket
 from ..services import GitService
-from .permissions import can_contribute, can_create_projects, can_manage_sprints, is_admin, is_project_member, visible_projects
+from .permissions import (
+    can_contribute,
+    can_create_projects,
+    can_manage_sprints,
+    get_project_role,
+    is_admin,
+    is_project_member,
+    require_project_admin,
+    visible_projects,
+)
 from .queries import filter_tickets_by_tag, project_backlog_queryset, resolve_tag_filter
 
 PERCENTAGE_MULTIPLIER = 100
@@ -109,8 +118,10 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         ctx["commit_link_tickets"] = project_tickets.only("id", "title").order_by("backlog_order", "id")
         ctx["available_tags"] = available_tags
         ctx["selected_tag"] = selected_tag
-        ctx["user_is_admin"] = is_admin(self.request.user)
-        ctx["user_can_create_ticket"] = can_contribute(self.request.user)
+        project_role = get_project_role(self.request.user, self.object)
+        ctx["project_role"] = project_role
+        ctx["user_is_admin"] = project_role == ProjectMember.ROLE_ADMIN
+        ctx["user_can_create_ticket"] = can_contribute(self.request.user, self.object)
         ctx["user_can_manage_sprints"] = can_manage_sprints(self.request.user, self.object)
         ctx["active_sprint"] = (
             self.object.sprints.filter(status=Sprint.STATUS_ACTIVE).order_by("start_date", "id").first()
@@ -308,14 +319,23 @@ class ProjectCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return response
 
 
-class ProjectUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class ProjectAdminRequiredMixin(LoginRequiredMixin):
+    _project = None
+
+    def get_object(self, queryset=None):
+        if self._project is None:
+            self._project = get_object_or_404(visible_projects(self.request.user), pk=self.kwargs["pk"])
+        return self._project
+
+    def dispatch(self, request, *args, **kwargs):
+        require_project_admin(request.user, self.get_object())
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ProjectUpdateView(ProjectAdminRequiredMixin, UpdateView):
     model = Project
     form_class = ProjectForm
     template_name = "blog/project_form.html"
-
-    def test_func(self):
-        project = self.get_object()
-        return self.request.user == project.manager or is_admin(self.request.user)
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -323,16 +343,12 @@ class ProjectUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return response
 
 
-class ProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
     model = Project
     template_name = "blog/project_confirm_delete.html"
 
     def get_success_url(self):
         return reverse("blog-home")
-
-    def test_func(self):
-        project = self.get_object()
-        return self.request.user == project.manager or is_admin(self.request.user)
 
 
 class ProjectBacklogView(LoginRequiredMixin, DetailView):

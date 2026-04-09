@@ -1,13 +1,14 @@
-import uuid
-
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
+from django.views.generic import FormView
 
-from .forms import InvitationForm, ProfileUpdateForm, UserRegisterForm
-from .models import Invitation
+from .forms import InvitationForm, LoginForm, ProfileUpdateForm, RegistrationForm
+from .models import Invitation, Profile
 
 
 def _is_platform_admin(user):
@@ -20,61 +21,50 @@ def custom_logout(request):
     return redirect("login")
 
 
-def register(request):
-    token = request.GET.get("token") or request.POST.get("token")
-    invitation = None
+def _with_password_alias(post_data):
+    mapped_data = post_data.copy()
+    raw_password = (mapped_data.get("password") or mapped_data.get("password1") or "").strip()
+    if raw_password:
+        mapped_data["password1"] = raw_password
+        mapped_data["password2"] = raw_password
+    return mapped_data
 
-    if token:
-        try:
-            invitation = Invitation.objects.get(token=uuid.UUID(str(token)), used=False)
-        except (Invitation.DoesNotExist, ValueError):
-            messages.error(request, "Invalid or already-used invitation link.")
-            return redirect("login")
-    else:
-        messages.error(request, "A valid invitation link is required to register.")
-        return redirect("login")
 
-    if request.method == "POST":
-        form = UserRegisterForm(request.POST, invitation=invitation)
-        if form.is_valid():
-            user = form.save()
+class RegisterView(FormView):
+    form_class = RegistrationForm
+    template_name = "users/register.html"
+    success_url = reverse_lazy("login")
 
-            user.profile.role = "member"
-            user.profile.save()
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == "POST":
+            kwargs["data"] = _with_password_alias(self.request.POST)
+        return kwargs
 
-            if invitation.project:
-                from blog.models import ProjectMember
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.email = form.cleaned_data["email"]
+        user.first_name = form.cleaned_data["first_name"]
+        user.last_name = form.cleaned_data["last_name"]
+        user.username = form.cleaned_data["username"]
+        user.save()
+        messages.success(self.request, f"Account created for {user.username}. You can now log in.")
+        return super().form_valid(form)
 
-                ProjectMember.objects.get_or_create(
-                    project=invitation.project,
-                    user=user,
-                    defaults={"role": "member"},
-                )
 
-            invitation.used = True
-            invitation.save()
+class LoginView(auth_views.LoginView):
+    template_name = "users/login.html"
+    authentication_form = LoginForm
+    redirect_authenticated_user = True
 
-            messages.success(request, f"Account created for {user.username}. You can now log in.")
-            return redirect("login")
-    else:
-        form = UserRegisterForm(invitation=invitation, initial={"email": invitation.email})
 
-    return render(
-        request,
-        "users/register.html",
-        {
-            "form": form,
-            "token": token,
-            "invitation_username": invitation.username,
-        },
-    )
+def register(request, *args, **kwargs):
+    return RegisterView.as_view()(request, *args, **kwargs)
 
 
 @login_required
 def profile(request):
     from blog.models import Project, ProjectMember, Ticket
-    from .models import Profile
-
     if request.method == "POST":
         p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
         if p_form.is_valid():
@@ -111,7 +101,7 @@ def profile(request):
         role_summary = {
             "total": len(role_profiles),
             "admins": sum(profile.role == Profile.ROLE_ADMIN for profile in role_profiles),
-            "members": sum(profile.role != Profile.ROLE_ADMIN for profile in role_profiles),
+            "contributors": sum(profile.role == Profile.ROLE_CONTRIBUTOR for profile in role_profiles),
         }
 
     context = {
@@ -146,7 +136,7 @@ def invite_user(request):
         if form.is_valid():
             inv = form.save(commit=False)
             inv.created_by = request.user
-            inv.role_assigned = "member"
+            inv.role_assigned = Invitation.ROLE_CONTRIBUTOR
             inv.save()
             messages.success(request, f"Invitation created for {inv.email}.")
             return redirect("invite-user")
@@ -174,8 +164,6 @@ def manage_roles(request):
         messages.error(request, "Only platform administrators can manage roles.")
         return redirect("blog-home")
 
-    from .models import Profile
-
     profiles = list(Profile.objects.select_related("user").order_by("user__username"))
     return render(
         request,
@@ -185,7 +173,7 @@ def manage_roles(request):
             "role_summary": {
                 "total": len(profiles),
                 "admins": sum(profile.role == Profile.ROLE_ADMIN for profile in profiles),
-                "members": sum(profile.role != Profile.ROLE_ADMIN for profile in profiles),
+                "contributors": sum(profile.role == Profile.ROLE_CONTRIBUTOR for profile in profiles),
             },
         },
     )

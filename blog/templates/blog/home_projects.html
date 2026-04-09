@@ -22,7 +22,7 @@
             <div class="atelier-project-card__top">
                 <div class="atelier-project-card__content">
                     <div class="atelier-project-card__title-row">
-                        <a href="{% url 'project-detail' project.pk %}" class="atelier-project-card__title">{{ project.name }}</a>
+                        <a href="{% url 'project-detail' pk=project.pk %}" class="atelier-project-card__title">{{ project.name }}</a>
                         {% if project.code_prefix %}
                             <span class="atelier-code-chip">{{ project.code_prefix }}</span>
                         {% endif %}
@@ -31,7 +31,7 @@
 
                 <div class="atelier-project-card__actions atelier-project-card__actions--stacked">
                     <div class="atelier-project-card__cta-row">
-                        <a class="btn btn-sm stitch-dashboard-open" href="{% url 'project-detail' project.pk %}">
+                        <a class="btn btn-sm stitch-dashboard-open" href="{% url 'project-detail' pk=project.pk %}">
                         Open
                         </a>
                         <a class="btn btn-outline-secondary btn-sm" href="{% url 'project-backlog' project.pk %}">
@@ -53,29 +53,33 @@
                 </div>
             </div>
 
-            <div class="atelier-project-card__meta-grid atelier-project-card__meta-grid--dashboard">
-                <div class="atelier-project-card__meta-item">
-                    <span class="atelier-project-card__meta-label">Project manager</span>
-                    <strong class="atelier-project-card__meta-value">{{ project.manager.get_full_name|default:project.manager.username }}</strong>
+            <div class="atelier-project-card__meta-split atelier-project-card__meta-split--dashboard">
+                <div class="atelier-project-card__meta-grid atelier-project-card__meta-grid--dashboard">
+                    <div class="atelier-project-card__meta-item">
+                        <span class="atelier-project-card__meta-label">Project manager</span>
+                        <strong class="atelier-project-card__meta-value">{{ project.manager.get_full_name|default:project.manager.username }}</strong>
+                    </div>
+                    <div class="atelier-project-card__meta-item">
+                        <span class="atelier-project-card__meta-label">Duration</span>
+                        <strong class="atelier-project-card__meta-value">
+                            {{ project.start_date|date:"d M Y"|default:"TBD" }}
+                            <span class="atelier-project-card__meta-separator">&#8594;</span>
+                            {{ project.end_date|date:"d M Y"|default:"TBD" }}
+                        </strong>
+                    </div>
                 </div>
-                <div class="atelier-project-card__meta-item">
-                    <span class="atelier-project-card__meta-label">Duration</span>
-                    <strong class="atelier-project-card__meta-value">
-                        {{ project.start_date|date:"d M Y"|default:"TBD" }}
-                        <span class="atelier-project-card__meta-separator">&#8594;</span>
-                        {{ project.end_date|date:"d M Y"|default:"TBD" }}
-                    </strong>
+                <div class="atelier-project-card__status-panel atelier-project-card__status-panel--dashboard">
+                    <span class="atelier-project-card__meta-label">Status</span>
+                    <div class="atelier-project-card__status-row">
+                        <span class="stitch-status-orb stitch-status-orb--{% if project.dashboard_status_class == 'active' %}green{% elif project.dashboard_status_class == 'planned' %}amber{% elif project.dashboard_status_class == 'completed' %}blue{% else %}green{% endif %}"></span>
+                        <span class="atelier-status-pill atelier-status-pill--{{ project.dashboard_status_class }}">{{ project.dashboard_status }}</span>
+                    </div>
                 </div>
             </div>
 
             <p class="atelier-project-card__description atelier-project-card__description--dashboard">{{ project.description|truncatechars:150 }}</p>
 
             <div class="atelier-project-card__footer atelier-project-card__footer--dashboard">
-                <div class="atelier-project-card__status-row">
-                    <span class="stitch-status-orb stitch-status-orb--{% if project.dashboard_status_class == 'active' %}green{% elif project.dashboard_status_class == 'planned' %}amber{% elif project.dashboard_status_class == 'completed' %}blue{% else %}green{% endif %}"></span>
-                    <span class="atelier-status-pill atelier-status-pill--{{ project.dashboard_status_class }}">{{ project.dashboard_status }}</span>
-                </div>
-
                 <div class="atelier-project-card__footer-copy">
                     <span class="sr-only">
                         Members:

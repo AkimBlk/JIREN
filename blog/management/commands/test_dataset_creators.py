@@ -135,9 +135,17 @@ def _build_project(code, name, description, manager, members, start, end, unit, 
             "sprint_duration_days": SPRINT_DURATION_DAYS,
         },
     )
-    ProjectMember.objects.get_or_create(project=project, user=manager, defaults={"role": "admin"})
+    ProjectMember.objects.get_or_create(
+        project=project,
+        user=manager,
+        defaults={"role": ProjectMember.ROLE_ADMIN},
+    )
     for user in members:
-        ProjectMember.objects.get_or_create(project=project, user=user, defaults={"role": "member"})
+        ProjectMember.objects.get_or_create(
+            project=project,
+            user=user,
+            defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
+        )
     return project
 
 

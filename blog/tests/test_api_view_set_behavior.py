@@ -26,7 +26,7 @@ class TagApiViewSetBehaviorTests(TestCase):
             global_capacity=10,
             manager=self.manager,
         )
-        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_MEMBER)
+        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
         self.tag = Tag.objects.create(project=self.project, name="Backend")
 
     def test_tag_create_uses_project_scope_and_rejects_outsiders(self):
@@ -72,7 +72,7 @@ class TicketTagApiViewSetBehaviorTests(TestCase):
             global_capacity=8,
             manager=self.manager,
         )
-        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_MEMBER)
+        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
         self.ticket = Ticket.objects.create(
             title="Ticket with tags",
             project=self.project,

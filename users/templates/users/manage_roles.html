@@ -26,9 +26,9 @@
         <span class="atelier-stat-card__meta">Admin accounts</span>
     </article>
     <article class="atelier-stat-card">
-        <span class="atelier-stat-card__label">Members</span>
-        <strong class="atelier-stat-card__value">{{ role_summary.members }}</strong>
-        <span class="atelier-stat-card__meta">Member accounts</span>
+        <span class="atelier-stat-card__label">Contributors</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.contributors }}</strong>
+        <span class="atelier-stat-card__meta">Contributor accounts</span>
     </article>
 </section>
 
@@ -63,7 +63,7 @@
                         {% if profile.role == 'admin' %}
                             <span class="atelier-badge atelier-badge--admin">Admin</span>
                         {% else %}
-                            <span class="atelier-badge atelier-badge--member">Member</span>
+                            <span class="atelier-badge atelier-badge--contributor">Contributor</span>
                         {% endif %}
                     </td>
                 </tr>

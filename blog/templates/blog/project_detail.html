@@ -36,7 +36,15 @@
             <article class="stitch-info-tile">
                 <span class="material-symbols-outlined">shield</span>
                 <strong>Permissions</strong>
-                <small>{% if user_is_admin %}Admin access{% elif user_can_manage_sprints %}Project lead{% else %}Project member{% endif %}</small>
+                <small>
+                    {% if user_is_admin %}
+                        Admin access
+                    {% elif project_role == 'contributor' %}
+                        Contributor
+                    {% else %}
+                        Read only
+                    {% endif %}
+                </small>
             </article>
             <article class="stitch-info-tile">
                 <span class="material-symbols-outlined">cloud_sync</span>
@@ -124,7 +132,7 @@
                                 <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
                             </div>
 
-                            <a href="{% url 'ticket-detail' ticket.pk %}"
+                            <a href="{% url 'ticket-detail' pk=project.pk tpk=ticket.pk %}"
                                class="stitch-ticket-row__title"
                                {% if ticket.issue_type == 'EPIC' and ticket.display_color %}
                                style="color: {{ ticket.display_color }};"
@@ -190,10 +198,14 @@
             <h3>Quick Actions</h3>
             <div class="stitch-quick-panel__actions">
                 <a href="{% url 'project-backlog' project.pk %}" class="btn stitch-btn-orange">View Backlog</a>
-                <a href="{% url 'ticket-create' %}?project={{ project.pk }}" class="btn stitch-btn-green">Create New Ticket</a>
-                <a href="{% url 'sprint-admin' project.pk %}" class="btn stitch-btn-orange">Sprint</a>
+                {% if user_can_create_ticket %}
+                    <a href="{% url 'ticket-create' pk=project.pk %}" class="btn stitch-btn-green">Create New Ticket</a>
+                {% endif %}
+                {% if user_can_manage_sprints %}
+                    <a href="{% url 'sprint-list' project.pk %}" class="btn stitch-btn-orange">Sprint</a>
+                {% endif %}
                 {% if active_sprint %}
-                    <a href="{% url 'project-active-sprint' project.pk %}" class="btn stitch-btn-ghost">Active Sprint</a>
+                    <a href="{% url 'sprint-kanban' pk=project.pk spk=active_sprint.pk %}" class="btn stitch-btn-ghost">Active Sprint</a>
                 {% else %}
                     <span class="btn stitch-btn-ghost disabled">No Active Sprint</span>
                 {% endif %}
@@ -205,11 +217,46 @@
                 <h3>Project Members</h3>
                 {% if user_is_admin %}<span class="stitch-muted-note">Admin view</span>{% endif %}
             </div>
+            {% if membership_management_enabled %}
+                <form method="post" action="{% url 'project-members-add' project.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <div class="form-group mb-2">
+                        <label for="{{ member_form.user.id_for_label }}">User</label>
+                        {{ member_form.user }}
+                        {% for error in member_form.user.errors %}
+                            <small class="text-danger d-block">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="{{ member_form.role.id_for_label }}">Role</label>
+                        {{ member_form.role }}
+                        {% for error in member_form.role.errors %}
+                            <small class="text-danger d-block">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Add member</button>
+                </form>
+            {% endif %}
             <div class="stitch-member-list">
                 {% for membership in members %}
                     <div class="stitch-member-chip{% if forloop.counter > 6 %} stitch-member-chip--hidden d-none{% endif %}">
                         <img src="{{ membership.user.profile.image.url }}" alt="{{ membership.user.username }}" class="atelier-user-inline__avatar">
                         <span>{{ membership.user.get_full_name|default:membership.user.username }}</span>
+                        {% if membership_management_enabled and membership.user_id != project.manager_id %}
+                            <form method="post" action="{% url 'project-members-role' project.pk membership.user_id %}" class="d-inline-flex align-items-center ml-2">
+                                {% csrf_token %}
+                                <select name="role" class="form-control form-control-sm mr-1">
+                                    {% for role_value, role_label in member_role_choices %}
+                                        <option value="{{ role_value }}" {% if membership.role == role_value %}selected{% endif %}>{{ role_label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                            </form>
+                            <form method="post" action="{% url 'project-members-remove' project.pk membership.user_id %}" class="d-inline ml-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        {% endif %}
                     </div>
                 {% empty %}
                     <p class="stitch-muted-note mb-0">No member assigned yet.</p>

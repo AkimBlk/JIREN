@@ -205,7 +205,7 @@
     <strong class="stitch-archive-callout__title">{{ backlog_summary.closed_sprint_count }} archived sprint{{ backlog_summary.closed_sprint_count|pluralize }}</strong>
     <p class="stitch-muted-note mb-0">Review previous sprints and create the next one from the sprint workspace.</p>
   </div>
-  <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-outline-primary">Open sprint history</a>
+  <a href="{% url 'sprint-admin' project.pk %}" class="btn btn-primary">Open sprint history</a>
 </section>
 <script>
 document.querySelectorAll('.stitch-progress__value[data-progress]').forEach(function(el) {

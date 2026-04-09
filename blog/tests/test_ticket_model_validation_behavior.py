@@ -29,7 +29,7 @@ class TicketModelValidationTests(TestCase):
             global_capacity=10,
             manager=self.other_user,
         )
-        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_MEMBER)
+        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
         self.active_sprint = Sprint.objects.create(
             project=self.project,
             name="Sprint Active",

@@ -53,4 +53,79 @@
 */
 @import url('./components/main-consolidated-pending.css');
 
+
+.helb-sidebar-brand,
+.helb-public-brand,
+.helb-topnav-mobile-brand {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.helb-brand-logo {
+  display: block;
+  width: 88px;
+  height: auto;
+  object-fit: contain;
+}
+
+.helb-sidebar-brand .helb-brand-logo {
+  width: 118px;
+}
+
+.helb-public-brand .helb-brand-logo {
+  width: 58px;
+}
+
+.helb-topnav-mobile-brand .helb-brand-logo {
+  width: 58px;
+}
+
+.helb-public-brand .helb-sidebar-brand-copy strong,
+.helb-topnav-mobile-brand .helb-sidebar-brand-copy strong {
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.helb-public-brand .helb-sidebar-brand-copy small,
+.helb-topnav-mobile-brand .helb-sidebar-brand-copy small {
+  display: none;
+}
+
+.helb-sidebar {
+  gap: 1.65rem;
+}
+
+.helb-auth-corner-brand {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  color: var(--helb-on-surface);
+  text-decoration: none;
+}
+
+.helb-auth-corner-brand .helb-brand-logo {
+  width: 84px;
+}
+
+.helb-auth-corner-brand .helb-sidebar-brand-copy strong {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.helb-auth-corner-brand .helb-sidebar-brand-copy small {
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+}
+
+.helb-auth-body {
+  padding-top: 5.5rem;
+}
+
 /* === END INDEX === */
