@@ -43,7 +43,7 @@
             <div class="stitch-sprint-card__meta-grid">
               <div>
                 <span class="stitch-info-bar__label">Objective</span>
-                <p class="stitch-muted-note mb-0">{{ sprint.objective|default:"No sprint objective set yet." }}</p>
+                <p class="stitch-muted-note mb-0">{{ sprint.objective|striptags|default:"No sprint objective set yet." }}</p>
               </div>
               <div>
                 <span class="stitch-info-bar__label">Capacity</span>

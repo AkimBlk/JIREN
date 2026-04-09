@@ -99,10 +99,12 @@ class Project(models.Model):
 
 class ProjectMember(models.Model):
     ROLE_ADMIN = "admin"
-    ROLE_MEMBER = "member"
+    ROLE_CONTRIBUTOR = "contributor"
+    ROLE_READ_ONLY = "read_only"
     ROLE_CHOICES = [
         (ROLE_ADMIN, "Admin"),
-        (ROLE_MEMBER, "Member"),
+        (ROLE_CONTRIBUTOR, "Contributor"),
+        (ROLE_READ_ONLY, "Read only"),
     ]
 
     project = models.ForeignKey(
@@ -118,7 +120,7 @@ class ProjectMember(models.Model):
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
-        default=ROLE_MEMBER,
+        default=ROLE_CONTRIBUTOR,
     )
     joined_at = models.DateTimeField(default=timezone.now)
 

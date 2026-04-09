@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.test import TestCase
 from django.urls import reverse
 
+from blog.forms import TicketForm
 from blog.models import Project, Ticket, TicketLink
 
 
@@ -59,6 +60,29 @@ class TicketCreationRulesTests(TestCase):
         self.assertIn("<strong>important</strong>", detail_content)
         self.assertIn("data:image/png;base64,AAAA", detail_content)
         self.assertNotIn("alert(", detail_content)
+
+    def test_bug_origin_commit_sha_accepts_short_only(self):
+        base_data = {
+            "issue_type": Ticket.ISSUE_TYPE_BUG,
+            "title": "Bug sha validation",
+            "description": "Bug description",
+            "project": self.project.pk,
+            "status": Ticket.STATUS_TODO,
+            "priority": "MEDIUM",
+            "tags_input": "",
+            "story_points": 1,
+            "initial_load": 1,
+            "remaining_load": 1,
+        }
+
+        invalid_form = TicketForm(data={**base_data, "origin_commit_sha": "a1b2c3d4e5f6"})
+        self.assertFalse(invalid_form.is_valid())
+        self.assertIn("origin_commit_sha", invalid_form.errors)
+        self.assertIn("Use a short commit SHA of 7 hexadecimal characters.", invalid_form.errors["origin_commit_sha"])
+
+        valid_form = TicketForm(data={**base_data, "origin_commit_sha": "A1B2C3D"})
+        self.assertTrue(valid_form.is_valid())
+        self.assertEqual(valid_form.cleaned_data["origin_commit_sha"], "a1b2c3d")
 
 
 class TicketLinkTests(TestCase):

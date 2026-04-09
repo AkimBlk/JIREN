@@ -3,14 +3,10 @@ from django.contrib.auth.models import User
 
 from ..models import Project, ProjectMember, Sprint
 
-
-class RichTextTextarea(forms.Textarea):
-    def format_value(self, value):
-        from ..rich_text import sanitize_rich_text
-        formatted_value = super().format_value(value)
-        if formatted_value in (None, ""):
-            return ""
-        return sanitize_rich_text(formatted_value)
+NON_ADMIN_PROJECT_ROLE_CHOICES = [
+    (ProjectMember.ROLE_CONTRIBUTOR, "Contributor"),
+    (ProjectMember.ROLE_READ_ONLY, "Read only"),
+]
 
 
 class ProjectForm(forms.ModelForm):
@@ -71,9 +67,53 @@ class ProjectForm(forms.ModelForm):
             selected_users.append(manager)
         selected_ids = {user.id for user in selected_users}
         project.members.exclude(user=manager).exclude(user_id__in=selected_ids).delete()
-        for user in selected_users:   
-            role = "admin" if user == manager else "member"
+        for user in selected_users:
+            role = ProjectMember.ROLE_ADMIN if user == manager else ProjectMember.ROLE_CONTRIBUTOR
             ProjectMember.objects.update_or_create(project=project, user=user, defaults={"role": role})
+
+
+class ProjectMemberForm(forms.Form):
+    user = forms.ModelChoiceField(queryset=User.objects.none(), empty_label=None)
+    role = forms.ChoiceField(choices=NON_ADMIN_PROJECT_ROLE_CHOICES)
+
+    def __init__(self, *args, project, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.project = project
+        self.fields["user"].queryset = self._available_users()
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-control"
+
+    def _available_users(self):
+        existing_ids = self.project.members.values_list("user_id", flat=True)
+        return User.objects.exclude(pk__in=existing_ids).exclude(pk=self.project.manager_id).order_by("username")
+
+    def clean_user(self):
+        selected_user = self.cleaned_data["user"]
+        if selected_user.pk == self.project.manager_id:
+            raise forms.ValidationError("Project manager is already an administrator.")
+        return selected_user
+
+    def save(self):
+        return ProjectMember.objects.create(
+            project=self.project,
+            user=self.cleaned_data["user"],
+            role=self.cleaned_data["role"],
+        )
+
+
+class ProjectMemberRoleForm(forms.Form):
+    role = forms.ChoiceField(choices=NON_ADMIN_PROJECT_ROLE_CHOICES)
+
+    def __init__(self, *args, member, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.member = member
+        self.fields["role"].initial = member.role
+        self.fields["role"].widget.attrs["class"] = "form-control"
+
+    def save(self):
+        self.member.role = self.cleaned_data["role"]
+        self.member.save(update_fields=["role"])
+        return self.member
 
 
 class SprintAdminForm(forms.ModelForm):
@@ -85,11 +125,7 @@ class SprintAdminForm(forms.ModelForm):
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
-            "objective": RichTextTextarea(attrs={
-                "rows": 6,
-                "data-rich-text-source": "true",
-                "class": "form-control",
-            }),
+            "objective": forms.Textarea(attrs={"rows": 5, "class": "form-control", "maxlength": "1000"}),
             "capacity": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
         }
 
@@ -110,8 +146,7 @@ class SprintAdminForm(forms.ModelForm):
         return sprint
 
     def clean_objective(self):
-        from ..rich_text import sanitize_rich_text
-        return sanitize_rich_text(self.cleaned_data.get("objective", ""))
+        return str(self.cleaned_data.get("objective") or "").strip()
 
 
 class SprintStatusForm(forms.Form):

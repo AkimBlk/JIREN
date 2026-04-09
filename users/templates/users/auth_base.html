@@ -18,12 +18,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'blog/index.css' %}">
-    <title>HELB JIREN - {% block title_text %}Authentification{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'blog/images/helb-logo.png' %}">
+    <title>JIREN - {% block title_text %}Authentification{% endblock %}</title>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="helb-auth-body {% block body_class %}{% endblock %}">
 <div class="helb-arc-bg"></div>
 <div class="helb-arc-bg-2"></div>
+<a class="helb-auth-corner-brand" href="{% url 'login' %}">
+    <img class="helb-brand-logo" src="{% static 'blog/images/helb-logo.png' %}" alt="HELB logo">
+    <span class="helb-sidebar-brand-copy">
+        <strong>JIREN</strong>
+        <small>Academic Atelier</small>
+    </span>
+</a>
+<a class="helb-auth-inline-link" href="{% url 'help' %}" style="position:fixed;top:1.25rem;right:1.25rem;z-index:1101;">
+    Help
+</a>
 
 {% if messages %}
 <div class="helb-auth-flash">

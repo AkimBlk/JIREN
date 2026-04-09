@@ -34,7 +34,7 @@
     </article>
     <article class="atelier-stat-card">
         <span class="atelier-stat-card__label">Default role</span>
-        <strong class="atelier-stat-card__value">Member</strong>
+        <strong class="atelier-stat-card__value">Contributor</strong>
         <span class="atelier-stat-card__meta">Assigned on signup</span>
     </article>
 </section>
@@ -66,7 +66,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table atelier-table atelier-table--roles mb-0" style="table-layout: fixed; width: 100%;">
+            <table class="table atelier-table atelier-table--roles atelier-table--invite mb-0" style="table-layout: fixed; width: 100%;">
                 <thead>
                     <tr>
                         <th>Email</th>
@@ -79,9 +79,9 @@
                 <tbody>
                 {% for inv in invitations %}
                     <tr>
-                        <td>
+                        <td class="atelier-invite-email-cell">
                             <div class="atelier-project-ref">
-                                <strong>{{ inv.email }}</strong>
+                                <strong class="atelier-invite-email">{{ inv.email }}</strong>
                                 <small>{{ inv.get_role_assigned_display }}</small>
                             </div>
                         </td>
@@ -164,6 +164,23 @@
         </div>
     </section>
 </div>
+
+<style>
+.atelier-table--invite .atelier-project-ref {
+    min-width: 0;
+}
+
+.atelier-table--invite .atelier-invite-email {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.atelier-table--invite .atelier-invite-email-cell {
+    min-width: 0;
+}
+</style>
 
 <script>
 async function copyInviteLink(id, button) {

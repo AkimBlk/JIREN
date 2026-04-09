@@ -12,18 +12,16 @@ username_validator = UnicodeUsernameValidator()
 
 class Profile(models.Model):
     ROLE_ADMIN = "admin"
-    ROLE_MEMBER = "member"
     ROLE_CONTRIBUTOR = "contributor"
-    ROLE_CONTRIBUTEUR = ROLE_CONTRIBUTOR
     ROLE_CHOICES = [
         (ROLE_ADMIN, "Admin"),
-        (ROLE_MEMBER, "Member"),
+        (ROLE_CONTRIBUTOR, "Contributor"),
     ]
-    EDITABLE_ROLES = {ROLE_MEMBER}
+    EDITABLE_ROLES = {ROLE_CONTRIBUTOR}
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_CONTRIBUTOR)
 
     def __str__(self):
         return f"{self.user.username} Profile ({self.role})"
@@ -38,7 +36,7 @@ class Profile(models.Model):
         if self.user.is_superuser or self.user.is_staff:
             self.role = self.ROLE_ADMIN
         elif self.role not in self.EDITABLE_ROLES:
-            self.role = self.ROLE_MEMBER
+            self.role = self.ROLE_CONTRIBUTOR
 
         super().save(*args, **kwargs)
 
@@ -51,9 +49,9 @@ class Profile(models.Model):
 
 
 class Invitation(models.Model):
-    ROLE_MEMBER = "member"
+    ROLE_CONTRIBUTOR = "contributor"
     ROLE_CHOICES = [
-        (ROLE_MEMBER, "Project member"),
+        (ROLE_CONTRIBUTOR, "Project contributor"),
     ]
 
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -73,7 +71,7 @@ class Invitation(models.Model):
     role_assigned = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
-        default=ROLE_MEMBER,
+        default=ROLE_CONTRIBUTOR,
     )
     project = models.ForeignKey(
         "blog.Project",

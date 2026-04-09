@@ -26,7 +26,7 @@
                 {% if is_platform_admin %}
                     <span class="atelier-badge atelier-badge--admin">Super Admin</span>
                 {% else %}
-                    <span class="atelier-badge atelier-badge--member">Member</span>
+                    <span class="atelier-badge atelier-badge--contributor">Contributor</span>
                 {% endif %}
 
                 <div class="atelier-mini-stats-grid">
@@ -104,7 +104,7 @@
                         {% for membership in memberships %}
                             <a href="{% url 'project-detail' membership.project.pk %}" class="atelier-pill atelier-pill--surface">
                                 {{ membership.project.name }}
-                                <span class="atelier-pill__meta">{{ membership.role|title }}</span>
+                                <span class="atelier-pill__meta">{{ membership.get_role_display }}</span>
                             </a>
                         {% endfor %}
                     </div>
@@ -255,7 +255,7 @@
                                 {% if profile.role == 'admin' %}
                                     <span class="atelier-badge atelier-badge--admin">Admin</span>
                                 {% else %}
-                                    <span class="atelier-badge atelier-badge--member">Member</span>
+                                    <span class="atelier-badge atelier-badge--contributor">Contributor</span>
                                 {% endif %}
                             </td>
                         </tr>

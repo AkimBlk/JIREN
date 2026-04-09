@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from .views.statistics import ProjectStatisticsView
 from .views.git_setup import GitRepositoryCreateView, GitRepositoryUpdateView
 from .views import AnalyticsView
@@ -32,8 +33,86 @@ from .views import (
     sprint_start,
 )
 
+LEGACY_REDIRECT_PERMANENT = False
+
 urlpatterns = [
-    path("", ProjectHomeView.as_view(), name="blog-home"),
+    # Canonical HELB routes
+    path(
+        "",
+        RedirectView.as_view(
+            pattern_name="project-list",
+            permanent=LEGACY_REDIRECT_PERMANENT,
+        ),
+    ),
+    path("projects/", ProjectHomeView.as_view(), name="project-list"),
+    path("projects/", ProjectHomeView.as_view(), name="blog-home"),
+    path("help/", views.help_page, name="help"),
+    path("projects/create/", ProjectCreateView.as_view(), name="project-create"),
+    path("projects/<int:pk>/", ProjectDetailView.as_view(), name="project-detail"),
+    path("projects/<int:pk>/edit/", ProjectUpdateView.as_view(), name="project-update"),
+    path("projects/<int:pk>/delete/", ProjectDeleteView.as_view(), name="project-delete"),
+    path("projects/<int:pk>/tickets/new/", TicketCreateView.as_view(), name="ticket-create"),
+    path(
+        "projects/<int:pk>/tickets/<int:tpk>/",
+        TicketDetailView.as_view(pk_url_kwarg="tpk"),
+        name="ticket-detail",
+    ),
+    path(
+        "projects/<int:pk>/tickets/<int:tpk>/edit/",
+        TicketUpdateView.as_view(pk_url_kwarg="tpk"),
+        name="ticket-update",
+    ),
+    path(
+        "projects/<int:pk>/tickets/<int:tpk>/delete/",
+        TicketDeleteView.as_view(pk_url_kwarg="tpk"),
+        name="ticket-delete",
+    ),
+    path("projects/<int:pk>/sprints/", sprint_admin, name="sprint-list"),
+    path("projects/<int:pk>/sprints/create/", sprint_admin, name="sprint-create"),
+    path(
+        "projects/<int:pk>/sprints/<int:spk>/",
+        views.SprintUpdateView.as_view(pk_url_kwarg="spk"),
+        name="sprint-detail",
+    ),
+    path("projects/<int:pk>/sprints/<int:spk>/start/", sprint_start, name="sprint-start"),
+    path("projects/<int:pk>/sprints/<int:spk>/close/", sprint_close, name="sprint-close"),
+    path("projects/<int:pk>/sprints/<int:spk>/kanban/", TicketListView.as_view(), name="sprint-kanban"),
+
+    # Legacy project aliases (temporary)
+    path(
+        "project/new/",
+        RedirectView.as_view(
+            pattern_name="project-create",
+            permanent=LEGACY_REDIRECT_PERMANENT,
+        ),
+        name="project-create-legacy",
+    ),
+    path(
+        "project/<int:pk>/",
+        RedirectView.as_view(
+            pattern_name="project-detail",
+            permanent=LEGACY_REDIRECT_PERMANENT,
+        ),
+        name="project-detail-legacy",
+    ),
+    path(
+        "project/<int:pk>/update/",
+        RedirectView.as_view(
+            pattern_name="project-update",
+            permanent=LEGACY_REDIRECT_PERMANENT,
+        ),
+        name="project-update-legacy",
+    ),
+    path(
+        "project/<int:pk>/delete/",
+        RedirectView.as_view(
+            pattern_name="project-delete",
+            permanent=LEGACY_REDIRECT_PERMANENT,
+        ),
+        name="project-delete-legacy",
+    ),
+
+    # Legacy routes kept for compatibility
     path("kanban/", TicketListView.as_view(), name="kanban"),
     path("ticket/<int:pk>/", TicketDetailView.as_view(), name="ticket-detail"),
     path("ticket/new/", TicketCreateView.as_view(), name="ticket-create"),
@@ -54,11 +133,6 @@ urlpatterns = [
     path("api/tickets/<int:pk>/tags/remove/", api_ticket_remove_tag, name="api-ticket-remove-tag"),
 
     path("tickets/", AllTicketsListView.as_view(), name="all-tickets"),
-
-    path("project/new/", ProjectCreateView.as_view(), name="project-create"),
-    path("project/<int:pk>/", ProjectDetailView.as_view(), name="project-detail"),
-    path("project/<int:pk>/update/", ProjectUpdateView.as_view(), name="project-update"),
-    path("project/<int:pk>/delete/", ProjectDeleteView.as_view(), name="project-delete"),
     path("project/<int:pk>/backlog/", ProjectBacklogView.as_view(), name="project-backlog"),
     path("project/<int:pk>/active-sprint/", project_active_sprint, name="project-active-sprint"),
     path("project/<int:pk>/tags/", project_tags, name="project-tags"),

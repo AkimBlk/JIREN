@@ -1,21 +1,19 @@
 import json
 
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from ..models import Project, Tag, Ticket
-from .permissions import is_project_member, visible_projects
+from .permissions import is_project_member, require_project_contributor, visible_projects
 
 
 @login_required
 def project_tags(request, pk):
     project = get_object_or_404(visible_projects(request.user), pk=pk)
-    if not is_project_member(request.user, project):
-        messages.error(request, "Access denied.")
-        return redirect("blog-home")
+    require_project_contributor(request.user, project)
     context = {"project": project, "title": f"{project.name} - Tags Management"}
     return render(request, "blog/project_tags.html", context)
 
@@ -37,7 +35,9 @@ def api_project_tags(request, pk):
 @require_POST
 def api_ticket_add_tag(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
-    if not is_project_member(request.user, ticket.project):
+    try:
+        require_project_contributor(request.user, ticket.project)
+    except PermissionDenied:
         return JsonResponse({"error": "Access denied"}, status=403)
 
     try:
@@ -60,7 +60,9 @@ def api_ticket_add_tag(request, pk):
 @require_POST
 def api_ticket_remove_tag(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
-    if not is_project_member(request.user, ticket.project):
+    try:
+        require_project_contributor(request.user, ticket.project)
+    except PermissionDenied:
         return JsonResponse({"error": "Access denied"}, status=403)
 
     try:

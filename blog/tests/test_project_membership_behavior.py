@@ -49,14 +49,24 @@ class ProjectMembershipTests(TestCase):
         self.assertEqual(response.status_code, 302)
         project = Project.objects.get(code_prefix="TEAM")
         self.assertTrue(ProjectMember.objects.filter(project=project, user=self.admin, role="admin").exists())
-        self.assertTrue(ProjectMember.objects.filter(project=project, user=self.member, role="member").exists())
+        self.assertTrue(
+            ProjectMember.objects.filter(
+                project=project,
+                user=self.member,
+                role=ProjectMember.ROLE_CONTRIBUTOR,
+            ).exists()
+        )
 
     def test_non_admin_sees_only_their_projects(self):
         visible_project = self._make_project("VIS", "Projet visible")
         hidden_project = self._make_project("HID", "Projet cache")
 
         ProjectMember.objects.create(project=visible_project, user=self.admin, role="admin")
-        ProjectMember.objects.create(project=visible_project, user=self.member, role="contributeur")
+        ProjectMember.objects.create(
+            project=visible_project,
+            user=self.member,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=hidden_project, user=self.admin, role="admin")
 
         self.client.force_login(self.member)
@@ -74,7 +84,11 @@ class ProjectMembershipTests(TestCase):
         hidden_project = self._make_project("TCK2", "Projet ticket cache")
 
         ProjectMember.objects.create(project=visible_project, user=self.admin, role="admin")
-        ProjectMember.objects.create(project=visible_project, user=self.member, role="contributeur")
+        ProjectMember.objects.create(
+            project=visible_project,
+            user=self.member,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=hidden_project, user=self.admin, role="admin")
 
         self.client.force_login(self.member)
@@ -98,8 +112,7 @@ class ProjectMembershipTests(TestCase):
                 "priority": "MEDIUM",
             },
         )
-        self.assertEqual(post_response.status_code, 200)
-        self.assertContains(post_response, "Select a valid choice")
+        self.assertEqual(post_response.status_code, 403)
 
     def test_ticket_create_prefills_related_data_for_project(self):
         project = self._make_project("TCK3", "Projet ticket cible")
@@ -118,7 +131,7 @@ class ProjectMembershipTests(TestCase):
             issue_type=Ticket.ISSUE_TYPE_EPIC,
         )
         ProjectMember.objects.create(project=project, user=self.admin, role="admin")
-        ProjectMember.objects.create(project=project, user=self.member, role="contributeur")
+        ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.member)
         response = self.client.get(f"{reverse('ticket-create')}?project={project.pk}")
@@ -144,7 +157,7 @@ class ProjectMembershipTests(TestCase):
     def test_ticket_create_form_shows_type_first_and_hides_status(self):
         project = self._make_project("TCK4", "Projet ticket formulaire")
         ProjectMember.objects.create(project=project, user=self.admin, role="admin")
-        ProjectMember.objects.create(project=project, user=self.member, role="contributeur")
+        ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.member)
         response = self.client.get(reverse("ticket-create"))
@@ -159,7 +172,7 @@ class ProjectMembershipTests(TestCase):
     def test_project_cards_show_members(self):
         project = self._make_project("CARD", "Projet carte")
         ProjectMember.objects.create(project=project, user=self.admin, role="admin")
-        ProjectMember.objects.create(project=project, user=self.member, role="contributeur")
+        ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.admin)
         response = self.client.get(reverse("blog-home"))
@@ -167,3 +180,49 @@ class ProjectMembershipTests(TestCase):
         self.assertContains(response, "Members:")
         self.assertContains(response, "admin")
         self.assertContains(response, "member")
+
+    def test_read_only_cannot_mutate_tickets_or_sprints(self):
+        project = self._make_project("ACL1", "Permission Matrix")
+        read_only_user = User.objects.create_user(username="readonly-user", password="secret123")
+        ProjectMember.objects.create(project=project, user=read_only_user, role=ProjectMember.ROLE_READ_ONLY)
+        ticket = Ticket.objects.create(
+            title="Read only ticket",
+            project=project,
+            author=self.admin,
+            issue_type=Ticket.ISSUE_TYPE_TASK,
+            initial_load=1,
+            remaining_load=1,
+        )
+        sprint = Sprint.objects.create(
+            project=project,
+            name="Startable sprint",
+            status=Sprint.STATUS_PLANNED,
+            start_date=date(2026, 4, 1),
+            end_date=date(2026, 4, 14),
+            created_by=self.admin,
+        )
+
+        self.client.force_login(read_only_user)
+        self.assertEqual(self.client.get(reverse("ticket-create"), data={"project": project.pk}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("ticket-update", kwargs={"pk": ticket.pk})).status_code, 403)
+        self.assertEqual(self.client.post(reverse("sprint-start", kwargs={"pk": sprint.pk})).status_code, 403)
+
+    def test_contributor_cannot_access_project_settings_or_membership_management(self):
+        project = self._make_project("ACL2", "Project Settings Gate")
+        contributor = User.objects.create_user(username="contrib-user", password="secret123")
+        ProjectMember.objects.create(project=project, user=contributor, role=ProjectMember.ROLE_CONTRIBUTOR)
+
+        self.client.force_login(contributor)
+        self.assertEqual(self.client.get(reverse("project-update", kwargs={"pk": project.pk})).status_code, 403)
+        response = self.client.post(
+            reverse("project-update", kwargs={"pk": project.pk}),
+            data={
+                "code_prefix": project.code_prefix,
+                "name": "Blocked edit",
+                "description": project.description,
+                "start_date": "",
+                "end_date": "",
+                "members": [contributor.pk],
+            },
+        )
+        self.assertEqual(response.status_code, 403)

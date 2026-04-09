@@ -15,9 +15,12 @@ class TicketListView(LoginRequiredMixin, ListView):
     template_name = "blog/home.html"
     context_object_name = "tickets"
 
+    def _resolve_project_id(self):
+        return self.kwargs.get("pk") or self.request.GET.get("project")
+
     def get_selected_project(self):
         projects = visible_projects(self.request.user).order_by("name")
-        project_id = self.request.GET.get("project")
+        project_id = self._resolve_project_id()
         if project_id:
             selected = projects.filter(pk=project_id).first()
             if selected:
@@ -25,6 +28,9 @@ class TicketListView(LoginRequiredMixin, ListView):
         return projects.first()
 
     def _get_active_sprint(self, project):
+        sprint_id = self.kwargs.get("spk")
+        if sprint_id and project:
+            return Sprint.objects.filter(project=project, pk=sprint_id).first()
         return (
             Sprint.objects.filter(project=project, status=Sprint.STATUS_ACTIVE)
             .order_by("start_date", "id")

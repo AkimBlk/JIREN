@@ -14,8 +14,8 @@
 {% block content %}
 
 <div class="tw-max-w-6xl tw-mx-auto tw-mt-6 tw-mb-10 tw-px-4">
-  <div class="tw-bg-[var(--helb-surface-container-lowest)] tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-shadow-sm tw-overflow-hidden">
-    <div class="tw-px-6 tw-pt-6 tw-pb-4 tw-border-b tw-border-[var(--helb-outline-variant)]">
+  <div class="ticket-form-shell tw-bg-[var(--helb-surface-container-lowest)] tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-shadow-sm tw-overflow-hidden">
+    <div class="ticket-form-block ticket-form-block--header tw-px-6 tw-pt-6 tw-pb-4 tw-border-b tw-border-[var(--helb-outline-variant)]">
       <h4 class="tw-font-extrabold tw-text-lg tw-text-[var(--helb-on-surface)] tw-m-0">
         {% if object %}
           Edit ticket: Ticket #{{ object.id }}
@@ -25,7 +25,10 @@
       </h4>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" data-origin-sha="{{ origin_sha|default:'' }}">
+    <form method="POST"
+          enctype="multipart/form-data"
+          data-origin-sha="{{ origin_sha|default:'' }}"
+          data-is-create-form="{% if object %}0{% else %}1{% endif %}">
       {% csrf_token %}
 
       {% if form.errors %}
@@ -49,7 +52,7 @@
       {% endif %}
 
       {# ── Issue type pills (full width) ────────────────────── #}
-      <div class="tw-px-6 tw-pt-5 tw-pb-2">
+      <div class="ticket-form-block tw-px-6 tw-pt-5 tw-pb-2">
         <label class="tw-block tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wider tw-text-[var(--helb-on-surface-variant)] tw-mb-2">Issue type</label>
         <div class="tw-flex tw-flex-wrap tw-gap-2" id="issueTypePills">
           {% for radio in form.issue_type %}
@@ -76,7 +79,7 @@
       </div>
 
       {# ── Two-column grid (lg+) ────────────────────────────── #}
-      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
 
         {# LEFT COLUMN — Title + Description (3/5) #}
         <div class="lg:tw-col-span-3 tw-space-y-4">
@@ -98,6 +101,9 @@
             {{ form.status|as_crispy_field }}
           {% endif %}
           {{ form.priority|as_crispy_field }}
+          <div id="color-field-wrapper">
+            {{ form.color|as_crispy_field }}
+          </div>
           {{ form.story_points|as_crispy_field }}
           <div id="origin-commit-block" hidden>
             {{ form.origin_commit_sha|as_crispy_field }}
@@ -106,14 +112,13 @@
       </div>
 
       {# ── Tags + Attachments ────────────────────────────────── #}
-      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
         <div class="lg:tw-col-span-3 tw-space-y-4">
           {{ form.tags_input|as_crispy_field }}
 
         </div>
 
         <div class="lg:tw-col-span-2 tw-space-y-4">
-          {{ form.color|as_crispy_field }}
           {{ form.initial_load|as_crispy_field }}
           {{ form.remaining_load|as_crispy_field }}
         </div>
@@ -121,7 +126,7 @@
 
       {# ── Ticket Links ────────────────────────────────────────── #}
       {% if form.blocked_by_tickets %}
-      <div class="tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
         <div class="lg:tw-col-span-3 tw-space-y-4">
           {{ form.blocked_by_tickets|as_crispy_field }}
         </div>
@@ -132,7 +137,7 @@
       {% endif %}
 
       {# ── Submit Button ────────────────────────────────────────── #}
-      <div class="tw-px-6 tw-py-4 tw-flex tw-gap-3">
+      <div class="ticket-form-block tw-px-6 tw-py-4 tw-flex tw-gap-3">
         <button type="submit" class="btn btn-primary">
           <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">{% if object %}save{% else %}add_circle{% endif %}</span>
           {% if object %}Update{% else %}Create{% endif %}
@@ -148,6 +153,44 @@
 {% endif %}
 
 <style>
+  .ticket-form-shell {
+    border-width: 2px !important;
+    border-color: var(--helb-outline-variant) !important;
+  }
+  .ticket-form-block {
+    border-top: 1px solid rgba(195, 198, 208, 0.24);
+  }
+  .ticket-form-block--header {
+    border-top: 0;
+  }
+  .ticket-form-shell .form-control,
+  .ticket-form-shell select.form-control,
+  .ticket-form-shell textarea.form-control,
+  .ticket-form-shell input.form-control,
+  .ticket-form-shell .rich-editor-shell,
+  .ticket-form-shell .link-selector-panel,
+  .ticket-form-shell .link-selector-chip {
+    border-width: 1.5px;
+    border-color: var(--helb-outline-variant);
+  }
+  html:not([data-theme="dark"]) .ticket-form-shell,
+  html:not([data-theme="dark"]) .ticket-form-shell .form-control,
+  html:not([data-theme="dark"]) .ticket-form-shell .rich-editor-shell,
+  html:not([data-theme="dark"]) .ticket-form-shell .link-selector-panel,
+  html:not([data-theme="dark"]) .ticket-form-shell .link-selector-chip {
+    border-color: var(--helb-outline) !important;
+  }
+  html:not([data-theme="dark"]) .ticket-form-shell .ticket-link-select.form-control {
+    box-shadow: inset 0 0 0 1px rgba(20, 37, 58, 0.16);
+  }
+  html[data-theme="dark"] .ticket-form-shell,
+  html[data-theme="dark"] .ticket-form-shell .form-control,
+  html[data-theme="dark"] .ticket-form-shell .rich-editor-shell,
+  html[data-theme="dark"] .ticket-form-shell .link-selector-panel,
+  html[data-theme="dark"] .ticket-form-shell .link-selector-chip {
+    border-color: var(--helb-outline-variant) !important;
+  }
+
   .rich-editor-source--enhanced { display: none; }
   .rich-editor-shell {
     background: var(--helb-surface-container-lowest);
@@ -211,6 +254,56 @@
   }
   .link-selector-chip button:hover { color: var(--helb-on-surface); }
 
+  #id_tags_input.form-control {
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.75rem;
+  }
+  #id_tags_input.form-control::placeholder {
+    color: var(--helb-outline);
+    opacity: 1;
+  }
+  .ticket-link-select.form-control {
+    min-height: 11rem;
+    padding: 0.5rem;
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.75rem;
+    box-shadow: inset 0 0 0 1px rgba(195, 198, 208, 0.18);
+  }
+  .ticket-link-select.form-control option {
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    padding: 0.3rem 0.45rem;
+  }
+  #id_tags_input.form-control:focus,
+  .ticket-link-select.form-control:focus {
+    border-color: var(--helb-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--helb-primary) 22%, transparent);
+    outline: none;
+  }
+
+  html[data-theme="dark"] #id_tags_input.form-control {
+    background: var(--helb-surface-container-low);
+    border-color: var(--helb-outline-variant);
+    color: var(--helb-on-surface);
+  }
+  html[data-theme="dark"] #id_tags_input.form-control::placeholder {
+    color: var(--helb-on-surface-variant);
+  }
+  html[data-theme="dark"] .ticket-link-select.form-control {
+    background: var(--helb-surface-container-low);
+    border-color: var(--helb-outline-variant);
+    color: var(--helb-on-surface);
+    box-shadow: inset 0 0 0 1px rgba(167, 200, 252, 0.12);
+  }
+  html[data-theme="dark"] .ticket-link-select.form-control option {
+    background: var(--helb-surface-container-high);
+    color: var(--helb-on-surface);
+  }
+
   /* Issue type pill styles - distinct colors for each type */
   .issue-type-pill[data-issue-type="EPIC"] {
     background: rgba(156, 39, 176, 0.12); color: #C77DFF;
@@ -251,6 +344,23 @@
     border-color: #3B82F6;
     transform: scale(1.05); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
   }
+
+  /* Epic color picker: thicker modern rounded stroke */
+  #id_color {
+    min-height: 2.2rem;
+    padding: 0.2rem;
+    border: 4px solid color-mix(in srgb, var(--helb-outline-variant) 85%, var(--helb-primary) 15%);
+    border-radius: 40px;
+    background: var(--helb-surface-container-lowest);
+    cursor: pointer;
+  }
+  #id_color::-webkit-color-swatch-wrapper { padding: 0; border-radius: 40px; }
+  #id_color::-webkit-color-swatch { border: none; border-radius: 40px; }
+  #id_color::-moz-color-swatch { border: none; border-radius: 40px; }
+  #id_color:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 </style>
 
 <script>
@@ -263,7 +373,8 @@
   };
 
   document.addEventListener("DOMContentLoaded", function () {
-    const IS_CREATE_FORM = {% if object %}false{% else %}true{% endif %};
+    const ticketForm = document.querySelector('form[data-origin-sha]');
+    const IS_CREATE_FORM = !ticketForm || ticketForm.dataset.isCreateForm === "1";
 
     /* ── Issue type pills ── */
     (function setupIssueTypePills() {
@@ -275,8 +386,10 @@
         var activeValue = checkedRadio ? checkedRadio.value : "";
         pills.forEach(function (pill) {
           var type = pill.getAttribute("data-issue-type");
+          pill.classList.remove("is-active");
           pill.classList.remove("is-active-EPIC", "is-active-STORY", "is-active-BUG", "is-active-TASK");
           if (type === activeValue) {
+            pill.classList.add("is-active");
             pill.classList.add("is-active-" + type);
           }
         });
@@ -864,19 +977,26 @@
     const projectDataElement = document.getElementById("ticketProjectData");
     const projectData = projectDataElement ? JSON.parse(projectDataElement.textContent) : {};
 
-    const sprintWrapper = document.getElementById("div_id_sprint_wrapper");
-    const epicWrapper = document.getElementById("div_id_epic_wrapper");
-    const storyPointsWrapper = document.getElementById("div_id_story_points_wrapper");
-    const initialLoadWrapper = document.getElementById("div_id_initial_load_wrapper");
-    const remainingLoadWrapper = document.getElementById("div_id_remaining_load_wrapper");
+    function getFieldWrapper(fieldName) {
+      return (
+        document.getElementById("div_id_" + fieldName + "_wrapper")
+        || document.getElementById("div_id_" + fieldName)
+      );
+    }
+
+    const sprintWrapper = getFieldWrapper("sprint");
+    const epicWrapper = getFieldWrapper("epic");
+    const storyPointsWrapper = getFieldWrapper("story_points");
+    const initialLoadWrapper = getFieldWrapper("initial_load");
+    const remainingLoadWrapper = getFieldWrapper("remaining_load");
     const storyPointsInput = document.getElementById("id_story_points");
     const initialLoadInput = document.getElementById("id_initial_load");
     const remainingLoadInput = document.getElementById("id_remaining_load");
     const originCommitBlock = document.getElementById("origin-commit-block");
     const originCommitInput = document.getElementById("id_origin_commit_sha");
     const colorInput = document.getElementById("id_color");
-    const colorWrapper = document.getElementById("div_id_color_wrapper");
-    const ticketForm = document.querySelector('form[data-origin-sha]');
+    const colorWrapper = document.getElementById("color-field-wrapper") || getFieldWrapper("color");
+    
 
     [storyPointsInput, initialLoadInput, remainingLoadInput].forEach(function (input) {
       if (!input) return;
@@ -889,6 +1009,10 @@
     setupRichTextEditor();
 
     function getSelectedIssueType() {
+      const activePill = document.querySelector(".issue-type-pill.is-active[data-issue-type]");
+      if (activePill) {
+        return activePill.dataset.issueType || "";
+      }
       const selectedInput = document.querySelector('input[name="issue_type"]:checked');
       return selectedInput ? selectedInput.value : "";
     }

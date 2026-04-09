@@ -6,7 +6,7 @@
 <section class="helb-auth-shell helb-auth-shell--split">
     <div class="helb-auth-hero d-none d-lg-flex">
         <div>
-            <span class="helb-auth-kicker">HELB JIREN PLATFORM</span>
+            <span class="helb-auth-kicker">JIREN PLATFORM</span>
             <h1>The Academic <span>Atelier.</span></h1>
             <p>
                 Join the curated workspace where academic rigor meets modern agility. Structure your research, manage your projects, and collaborate with precision.
@@ -26,7 +26,6 @@
 
         <form method="post" class="helb-auth-form">
             {% csrf_token %}
-            <input type="hidden" name="token" value="{{ token }}">
 
             {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">
@@ -35,17 +34,6 @@
                     {% endfor %}
                 </div>
             {% endif %}
-
-            <div class="helb-auth-field">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label for="invitation-username" class="mb-0">Username</label>
-                    <span class="helb-auth-chip">Assigned by admin</span>
-                </div>
-                <div class="helb-auth-input helb-auth-input--locked">
-                    <input id="invitation-username" type="text" class="form-control" value="{{ invitation_username }}" readonly>
-                    <span class="material-symbols-outlined helb-auth-input__trailing">lock</span>
-                </div>
-            </div>
 
             <div class="helb-auth-field">
                 <label for="{{ form.email.id_for_label }}">Email</label>
@@ -59,31 +47,48 @@
             </div>
 
             <div class="helb-auth-field">
-                <label for="{{ form.password1.id_for_label }}">Password</label>
+                <label for="{{ form.last_name.id_for_label }}">Last name</label>
                 <div class="helb-auth-input">
-                    <span class="material-symbols-outlined">lock</span>
-                    {{ form.password1 }}
+                    <span class="material-symbols-outlined">badge</span>
+                    {{ form.last_name }}
                 </div>
-                {% for error in form.password1.errors %}
+                {% for error in form.last_name.errors %}
                     <small class="text-danger d-block mt-2">{{ error }}</small>
                 {% endfor %}
             </div>
 
             <div class="helb-auth-field">
-                <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                <label for="{{ form.first_name.id_for_label }}">First name</label>
                 <div class="helb-auth-input">
-                    <span class="material-symbols-outlined">verified_user</span>
-                    {{ form.password2 }}
+                    <span class="material-symbols-outlined">person</span>
+                    {{ form.first_name }}
                 </div>
-                {% for error in form.password2.errors %}
+                {% for error in form.first_name.errors %}
                     <small class="text-danger d-block mt-2">{{ error }}</small>
                 {% endfor %}
             </div>
 
-            <label class="helb-auth-checkbox" for="terms-acceptance">
-                <input id="terms-acceptance" type="checkbox" required>
-                <span>I agree to the Terms of Use and Privacy Policy.</span>
-            </label>
+            <div class="helb-auth-field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">alternate_email</span>
+                    {{ form.username }}
+                </div>
+                {% for error in form.username.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <label for="id_password">Password</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">lock</span>
+                    <input id="id_password" type="password" name="password" class="form-control" autocomplete="new-password" required>
+                </div>
+                {% for error in form.password1.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
 
             <button class="btn btn-primary btn-block helb-auth-submit" type="submit">
                 Create account

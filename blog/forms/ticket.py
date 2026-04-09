@@ -7,6 +7,8 @@ from ..models import Tag, Ticket, TicketLink
 from ..models.tag import normalize_tag_name
 from ..rich_text import sanitize_rich_text
 
+SHORT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7}$")
+
 
 # Description templates by issue type
 TICKET_TEMPLATES = {
@@ -100,18 +102,24 @@ class TicketForm(forms.ModelForm):
     tags_input = forms.CharField(
         label="Tags",
         required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "[TAG_1], [TAG_2], [TAG_3]",
+            }
+        ),
     )
     blocked_by_tickets = forms.ModelMultipleChoiceField(
         queryset=Ticket.objects.none(),
         required=False,
         label="Blocked by",
-        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": 6}),
+        widget=forms.SelectMultiple(attrs={"class": "form-control ticket-link-select", "size": 6}),
     )
     relates_to_tickets = forms.ModelMultipleChoiceField(
         queryset=Ticket.objects.none(),
         required=False,
         label="Relates to",
-        widget=forms.SelectMultiple(attrs={"class": "form-control", "size": 6}),
+        widget=forms.SelectMultiple(attrs={"class": "form-control ticket-link-select", "size": 6}),
     )
 
     class Meta:
@@ -134,6 +142,14 @@ class TicketForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.help_text = None
+        self.fields["tags_input"].widget.attrs["placeholder"] = "[TAG_1], [TAG_2], [TAG_3]"
+        if "origin_commit_sha" in self.fields:
+            self.fields["origin_commit_sha"].widget.attrs.update({
+                "maxlength": "7",
+                "pattern": "[0-9a-fA-F]{7}",
+                "placeholder": "e.g. a1b2c3d",
+                "autocomplete": "off",
+            })
         self.fields["blocked_by_tickets"].label_from_instance = self._ticket_label
         self.fields["relates_to_tickets"].label_from_instance = self._ticket_label
         for field_name in ("story_points", "initial_load", "remaining_load"):
@@ -213,6 +229,14 @@ class TicketForm(forms.ModelForm):
             )
 
         return story_points
+
+    def clean_origin_commit_sha(self):
+        origin_commit_sha = (self.cleaned_data.get("origin_commit_sha") or "").strip()
+        if not origin_commit_sha:
+            return ""
+        if not SHORT_SHA_RE.fullmatch(origin_commit_sha):
+            raise forms.ValidationError("Use a short commit SHA of 7 hexadecimal characters.")
+        return origin_commit_sha.lower()
 
     def clean(self):
         cleaned_data = super().clean()

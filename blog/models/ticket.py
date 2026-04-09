@@ -146,4 +146,4 @@ class Ticket(models.Model):
         return f"[{self.project.code_prefix}] {self.title}"
 
     def get_absolute_url(self):
-        return reverse("ticket-detail", kwargs={"pk": self.pk})
+        return reverse("ticket-detail", kwargs={"pk": self.project_id, "tpk": self.pk})

@@ -27,6 +27,8 @@ def update_ticket_status(request, pk):
         visible = visible_projects(request.user).values_list("id", flat=True)
         if ticket.project_id not in visible:
             return JsonResponse({"error": "Access denied."}, status=403)
+    if not can_edit_ticket(request.user, ticket):
+        return JsonResponse({"error": "Contributor role required."}, status=403)
 
     try:
         data = json.loads(request.body)

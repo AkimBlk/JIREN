@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.test import RequestFactory, TestCase
 
 from blog.models import Project, ProjectMember, Sprint, SprintUserCapacity, Ticket
-from blog.views import TicketCreateView, TicketListView
+from blog.views import TicketCreateView, TicketListView, TicketUpdateView
 from blog.views.queries import save_sprint_user_capacities as _save_sprint_user_capacities
 
 
@@ -24,7 +24,7 @@ class TicketViewConfigurationBehaviorTests(TestCase):
             manager=self.manager,
         )
         ProjectMember.objects.create(project=self.project, user=self.manager, role=ProjectMember.ROLE_ADMIN)
-        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_MEMBER)
+        ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.active_sprint = Sprint.objects.create(
             project=self.project,
@@ -94,6 +94,36 @@ class TicketViewConfigurationBehaviorTests(TestCase):
         self.assertIn(self.manager, form.fields["assignee"].queryset)
         self.assertIn(self.member, form.fields["assignee"].queryset)
         self.assertEqual(form.fields["color"].widget.input_type, "color")
+        self.assertEqual(form.fields["color"].widget.attrs.get("disabled"), "disabled")
+        self.assertIn(form.initial.get("color"), ("", None))
+
+    def test_ticket_update_view_disables_color_for_non_epic(self):
+        request = self.factory.get(f"/ticket/{self.story.pk}/edit/")
+        request.user = self.manager
+        view = TicketUpdateView()
+        view.request = request
+        view.args = ()
+        view.kwargs = {"pk": self.story.pk}
+        view.object = self.story
+
+        form = view.get_form()
+
+        self.assertEqual(form.fields["color"].widget.input_type, "color")
+        self.assertEqual(form.fields["color"].widget.attrs.get("disabled"), "disabled")
+
+    def test_ticket_update_view_keeps_color_enabled_for_epic(self):
+        request = self.factory.get(f"/ticket/{self.epic.pk}/edit/")
+        request.user = self.manager
+        view = TicketUpdateView()
+        view.request = request
+        view.args = ()
+        view.kwargs = {"pk": self.epic.pk}
+        view.object = self.epic
+
+        form = view.get_form()
+
+        self.assertEqual(form.fields["color"].widget.input_type, "color")
+        self.assertNotIn("disabled", form.fields["color"].widget.attrs)
 
     def test_save_sprint_user_capacities_enforces_positive_integer_rows(self):
         sprint = Sprint.objects.create(

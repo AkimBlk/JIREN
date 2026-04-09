@@ -1,6 +1,12 @@
 from django.shortcuts import render
 
 from .analytics_view import AnalyticsView
+from .membership import (
+    ProjectMemberAddView,
+    ProjectMemberListView,
+    ProjectMemberRemoveView,
+    ProjectMemberRoleView,
+)
 from .project import (
     ProjectBacklogView,
     ProjectCreateView,
@@ -39,6 +45,7 @@ from .ticket import (
 
 __all__ = [
     "about",
+    "help_page",
     "AllTicketsListView",
     "AnalyticsView",
     "ProjectBacklogView",
@@ -46,6 +53,10 @@ __all__ = [
     "ProjectDeleteView",
     "ProjectDetailView",
     "ProjectHomeView",
+    "ProjectMemberAddView",
+    "ProjectMemberListView",
+    "ProjectMemberRemoveView",
+    "ProjectMemberRoleView",
     "ProjectUpdateView",
     "SprintAdminIndexView",
     "SprintUpdateView",
@@ -76,3 +87,7 @@ __all__ = [
 
 def about(request):
     return render(request, "blog/about.html", {"title": "About"})
+
+
+def help_page(request):
+    return render(request, "blog/help.html", {"title": "Help"})
