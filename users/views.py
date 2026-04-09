@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView
 
-from .forms import InvitationForm, LoginForm, ProfileUpdateForm, RegistrationForm
+from .forms import InvitationForm, LoginForm, ProfileUpdateForm, UserRegisterForm
 from .models import Invitation, Profile
 
 
@@ -31,23 +31,61 @@ def _with_password_alias(post_data):
 
 
 class RegisterView(FormView):
-    form_class = RegistrationForm
+    form_class = UserRegisterForm
     template_name = "users/register.html"
     success_url = reverse_lazy("login")
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            logout(request)
+
+        token = request.GET.get("token") or request.POST.get("token")
+        if not token:
+            messages.error(request, "Invitation token is missing.")
+            return redirect("login")
+
+        try:
+            self.invitation = Invitation.objects.get(token=token, used=False)
+        except Invitation.DoesNotExist:
+            messages.error(request, "This invitation is invalid or has already been used.")
+            return redirect("login")
+
+        return super().dispatch(request, *args, **kwargs)
+
+        
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs["invitation"] = self.invitation
+
         if self.request.method == "POST":
             kwargs["data"] = _with_password_alias(self.request.POST)
+
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["invitation"] = self.invitation
+        return context
+
     def form_valid(self, form):
-        user = form.save(commit=False)
-        user.email = form.cleaned_data["email"]
-        user.first_name = form.cleaned_data["first_name"]
-        user.last_name = form.cleaned_data["last_name"]
-        user.username = form.cleaned_data["username"]
-        user.save()
+        user = form.save()
+
+        profile = user.profile
+        profile.role = self.invitation.role_assigned
+        profile.save()
+
+        if self.invitation.project:
+            from blog.models import ProjectMember
+            ProjectMember.objects.get_or_create(
+                project=self.invitation.project,
+                user=user,
+                defaults={"role": "member"},
+            )
+
+        self.invitation.used = True
+        self.invitation.save(update_fields=["used"])
+
         messages.success(self.request, f"Account created for {user.username}. You can now log in.")
         return super().form_valid(form)
 

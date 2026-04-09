@@ -26,6 +26,7 @@
 
         <form method="post" class="helb-auth-form">
             {% csrf_token %}
+            <input type="hidden" name="token" value="{{ invitation.token }}">
 
             {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">
@@ -35,59 +36,47 @@
                 </div>
             {% endif %}
 
-            <div class="helb-auth-field">
-                <label for="{{ form.email.id_for_label }}">Email</label>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div class="text-danger small mt-1">{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+
+           <div class="helb-auth-field">
+                <label>Email</label>
                 <div class="helb-auth-input">
                     <span class="material-symbols-outlined">mail</span>
-                    {{ form.email }}
+                    <input type="text" value="{{ invitation.email }}" class="form-control" readonly>
                 </div>
-                {% for error in form.email.errors %}
-                    <small class="text-danger d-block mt-2">{{ error }}</small>
-                {% endfor %}
+
+                
+                <input type="hidden" name="email" value="{{ invitation.email }}">
             </div>
 
             <div class="helb-auth-field">
-                <label for="{{ form.last_name.id_for_label }}">Last name</label>
-                <div class="helb-auth-input">
-                    <span class="material-symbols-outlined">badge</span>
-                    {{ form.last_name }}
-                </div>
-                {% for error in form.last_name.errors %}
-                    <small class="text-danger d-block mt-2">{{ error }}</small>
-                {% endfor %}
-            </div>
-
-            <div class="helb-auth-field">
-                <label for="{{ form.first_name.id_for_label }}">First name</label>
-                <div class="helb-auth-input">
-                    <span class="material-symbols-outlined">person</span>
-                    {{ form.first_name }}
-                </div>
-                {% for error in form.first_name.errors %}
-                    <small class="text-danger d-block mt-2">{{ error }}</small>
-                {% endfor %}
-            </div>
-
-            <div class="helb-auth-field">
-                <label for="{{ form.username.id_for_label }}">Username</label>
+                <label>Username</label>
                 <div class="helb-auth-input">
                     <span class="material-symbols-outlined">alternate_email</span>
-                    {{ form.username }}
+                    <input type="text" value="{{ invitation.username }}" class="form-control" readonly>
                 </div>
-                {% for error in form.username.errors %}
-                    <small class="text-danger d-block mt-2">{{ error }}</small>
-                {% endfor %}
+
+                <input type="hidden" name="username" value="{{ invitation.username }}">
             </div>
 
             <div class="helb-auth-field">
-                <label for="id_password">Password</label>
+                <label for="id_password1">Password</label>
                 <div class="helb-auth-input">
                     <span class="material-symbols-outlined">lock</span>
-                    <input id="id_password" type="password" name="password" class="form-control" autocomplete="new-password" required>
+                    <input id="id_password1" type="password" name="password1" class="form-control" autocomplete="new-password" required>
                 </div>
-                {% for error in form.password1.errors %}
-                    <small class="text-danger d-block mt-2">{{ error }}</small>
-                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <label for="id_password2">Confirm password</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">lock</span>
+                    <input id="id_password2" type="password" name="password2" class="form-control" autocomplete="new-password" required>
+                </div>
             </div>
 
             <button class="btn btn-primary btn-block helb-auth-submit" type="submit">
