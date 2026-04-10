@@ -18,7 +18,6 @@ class TicketTagViewSet(viewsets.ViewSet):
         project = ticket.project
         is_member = (
             self.request.user.is_superuser
-            or self.request.user.is_staff
             or project.manager_id == self.request.user.id
             or ProjectMember.objects.filter(project=project, user=self.request.user).exists()
         )

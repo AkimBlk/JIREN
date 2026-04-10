@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+﻿from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
@@ -96,17 +96,17 @@ class ProfileRoleSyncTests(TestCase):
     def setUp(self):
         self.manager = User.objects.create_user(username="manager-pr", password="secret123")
 
-    def test_profile_role_syncs_with_staff_flag(self):
+    def test_profile_role_syncs_with_superuser_flag(self):
         profile = self.manager.profile
-        self.manager.is_staff = True
-        self.manager.save(update_fields=["is_staff"])
+        self.manager.is_superuser = True
+        self.manager.save(update_fields=["is_superuser"])
         profile.save()
         profile.refresh_from_db()
         self.assertEqual(profile.role, profile.ROLE_ADMIN)
 
-        self.manager.is_staff = False
         self.manager.is_superuser = False
-        self.manager.save(update_fields=["is_staff", "is_superuser"])
+        self.manager.save(update_fields=["is_superuser"])
         profile.save()
         profile.refresh_from_db()
         self.assertNotEqual(profile.role, profile.ROLE_ADMIN)
+

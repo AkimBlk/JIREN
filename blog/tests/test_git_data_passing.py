@@ -1,48 +1,38 @@
 """Test to verify git data is correctly passed to templates."""
-from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+from django.urls import reverse
+
 from blog.models import Project
 
 User = get_user_model()
 
 
 class GitDataPassingTest(TestCase):
-    """Test that git_branches and git_commits context data are available."""
-
-    fixtures = ["demo_data.json"]  # Use existing demo data if available
+    """Test that git context data is available in project detail responses."""
 
     def setUp(self):
-        """Create test user and project."""
         self.client = Client()
-        try:
-            self.user = User.objects.first()  # Use first user from fixtures
-            if not self.user:
-                self.user = User.objects.create_user(
-                    username="testuser", password="testpass123"
-                )
-        except Exception as e:
-            self.user = User.objects.create_user(
-                username="testuser", password="testpass123"
-            )
-
-        self.project = Project.objects.first()
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.project = Project.objects.create(
+            code_prefix="GIT",
+            name="Git Context",
+            description="Git context availability test",
+            manager=self.user,
+            capacity_mode=Project.CAPACITY_MODE_GLOBAL,
+            global_capacity=5,
+        )
 
     def test_project_detail_context_has_git_data(self):
-        """Test that project detail context includes git_branches and git_commits."""
         self.client.login(username="testuser", password="testpass123")
 
-        if not self.project:
-            return  # Skip if no project exists
+        response = self.client.get(reverse("project-detail", kwargs={"pk": self.project.pk}))
 
-        response = self.client.get(f"/blog/project/{self.project.pk}/")
-
-        # Check response status
-        assert response.status_code in (200, 403, 404), f"Unexpected status: {response.status_code}"
+        self.assertIn(response.status_code, (200, 403, 404))
 
         if response.status_code == 200:
             context = response.context
-            print("\n✅ Project detail page loaded successfully")
-            print(f"   - git_branches: {context.get('git_branches', 'NOT PRESENT')}")
-            print(f"   - git_commits: {context.get('git_commits', 'NOT PRESENT')}")
-            print(f"   - git_extended_data: {context.get('git_extended_data', 'NOT PRESENT')}")
-            print(f"   - git_repository: {context.get('git_repository', 'NOT PRESENT')}")
+            self.assertIn("git_branches", context)
+            self.assertIn("git_commits", context)
+            self.assertIn("git_extended_data", context)
+            self.assertIn("git_repository", context)

@@ -212,6 +212,10 @@
                 <p class="atelier-page-header__subtitle">Overview of registered accounts and current roles.</p>
             </div>
             <div class="atelier-page-header__actions">
+                <a href="{% url 'manage-roles' %}" class="btn btn-outline-secondary">
+                    <span class="material-symbols-outlined" style="font-size:16px;">admin_panel_settings</span>
+                    Manage User Roles
+                </a>
                 <a href="{% url 'invite-user' %}" class="btn btn-primary">
                     <span class="material-symbols-outlined" style="font-size:16px;">person_add</span>
                     Invite User

@@ -6,15 +6,23 @@
       <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">code</span>
       Git Integration
     </h5>
-    {% if git_repository and user_can_configure_git %}
-      <button type="button"
-              class="btn btn-sm btn-outline-secondary"
-              data-toggle="modal"
-              data-target="#git-setup-modal">
-        <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">edit</span>
-        Edit
-      </button>
-    {% endif %}
+    <div class="d-flex align-items-center" style="gap: 0.4rem;">
+      <a href="{% url 'help' %}#github-private-token"
+         class="btn btn-sm btn-outline-secondary"
+         title="How to generate a GitHub token for private repositories"
+         aria-label="Open help for GitHub private repository token">
+        <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">help</span>
+      </a>
+      {% if git_repository and user_can_configure_git %}
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-toggle="modal"
+                data-target="#git-setup-modal">
+          <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">edit</span>
+          Edit
+        </button>
+      {% endif %}
+    </div>
   </div>
 
   <div id="git-accordion-root" class="git-accordion">

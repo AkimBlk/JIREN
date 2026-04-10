@@ -29,7 +29,7 @@ class GitRepositoryForm(forms.ModelForm):
         label="Access token",
         widget=forms.PasswordInput(attrs={
             "class": "form-control",
-            "placeholder": "Access token",
+            "placeholder": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         }),
     )
 

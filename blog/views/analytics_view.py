@@ -1,24 +1,21 @@
 from datetime import timedelta
 from typing import Dict, List, Optional
 
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import QuerySet, Sum
 from django.views.generic import TemplateView
 
-from ..models import Project, Sprint, Ticket
+from ..models import Sprint, Ticket
+from .permissions import visible_projects
 
 PERCENTAGE_MULTIPLIER = 100
 DECIMAL_PRECISION = 2
 
 
-class AnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class AnalyticsView(LoginRequiredMixin, TemplateView):
     """Display analytics dashboard with per-project filtering."""
 
     template_name = "blog/analytics_dashboard.html"
-
-    def test_func(self) -> bool:
-        """Only staff and superusers can access analytics."""
-        return self.request.user.is_staff or self.request.user.is_superuser
 
     def get_context_data(self, **kwargs) -> Dict:
         ctx = super().get_context_data(**kwargs)
@@ -42,7 +39,7 @@ class AnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             {
                 "all_projects": all_projects,
                 "selected_project": selected_project,
-                "projects_count": Project.objects.count(),
+                "projects_count": all_projects.count(),
                 "sprints_count": len(sprints),
                 **analytics,
             }
@@ -51,8 +48,8 @@ class AnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return ctx
 
     def _get_projects(self) -> QuerySet:
-        """Get all projects ordered by name."""
-        return Project.objects.all().order_by("name")
+        """Get projects visible to the current user, ordered by name."""
+        return visible_projects(self.request.user).order_by("name")
 
     def _get_sprints(self, project_id: Optional[int] = None) -> List[Sprint]:
         """Get closed sprints, optionally filtered by project."""
@@ -66,7 +63,7 @@ class AnalyticsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         if project_id:
             query = query.filter(project_id=project_id)
 
-        return list(query)
+        return list(query.filter(project__in=self._get_projects()))
 
     def _calculate_analytics(self, sprints: List[Sprint]) -> Dict:
         """Calculate velocity, consumption, and burndown metrics."""

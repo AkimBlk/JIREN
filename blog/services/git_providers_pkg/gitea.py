@@ -1,7 +1,13 @@
 """Gitea API provider implementation."""
 from typing import Dict, List
 
-from ..git_data_mapper import normalize_commits, normalize_branches, base_metadata, format_stars
+from ..git_data_mapper import (
+    base_metadata,
+    format_stars,
+    normalize_branches,
+    normalize_commits,
+    normalize_repository_info,
+)
 from .base import GitProviderBase
 
 
@@ -11,7 +17,8 @@ class GiteaProvider(GitProviderBase):
     def get_repository_info(self) -> Dict:
         """Fetch repository info from Gitea API."""
         api_url = self._get_api_url()
-        return self._safe_request(api_url)
+        data = self._safe_request(api_url)
+        return normalize_repository_info(data, "gitea", self.repository_url)
 
     def get_recent_commits(self, limit: int) -> List[Dict]:
         """Fetch recent commits from Gitea API."""

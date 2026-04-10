@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -10,8 +10,8 @@ from blog.models import Project, Sprint, Tag, Ticket
 class TicketTagTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(username="tag-admin", password="secret123")
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
 
         self.project = Project.objects.create(
             code_prefix="TAG",
@@ -136,3 +136,4 @@ class TicketTagTests(TestCase):
         self.assertContains(response, "Story front")
         self.assertNotContains(response, "Story back")
         self.assertEqual(response.context["selected_tag"], frontend)
+

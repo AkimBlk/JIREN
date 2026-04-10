@@ -98,13 +98,9 @@ class Project(models.Model):
 
 
 class ProjectMember(models.Model):
-    ROLE_ADMIN = "admin"
     ROLE_CONTRIBUTOR = "contributor"
-    ROLE_READ_ONLY = "read_only"
     ROLE_CHOICES = [
-        (ROLE_ADMIN, "Admin"),
         (ROLE_CONTRIBUTOR, "Contributor"),
-        (ROLE_READ_ONLY, "Read only"),
     ]
 
     project = models.ForeignKey(

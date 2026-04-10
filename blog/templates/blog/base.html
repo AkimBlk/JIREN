@@ -38,7 +38,7 @@
         </span>
     </a>
 
-    {% if user.is_staff or user.is_superuser %}
+    {% if user.is_superuser %}
         <a href="{% url 'project-create' %}" class="helb-sidebar-create">
             <span class="material-symbols-outlined">add</span>
             Create Project
@@ -104,6 +104,7 @@
             <span class="material-symbols-outlined" id="themeToggleIcon">dark_mode</span>
             <span class="helb-theme-toggle__label" id="themeToggleLabel">Dark Mode</span>
         </button>
+        <span class="helb-theme-fab" hidden aria-hidden="true"></span>
 
         <a href="{% url 'help' %}" class="helb-icon-button" aria-label="Open help">
             <span class="material-symbols-outlined">help</span>
@@ -113,7 +114,7 @@
             <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
             <span class="helb-user-chip__text d-none d-xl-flex">
                 <strong>{{ user.get_full_name|default:user.username }}</strong>
-                <small>{% if user.is_staff or user.is_superuser %}Curator{% else %}Contributor{% endif %}</small>
+                <small>{% if user.is_superuser %}Curator{% else %}Contributor{% endif %}</small>
             </span>
         </a>
 

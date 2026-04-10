@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout
@@ -12,7 +14,7 @@ from .models import Invitation, Profile
 
 
 def _is_platform_admin(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
+    return user.is_authenticated and user.is_superuser
 
 
 @require_POST
@@ -34,6 +36,8 @@ class RegisterView(FormView):
     form_class = UserRegisterForm
     template_name = "users/register.html"
     success_url = reverse_lazy("login")
+    invitation = None
+    invitation_token = ""
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -41,18 +45,25 @@ class RegisterView(FormView):
 
         token = request.GET.get("token") or request.POST.get("token")
         if not token:
-            messages.error(request, "Invitation token is missing.")
+            messages.error(request, "A valid invitation link is required to register.")
+            return redirect("login")
+        try:
+            token_uuid = uuid.UUID(str(token))
+        except ValueError:
+            messages.error(request, "Invalid or already-used invitation link.")
             return redirect("login")
 
-        try:
-            self.invitation = Invitation.objects.get(token=token, used=False)
-        except Invitation.DoesNotExist:
-            messages.error(request, "This invitation is invalid or has already been used.")
+        self.invitation = (
+            Invitation.objects.filter(token=token_uuid, used=False)
+            .select_related("project")
+            .first()
+        )
+        if not self.invitation:
+            messages.error(request, "Invalid or already-used invitation link.")
             return redirect("login")
+        self.invitation_token = str(self.invitation.token)
 
         return super().dispatch(request, *args, **kwargs)
-
-        
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -66,6 +77,7 @@ class RegisterView(FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["invitation"] = self.invitation
+        context["token"] = self.invitation_token
         return context
 
     def form_valid(self, form):
@@ -77,10 +89,11 @@ class RegisterView(FormView):
 
         if self.invitation.project:
             from blog.models import ProjectMember
+
             ProjectMember.objects.get_or_create(
                 project=self.invitation.project,
                 user=user,
-                defaults={"role": "member"},
+                defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
             )
 
         self.invitation.used = True

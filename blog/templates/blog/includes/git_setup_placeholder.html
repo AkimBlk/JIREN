@@ -1,6 +1,6 @@
 {% load static %}
 
-{% if user_is_admin and not git_repository %}
+{% if user_can_configure_git and not git_repository %}
 <link rel="stylesheet" href="{% static 'blog/css/git_setup.css' %}">
 
 <div class="git-setup-placeholder">

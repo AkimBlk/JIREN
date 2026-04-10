@@ -2,23 +2,20 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 
-from ..models import Project, ProjectMember, Ticket
+from ..models import Project, ProjectMember
 
-LEGACY_PROJECT_ROLE_ALIAS = "member"
-PROJECT_ROLE_VALUES = {
-    ProjectMember.ROLE_ADMIN,
-    ProjectMember.ROLE_CONTRIBUTOR,
-    ProjectMember.ROLE_READ_ONLY,
+LEGACY_PROJECT_ROLE_ALIASES = {
+    "member",
+    "read-only",
+    "read_only",
+    "admin",
 }
-PROJECT_ADMIN_ROLES = {ProjectMember.ROLE_ADMIN}
-PROJECT_CONTRIBUTOR_ROLES = {
-    ProjectMember.ROLE_ADMIN,
-    ProjectMember.ROLE_CONTRIBUTOR,
-}
+PROJECT_CONTRIBUTOR_ROLES = {ProjectMember.ROLE_CONTRIBUTOR}
+PROJECT_ROLE_VALUES = {ProjectMember.ROLE_CONTRIBUTOR}
 
 
 def is_admin(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
+    return user.is_authenticated and user.is_superuser
 
 
 def can_create_projects(user):
@@ -28,24 +25,26 @@ def can_create_projects(user):
 def get_project_role(user, project):
     if not user.is_authenticated:
         return None
-    if is_admin(user) or project.manager_id == user.id:
-        return ProjectMember.ROLE_ADMIN
+    if is_admin(user):
+        return ProjectMember.ROLE_CONTRIBUTOR
+    if project.manager_id == user.id:
+        return ProjectMember.ROLE_CONTRIBUTOR
     role = (
         ProjectMember.objects.filter(project=project, user=user)
         .values_list("role", flat=True)
         .first()
     )
-    if role == LEGACY_PROJECT_ROLE_ALIAS:
+    if role in LEGACY_PROJECT_ROLE_ALIASES:
         return ProjectMember.ROLE_CONTRIBUTOR
     return role if role in PROJECT_ROLE_VALUES else None
 
 
 def is_project_read_only(user, project):
-    return get_project_role(user, project) == ProjectMember.ROLE_READ_ONLY
+    return False
 
 
 def require_project_admin(user, project):
-    if get_project_role(user, project) not in PROJECT_ADMIN_ROLES:
+    if not is_admin(user):
         raise PermissionDenied("Project admin role required.")
 
 
@@ -69,7 +68,7 @@ def can_create_tickets(user):
         return True
     return ProjectMember.objects.filter(
         user=user,
-        role__in=[LEGACY_PROJECT_ROLE_ALIAS, ProjectMember.ROLE_ADMIN, ProjectMember.ROLE_CONTRIBUTOR],
+        role__in=list(LEGACY_PROJECT_ROLE_ALIASES) + [ProjectMember.ROLE_CONTRIBUTOR],
     ).exists()
 
 

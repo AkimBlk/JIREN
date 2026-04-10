@@ -87,6 +87,40 @@
   </details>
 </section>
 
+<section class="helb-card-sm mb-3" id="github-private-token">
+  <h2 class="mb-3" style="font-size: 1.2rem; font-weight: 750;">5. GitHub Token For Private Repositories</h2>
+  <p class="text-muted mb-3">
+    If your repository is private, you must provide a personal access token.
+    Keep it secret and never share it in chat, screenshots, or commits.
+  </p>
+  <ol class="mb-3 pl-3" style="display: grid; gap: 0.6rem;">
+    <li>
+      Open GitHub settings:
+      <strong>Profile picture -> Settings -> Developer settings -> Personal access tokens</strong>.
+    </li>
+    <li>
+      Choose a token type:
+      <strong>Fine-grained token</strong> (recommended) or <strong>Classic token</strong>.
+    </li>
+    <li>
+      Set an expiration date (short-lived is safer), then grant repository read access.
+      For private repos, make sure the token can read repository metadata and contents.
+    </li>
+    <li>
+      Click <strong>Generate token</strong> and copy it immediately.
+      GitHub shows the full token only once.
+    </li>
+    <li>
+      In JIREN, open <strong>Project -> Git Integration</strong>, enable
+      <strong>Private Repository</strong>, paste the token, and save.
+    </li>
+  </ol>
+  <div class="p-3" style="border-radius: 0.75rem; background: var(--helb-surface-container-low);">
+    <strong>Recommended scope (minimum):</strong>
+    <span class="text-muted">read-only access to the target private repository.</span>
+  </div>
+</section>
+
 <section class="helb-card-sm">
   <div class="d-flex flex-wrap justify-content-between align-items-center" style="gap: 0.75rem;">
     <div>

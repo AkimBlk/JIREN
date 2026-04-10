@@ -26,7 +26,7 @@
 
         <form method="post" class="helb-auth-form">
             {% csrf_token %}
-            <input type="hidden" name="token" value="{{ invitation.token }}">
+            <input type="hidden" name="token" value="{{ token|default:invitation.token }}">
 
             {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">

@@ -114,12 +114,12 @@
   width: 84px;
 }
 
-.helb-auth-corner-brand .helb-sidebar-brand-copy strong {
+.helb-auth-corner-brand .helb-auth-brand-copy strong {
   font-size: 0.75rem;
   line-height: 1;
 }
 
-.helb-auth-corner-brand .helb-sidebar-brand-copy small {
+.helb-auth-corner-brand .helb-auth-brand-copy small {
   font-size: 0.52rem;
   letter-spacing: 0.12em;
 }

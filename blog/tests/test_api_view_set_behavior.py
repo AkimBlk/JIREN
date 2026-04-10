@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -13,9 +13,9 @@ class TagApiViewSetBehaviorTests(TestCase):
         self.factory = APIRequestFactory()
         self.manager = User.objects.create_user(username="api-manager", password="secret123")
         self.member = User.objects.create_user(username="api-member", password="secret123")
-        self.staff = User.objects.create_user(username="api-staff", password="secret123")
-        self.staff.is_staff = True
-        self.staff.save(update_fields=["is_staff"])
+        self.superuser = User.objects.create_user(username="api-superuser", password="secret123")
+        self.superuser.is_superuser = True
+        self.superuser.save(update_fields=["is_superuser"])
         self.outsider = User.objects.create_user(username="api-outsider", password="secret123")
 
         self.project = Project.objects.create(
@@ -43,7 +43,7 @@ class TagApiViewSetBehaviorTests(TestCase):
         denied_response = create_view(denied_request, project_id=self.project.pk)
         self.assertEqual(denied_response.status_code, 403)
 
-    def test_tag_destroy_is_reserved_for_project_managers_or_staff(self):
+    def test_tag_destroy_is_reserved_for_project_managers_or_superusers(self):
         destroy_view = TagViewSet.as_view({"delete": "destroy"})
 
         member_request = self.factory.delete("/api/projects/tags/1/")
@@ -51,10 +51,10 @@ class TagApiViewSetBehaviorTests(TestCase):
         member_response = destroy_view(member_request, project_id=self.project.pk, pk=self.tag.pk)
         self.assertEqual(member_response.status_code, 403)
 
-        staff_request = self.factory.delete("/api/projects/tags/1/")
-        force_authenticate(staff_request, user=self.staff)
-        staff_response = destroy_view(staff_request, project_id=self.project.pk, pk=self.tag.pk)
-        self.assertEqual(staff_response.status_code, 204)
+        superuser_request = self.factory.delete("/api/projects/tags/1/")
+        force_authenticate(superuser_request, user=self.superuser)
+        superuser_response = destroy_view(superuser_request, project_id=self.project.pk, pk=self.tag.pk)
+        self.assertEqual(superuser_response.status_code, 204)
 
 
 class TicketTagApiViewSetBehaviorTests(TestCase):
@@ -121,3 +121,4 @@ class TicketTagApiViewSetBehaviorTests(TestCase):
         second_response = remove_view(second_request, ticket_id=self.ticket.pk)
         self.assertEqual(second_response.status_code, 200)
         self.assertFalse(self.ticket.tags.filter(pk=self.tag.pk).exists())
+
