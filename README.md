@@ -1,4 +1,7 @@
-# project_django jira ekip4
+# project_django jiren equipe4
+### 0. Recuperer le projet
+git clone https://github.com/Leviantan07/JIREN-RESURECTION.git <br>
+cd JIREN-RESURECTION <br>
 
 # How to Run the Application (Test Instructions)
 
@@ -72,9 +75,7 @@ git push origin [prenom]
 
 # comment debuter :
 
-### 1. Recuperer le projet
-git clone https://github.com/Leviantan07/JIREN-RESURECTION.git <br>
-cd JIREN-RESURECTION <br>
+
 
 # 2.5 Avec environnement virtuel windows :
 python -m venv venv <br>

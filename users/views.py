@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView
 
-from .forms import InvitationForm, LoginForm, ProfileUpdateForm, RegistrationForm
+from .forms import InvitationForm, LoginForm, ProfileUpdateForm, UserRegisterForm
 from .models import Invitation, Profile
 
 
@@ -33,13 +33,16 @@ def _with_password_alias(post_data):
 
 
 class RegisterView(FormView):
-    form_class = RegistrationForm
+    form_class = UserRegisterForm
     template_name = "users/register.html"
     success_url = reverse_lazy("login")
     invitation = None
     invitation_token = ""
 
     def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            logout(request)
+
         token = request.GET.get("token") or request.POST.get("token")
         if not token:
             messages.error(request, "A valid invitation link is required to register.")
@@ -55,45 +58,34 @@ class RegisterView(FormView):
             messages.error(request, "Invalid or already-used invitation link.")
             return redirect("login")
         self.invitation_token = str(self.invitation.token)
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        if self.request.method == "POST":
-            data = _with_password_alias(self.request.POST).copy()
-            data["email"] = self.invitation.email
-            data["username"] = self.invitation.username
-            kwargs["data"] = data
-        else:
-            kwargs["initial"] = {
-                "email": self.invitation.email,
-                "username": self.invitation.username,
-            }
-        return kwargs
+        kwargs["invitation"] = self.invitation
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        form.fields["email"].widget.attrs["readonly"] = "readonly"
-        form.fields["username"].widget.attrs["readonly"] = "readonly"
-        return form
+        if self.request.method == "POST":
+            kwargs["data"] = _with_password_alias(self.request.POST)
+
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["invitation"] = self.invitation
         context["token"] = self.invitation_token
-        context["invitation_username"] = self.invitation.username
         return context
 
     def form_valid(self, form):
-        from blog.models import ProjectMember
+        user = form.save()
 
-        user = form.save(commit=False)
-        user.email = self.invitation.email
-        user.username = self.invitation.username
-        user.first_name = form.cleaned_data.get("first_name", "")
-        user.last_name = form.cleaned_data.get("last_name", "")
-        user.save()
+        profile = user.profile
+        profile.role = self.invitation.role_assigned
+        profile.save()
 
         if self.invitation.project:
+            from blog.models import ProjectMember
+
             ProjectMember.objects.get_or_create(
                 project=self.invitation.project,
                 user=user,
