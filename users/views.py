@@ -53,7 +53,11 @@ class RegisterView(FormView):
             messages.error(request, "Invalid or already-used invitation link.")
             return redirect("login")
 
-        self.invitation = Invitation.objects.filter(token=token_uuid, used=False).select_related("project").first()
+        self.invitation = (
+            Invitation.objects.filter(token=token_uuid, used=False)
+            .select_related("project")
+            .first()
+        )
         if not self.invitation:
             messages.error(request, "Invalid or already-used invitation link.")
             return redirect("login")
