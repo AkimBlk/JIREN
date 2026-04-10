@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout
@@ -34,20 +36,73 @@ class RegisterView(FormView):
     form_class = RegistrationForm
     template_name = "users/register.html"
     success_url = reverse_lazy("login")
+    invitation = None
+    invitation_token = ""
+
+    def dispatch(self, request, *args, **kwargs):
+        token = request.GET.get("token") or request.POST.get("token")
+        if not token:
+            messages.error(request, "A valid invitation link is required to register.")
+            return redirect("login")
+        try:
+            token_uuid = uuid.UUID(str(token))
+        except ValueError:
+            messages.error(request, "Invalid or already-used invitation link.")
+            return redirect("login")
+
+        self.invitation = Invitation.objects.filter(token=token_uuid, used=False).select_related("project").first()
+        if not self.invitation:
+            messages.error(request, "Invalid or already-used invitation link.")
+            return redirect("login")
+        self.invitation_token = str(self.invitation.token)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         if self.request.method == "POST":
-            kwargs["data"] = _with_password_alias(self.request.POST)
+            data = _with_password_alias(self.request.POST).copy()
+            data["email"] = self.invitation.email
+            data["username"] = self.invitation.username
+            kwargs["data"] = data
+        else:
+            kwargs["initial"] = {
+                "email": self.invitation.email,
+                "username": self.invitation.username,
+            }
         return kwargs
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["email"].widget.attrs["readonly"] = "readonly"
+        form.fields["username"].widget.attrs["readonly"] = "readonly"
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["token"] = self.invitation_token
+        context["invitation_username"] = self.invitation.username
+        return context
+
     def form_valid(self, form):
+        from blog.models import ProjectMember
+
         user = form.save(commit=False)
-        user.email = form.cleaned_data["email"]
-        user.first_name = form.cleaned_data["first_name"]
-        user.last_name = form.cleaned_data["last_name"]
-        user.username = form.cleaned_data["username"]
+        user.email = self.invitation.email
+        user.username = self.invitation.username
+        user.first_name = form.cleaned_data.get("first_name", "")
+        user.last_name = form.cleaned_data.get("last_name", "")
         user.save()
+
+        if self.invitation.project:
+            ProjectMember.objects.get_or_create(
+                project=self.invitation.project,
+                user=user,
+                defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
+            )
+
+        self.invitation.used = True
+        self.invitation.save(update_fields=["used"])
+
         messages.success(self.request, f"Account created for {user.username}. You can now log in.")
         return super().form_valid(form)
 

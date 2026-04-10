@@ -134,13 +134,32 @@ class SprintAdminForm(forms.ModelForm):
     def __init__(self, *args, project=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.project = project
+        self.fields["workload_unit"].required = False
+        self.fields["capacity_mode"].required = False
         if project and not self.is_bound:
             self.fields["workload_unit"].initial = project.workload_unit
+            self.fields["capacity_mode"].initial = self._default_capacity_mode()
+
+    def _default_capacity_mode(self):
+        if self.project and self.project.capacity_mode == Project.CAPACITY_MODE_PER_USER:
+            return Sprint.CAPACITY_MODE_PER_USER
+        return Sprint.CAPACITY_MODE_GLOBAL
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.project:
+            if not cleaned_data.get("workload_unit"):
+                cleaned_data["workload_unit"] = self.project.workload_unit
+            if not cleaned_data.get("capacity_mode"):
+                cleaned_data["capacity_mode"] = self._default_capacity_mode()
+        if cleaned_data.get("capacity_mode") == Sprint.CAPACITY_MODE_PER_USER:
+            cleaned_data["capacity"] = None
+        return cleaned_data
 
     def save(self, commit=True):
         sprint = super().save(commit=False)
         if self.project:
-            self.project.workload_unit = self.cleaned_data["workload_unit"]
+            self.project.workload_unit = self.cleaned_data.get("workload_unit") or self.project.workload_unit
             self.project.save(update_fields=["workload_unit"])
         if commit:
             sprint.save()
