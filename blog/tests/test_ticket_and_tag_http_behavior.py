@@ -43,7 +43,11 @@ class TicketAndTagHttpBehaviorTests(TestCase):
             global_capacity=10,
             manager=self.manager,
         )
-        ProjectMember.objects.create(project=self.project, user=self.manager, role=ProjectMember.ROLE_ADMIN)
+        ProjectMember.objects.create(
+            project=self.project,
+            user=self.manager,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
         self.sprint = Sprint.objects.create(
             project=self.project,

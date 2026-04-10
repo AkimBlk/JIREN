@@ -38,11 +38,9 @@
                 <strong>Permissions</strong>
                 <small>
                     {% if user_is_admin %}
-                        Admin access
-                    {% elif project_role == 'contributor' %}
-                        Contributor
+                        Super admin access
                     {% else %}
-                        Read only
+                        Contributor
                     {% endif %}
                 </small>
             </article>
@@ -215,7 +213,7 @@
         <article class="stitch-member-panel">
             <div class="stitch-panel-head">
                 <h3>Project Members</h3>
-                {% if user_is_admin %}<span class="stitch-muted-note">Admin view</span>{% endif %}
+                {% if user_is_admin %}<span class="stitch-muted-note">Super admin view</span>{% endif %}
             </div>
             {% if membership_management_enabled %}
                 <form method="post" action="{% url 'project-members-add' project.pk %}" class="mb-3">

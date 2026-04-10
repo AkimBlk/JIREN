@@ -8,7 +8,7 @@ from django.views.generic import DetailView, View
 
 from ..forms import NON_ADMIN_PROJECT_ROLE_CHOICES, ProjectMemberForm, ProjectMemberRoleForm
 from ..models import Project, ProjectMember
-from .permissions import require_project_admin
+from .permissions import is_admin, require_project_admin
 
 
 class ProjectAdminRequiredMixin(LoginRequiredMixin):
@@ -44,7 +44,7 @@ class ProjectMemberListView(ProjectAdminRequiredMixin, DetailView):
         ctx["member_form"] = kwargs.get("member_form") or ProjectMemberForm(project=self.object)
         ctx["member_role_choices"] = NON_ADMIN_PROJECT_ROLE_CHOICES
         ctx["project_summary"] = {"member_count": members.count()}
-        ctx["user_is_admin"] = True
+        ctx["user_is_admin"] = is_admin(self.request.user)
         return ctx
 
 

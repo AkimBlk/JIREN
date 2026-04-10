@@ -5,7 +5,6 @@ from ..models import Project, ProjectMember, Sprint
 
 NON_ADMIN_PROJECT_ROLE_CHOICES = [
     (ProjectMember.ROLE_CONTRIBUTOR, "Contributor"),
-    (ProjectMember.ROLE_READ_ONLY, "Read only"),
 ]
 
 
@@ -68,8 +67,11 @@ class ProjectForm(forms.ModelForm):
         selected_ids = {user.id for user in selected_users}
         project.members.exclude(user=manager).exclude(user_id__in=selected_ids).delete()
         for user in selected_users:
-            role = ProjectMember.ROLE_ADMIN if user == manager else ProjectMember.ROLE_CONTRIBUTOR
-            ProjectMember.objects.update_or_create(project=project, user=user, defaults={"role": role})
+            ProjectMember.objects.update_or_create(
+                project=project,
+                user=user,
+                defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
+            )
 
 
 class ProjectMemberForm(forms.Form):
@@ -90,7 +92,7 @@ class ProjectMemberForm(forms.Form):
     def clean_user(self):
         selected_user = self.cleaned_data["user"]
         if selected_user.pk == self.project.manager_id:
-            raise forms.ValidationError("Project manager is already an administrator.")
+            raise forms.ValidationError("Project manager is already part of this project.")
         return selected_user
 
     def save(self):

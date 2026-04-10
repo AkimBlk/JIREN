@@ -120,7 +120,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         ctx["selected_tag"] = selected_tag
         project_role = get_project_role(self.request.user, self.object)
         ctx["project_role"] = project_role
-        ctx["user_is_admin"] = project_role == ProjectMember.ROLE_ADMIN
+        ctx["user_is_admin"] = is_admin(self.request.user)
         ctx["user_can_create_ticket"] = can_contribute(self.request.user, self.object)
         ctx["user_can_manage_sprints"] = can_manage_sprints(self.request.user, self.object)
         ctx["active_sprint"] = (
@@ -142,9 +142,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         # Add Git repository information if user has project access
         git_repository = getattr(self.object, "git_repository", None)
         ctx["git_repository"] = git_repository
-        ctx["user_can_configure_git"] = (
-            is_admin(self.request.user) or self.request.user == self.object.manager
-        )
+        ctx["user_can_configure_git"] = is_project_member(self.request.user, self.object)
         ctx["git_info"] = self._get_git_info()
         ctx["git_commits"] = self._get_git_commits()
         ctx["git_branches"] = self._get_git_branches()

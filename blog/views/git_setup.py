@@ -1,31 +1,43 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
 from ..forms.git_repository import GitRepositoryForm
 from ..models import GitRepository, Project
-from .permissions import is_admin
+from .permissions import is_project_member
 
 
 class GitRepositorySetupMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
-    Mixin to ensure only project admins can setup Git repository.
+    Mixin to ensure any project member can setup Git repository.
     """
 
-    def test_func(self):
-        """Check if user is project admin."""
-        project_pk = self.kwargs.get("project_pk")
-        project = get_object_or_404(Project, pk=project_pk)
+    def _is_ajax(self):
+        return self.request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-        # User must be project manager or superuser
-        return self.request.user == project.manager or is_admin(self.request.user)
+    def _json_error(self, message, status=400):
+        return JsonResponse({"success": False, "error": message}, status=status)
+
+    def _project(self):
+        return get_object_or_404(Project, pk=self.kwargs["project_pk"])
+
+    def test_func(self):
+        """Check if user is a project member."""
+        return is_project_member(self.request.user, self._project())
+
+    def handle_no_permission(self):
+        if self._is_ajax():
+            if not self.request.user.is_authenticated:
+                return self._json_error("Authentication required.", status=401)
+            return self._json_error("Access denied for this project.", status=403)
+        return super().handle_no_permission()
 
     def get_context_data(self, **kwargs):
         """Add project to context."""
         context = super().get_context_data(**kwargs)
-        context["project"] = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        context["project"] = self._project()
         return context
 
 
@@ -41,15 +53,27 @@ class GitRepositoryCreateView(GitRepositorySetupMixin, CreateView):
         if not super().test_func():
             return False
 
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        project = self._project()
         return not hasattr(project, "git_repository")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not super().test_func():
+            return self.handle_no_permission()
+        if hasattr(self._project(), "git_repository"):
+            if self._is_ajax():
+                return self._json_error(
+                    "Repository already configured. Use edit instead.",
+                    status=409,
+                )
+            return self.handle_no_permission()
+        return super(UserPassesTestMixin, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         """Save form and link to project."""
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        project = self._project()
         form.instance.project = project
 
-        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if self._is_ajax():
             super().form_valid(form)
             return JsonResponse({
                 "success": True,
@@ -64,7 +88,7 @@ class GitRepositoryCreateView(GitRepositorySetupMixin, CreateView):
 
     def form_invalid(self, form):
         """Return JSON errors for AJAX requests."""
-        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if self._is_ajax():
             errors = "; ".join(
                 f"{field}: {', '.join(errs)}"
                 for field, errs in form.errors.items()
@@ -90,22 +114,34 @@ class GitRepositoryUpdateView(GitRepositorySetupMixin, UpdateView):
         if not super().test_func():
             return False
 
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        project = self._project()
         return hasattr(project, "git_repository")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not super().test_func():
+            return self.handle_no_permission()
+        if not hasattr(self._project(), "git_repository"):
+            if self._is_ajax():
+                return self._json_error(
+                    "No repository configured yet. Create one first.",
+                    status=404,
+                )
+            return self.handle_no_permission()
+        return super(UserPassesTestMixin, self).dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         """Get the Git repository for the project."""
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        project = self._project()
         return project.git_repository
 
     def form_valid(self, form):
         """Save form — keep existing token if field left empty."""
-        project = get_object_or_404(Project, pk=self.kwargs["project_pk"])
+        project = self._project()
 
         if not form.cleaned_data.get("access_token"):
             form.instance.access_token = self.get_object().access_token
 
-        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if self._is_ajax():
             super().form_valid(form)
             return JsonResponse({
                 "success": True,
@@ -120,7 +156,7 @@ class GitRepositoryUpdateView(GitRepositorySetupMixin, UpdateView):
 
     def form_invalid(self, form):
         """Return JSON errors for AJAX requests."""
-        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if self._is_ajax():
             errors = "; ".join(
                 f"{field}: {', '.join(errs)}"
                 for field, errs in form.errors.items()

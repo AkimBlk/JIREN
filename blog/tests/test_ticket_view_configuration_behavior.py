@@ -14,6 +14,8 @@ class TicketViewConfigurationBehaviorTests(TestCase):
         self.factory = RequestFactory()
         self.manager = User.objects.create_user(username="view-manager", password="secret123")
         self.member = User.objects.create_user(username="view-member", password="secret123")
+        self.client.defaults["wsgi.url_scheme"] = "https"
+        self.client.defaults["SERVER_PORT"] = "443"
 
         self.project = Project.objects.create(
             code_prefix="CFG",
@@ -23,7 +25,11 @@ class TicketViewConfigurationBehaviorTests(TestCase):
             global_capacity=8,
             manager=self.manager,
         )
-        ProjectMember.objects.create(project=self.project, user=self.manager, role=ProjectMember.ROLE_ADMIN)
+        ProjectMember.objects.create(
+            project=self.project,
+            user=self.manager,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=self.project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.active_sprint = Sprint.objects.create(
@@ -70,6 +76,7 @@ class TicketViewConfigurationBehaviorTests(TestCase):
         request = self.factory.get("/kanban/", {"project": self.project.pk})
         request.user = self.manager
         view.request = request
+        view.kwargs = {}
 
         queryset = view.get_queryset()
 

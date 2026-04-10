@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -153,9 +153,9 @@ class SprintAssignmentTests(TestCase):
         with self.assertRaises(ValidationError):
             ticket.full_clean()
 
-    def test_staff_can_create_sprint_from_simple_admin_page(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=["is_staff"])
+    def test_superuser_can_create_sprint_from_simple_admin_page(self):
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("sprint-admin", kwargs={"pk": self.project.pk}),
@@ -171,16 +171,16 @@ class SprintAssignmentTests(TestCase):
         self.assertEqual(sprint.status, Sprint.STATUS_PLANNED)
 
     def test_sprint_admin_creation_form_hides_status_field(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=["is_staff"])
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
         response = self.client.get(reverse("sprint-admin", kwargs={"pk": self.project.pk}))
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("status", response.context["form"].fields)
 
-    def test_staff_can_update_sprint_status_from_admin_page(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=["is_staff"])
+    def test_superuser_can_update_sprint_status_from_admin_page(self):
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
         planned_sprint = Sprint.objects.create(
             project=self.project,
@@ -201,8 +201,8 @@ class SprintAssignmentTests(TestCase):
         self.assertIsNotNone(planned_sprint.activated_at)
 
     def test_sprint_admin_nav_page_lists_projects(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=["is_staff"])
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
         response = self.client.get(reverse("sprint-admin-index"))
         self.assertEqual(response.status_code, 200)
@@ -211,8 +211,8 @@ class SprintAssignmentTests(TestCase):
         self.assertContains(response, reverse("sprint-admin", kwargs={"pk": self.project.pk}))
 
     def test_sprint_pages_use_english_copy_without_helper_notes(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=["is_staff"])
+        self.user.is_superuser = True
+        self.user.save(update_fields=["is_superuser"])
         self.client.force_login(self.user)
 
         admin_response = self.client.get(reverse("sprint-admin", kwargs={"pk": self.project.pk}))
@@ -225,3 +225,4 @@ class SprintAssignmentTests(TestCase):
         self.assertNotContains(admin_response, "Choose one ticket card template for the whole sprint.")
         self.assertContains(index_response, "Manage project sprints.")
         self.assertNotContains(update_response, "Fill only the users that should receive sprint capacity.")
+

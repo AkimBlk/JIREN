@@ -1,17 +1,19 @@
-from datetime import date
+﻿from datetime import date
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from blog.models import Project, ProjectMember, Sprint, Ticket
+from blog.models import GitRepository, Project, ProjectMember, Sprint, Ticket
 
 
 class ProjectMembershipTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(username="admin", password="secret123")
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
+        self.client.defaults["wsgi.url_scheme"] = "https"
+        self.client.defaults["SERVER_PORT"] = "443"
 
         self.member = User.objects.create_user(username="member", password="secret123")
 
@@ -48,7 +50,13 @@ class ProjectMembershipTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         project = Project.objects.get(code_prefix="TEAM")
-        self.assertTrue(ProjectMember.objects.filter(project=project, user=self.admin, role="admin").exists())
+        self.assertTrue(
+            ProjectMember.objects.filter(
+                project=project,
+                user=self.admin,
+                role=ProjectMember.ROLE_CONTRIBUTOR,
+            ).exists()
+        )
         self.assertTrue(
             ProjectMember.objects.filter(
                 project=project,
@@ -61,13 +69,21 @@ class ProjectMembershipTests(TestCase):
         visible_project = self._make_project("VIS", "Projet visible")
         hidden_project = self._make_project("HID", "Projet cache")
 
-        ProjectMember.objects.create(project=visible_project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=visible_project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(
             project=visible_project,
             user=self.member,
             role=ProjectMember.ROLE_CONTRIBUTOR,
         )
-        ProjectMember.objects.create(project=hidden_project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=hidden_project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
 
         self.client.force_login(self.member)
         response = self.client.get(reverse("blog-home"))
@@ -83,13 +99,21 @@ class ProjectMembershipTests(TestCase):
         visible_project = self._make_project("TCK1", "Projet ticket visible")
         hidden_project = self._make_project("TCK2", "Projet ticket cache")
 
-        ProjectMember.objects.create(project=visible_project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=visible_project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(
             project=visible_project,
             user=self.member,
             role=ProjectMember.ROLE_CONTRIBUTOR,
         )
-        ProjectMember.objects.create(project=hidden_project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=hidden_project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
 
         self.client.force_login(self.member)
         response = self.client.get(reverse("ticket-create"))
@@ -130,7 +154,11 @@ class ProjectMembershipTests(TestCase):
             author=self.admin,
             issue_type=Ticket.ISSUE_TYPE_EPIC,
         )
-        ProjectMember.objects.create(project=project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.member)
@@ -156,7 +184,11 @@ class ProjectMembershipTests(TestCase):
 
     def test_ticket_create_form_shows_type_first_and_hides_status(self):
         project = self._make_project("TCK4", "Projet ticket formulaire")
-        ProjectMember.objects.create(project=project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.member)
@@ -171,7 +203,11 @@ class ProjectMembershipTests(TestCase):
 
     def test_project_cards_show_members(self):
         project = self._make_project("CARD", "Projet carte")
-        ProjectMember.objects.create(project=project, user=self.admin, role="admin")
+        ProjectMember.objects.create(
+            project=project,
+            user=self.admin,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ProjectMember.objects.create(project=project, user=self.member, role=ProjectMember.ROLE_CONTRIBUTOR)
 
         self.client.force_login(self.admin)
@@ -181,12 +217,16 @@ class ProjectMembershipTests(TestCase):
         self.assertContains(response, "admin")
         self.assertContains(response, "member")
 
-    def test_read_only_cannot_mutate_tickets_or_sprints(self):
+    def test_contributor_can_mutate_tickets_and_sprints(self):
         project = self._make_project("ACL1", "Permission Matrix")
-        read_only_user = User.objects.create_user(username="readonly-user", password="secret123")
-        ProjectMember.objects.create(project=project, user=read_only_user, role=ProjectMember.ROLE_READ_ONLY)
+        contributor = User.objects.create_user(username="contributor-user", password="secret123")
+        ProjectMember.objects.create(
+            project=project,
+            user=contributor,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
         ticket = Ticket.objects.create(
-            title="Read only ticket",
+            title="Contributor ticket",
             project=project,
             author=self.admin,
             issue_type=Ticket.ISSUE_TYPE_TASK,
@@ -202,10 +242,10 @@ class ProjectMembershipTests(TestCase):
             created_by=self.admin,
         )
 
-        self.client.force_login(read_only_user)
-        self.assertEqual(self.client.get(reverse("ticket-create"), data={"project": project.pk}).status_code, 403)
-        self.assertEqual(self.client.get(reverse("ticket-update", kwargs={"pk": ticket.pk})).status_code, 403)
-        self.assertEqual(self.client.post(reverse("sprint-start", kwargs={"pk": sprint.pk})).status_code, 403)
+        self.client.force_login(contributor)
+        self.assertEqual(self.client.get(reverse("ticket-create"), data={"project": project.pk}).status_code, 200)
+        self.assertEqual(self.client.get(reverse("ticket-update", kwargs={"pk": ticket.pk})).status_code, 200)
+        self.assertEqual(self.client.post(reverse("sprint-start", kwargs={"pk": sprint.pk})).status_code, 302)
 
     def test_contributor_cannot_access_project_settings_or_membership_management(self):
         project = self._make_project("ACL2", "Project Settings Gate")
@@ -226,3 +266,110 @@ class ProjectMembershipTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_non_superuser_manager_is_limited_to_contributor_actions(self):
+        manager = User.objects.create_user(username="manager-contributor", password="secret123")
+        project = self._make_project("ACL3", "Manager Contributor Gate", manager=manager)
+        ProjectMember.objects.create(project=project, user=manager, role=ProjectMember.ROLE_CONTRIBUTOR)
+
+        self.client.force_login(manager)
+        self.assertEqual(self.client.get(reverse("project-update", kwargs={"pk": project.pk})).status_code, 403)
+        self.assertEqual(self.client.get(reverse("ticket-create"), data={"project": project.pk}).status_code, 200)
+
+    def test_project_members_can_configure_git_repository(self):
+        contributor = User.objects.create_user(username="git-contributor", password="secret123")
+        role_matrix = [
+            ("manager", self.admin, None),
+            ("contributor", contributor, ProjectMember.ROLE_CONTRIBUTOR),
+        ]
+
+        for index, (role_name, actor, membership_role) in enumerate(role_matrix, start=1):
+            project = self._make_project(f"G{index}", f"Git access {role_name}")
+            if membership_role:
+                ProjectMember.objects.create(project=project, user=actor, role=membership_role)
+
+            self.client.force_login(actor)
+            response = self.client.post(
+                reverse("git-setup-create", kwargs={"project_pk": project.pk}),
+                data={
+                    "repository_url": f"https://github.com/acme/repo-{role_name}",
+                    "repository_type": GitRepository.REPOSITORY_TYPE_GITHUB,
+                    "is_private": "",
+                    "access_token": "",
+                },
+                secure=True,
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(
+                GitRepository.objects.filter(
+                    project=project,
+                    repository_type=GitRepository.REPOSITORY_TYPE_GITHUB,
+                ).exists()
+            )
+
+    def test_git_repository_setup_blocks_outsider_and_anonymous(self):
+        project = self._make_project("GATE", "Git access gate")
+
+        self.client.force_login(self.outsider)
+        outsider_response = self.client.post(
+            reverse("git-setup-create", kwargs={"project_pk": project.pk}),
+            data={
+                "repository_url": "https://github.com/acme/blocked",
+                "repository_type": GitRepository.REPOSITORY_TYPE_GITHUB,
+                "is_private": "",
+                "access_token": "",
+            },
+            secure=True,
+        )
+        self.assertEqual(outsider_response.status_code, 403)
+        self.assertFalse(GitRepository.objects.filter(project=project).exists())
+
+        self.client.logout()
+        anonymous_response = self.client.post(
+            reverse("git-setup-create", kwargs={"project_pk": project.pk}),
+            data={
+                "repository_url": "https://github.com/acme/anonymous",
+                "repository_type": GitRepository.REPOSITORY_TYPE_GITHUB,
+                "is_private": "",
+                "access_token": "",
+            },
+            secure=True,
+        )
+        self.assertEqual(anonymous_response.status_code, 302)
+        self.assertFalse(GitRepository.objects.filter(project=project).exists())
+
+    def test_contributor_sees_git_configuration_cta(self):
+        project = self._make_project("ROCT", "Contributor Git CTA")
+        contributor = User.objects.create_user(username="contributor-git-view", password="secret123")
+        ProjectMember.objects.create(
+            project=project,
+            user=contributor,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
+
+        self.client.force_login(contributor)
+        response = self.client.get(reverse("project-detail", kwargs={"pk": project.pk}), secure=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["user_can_configure_git"])
+        self.assertContains(response, "Configure Git Repository")
+
+    def test_git_modal_private_toggle_uses_accessible_switch_and_token_placeholder(self):
+        project = self._make_project("GUX", "Git UX")
+        contributor = User.objects.create_user(username="git-ux-user", password="secret123")
+        ProjectMember.objects.create(
+            project=project,
+            user=contributor,
+            role=ProjectMember.ROLE_CONTRIBUTOR,
+        )
+
+        self.client.force_login(contributor)
+        response = self.client.get(reverse("project-detail", kwargs={"pk": project.pk}), secure=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="git-private-toggle"')
+        self.assertContains(response, 'id="is-private"')
+        self.assertContains(response, 'data-token-placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"')
+        self.assertContains(response, 'data-token-has-placeholder="true"')
+

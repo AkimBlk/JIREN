@@ -12,7 +12,7 @@ from .models import Invitation, Profile
 
 
 def _is_platform_admin(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
+    return user.is_authenticated and user.is_superuser
 
 
 @require_POST

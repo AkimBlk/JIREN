@@ -36,21 +36,47 @@
           </div>
 
           <div class="form-group">
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input"
-                     id="is-private" name="is_private"
-                     {% if git_repository.is_private %}checked{% endif %}>
-              <label class="form-check-label" for="is-private">
-                Private Repository
+            <div class="git-private-toggle">
+              <div class="git-private-toggle__content">
+                <p class="git-private-toggle__title mb-1">Private repository</p>
+                <small id="private-repository-help" class="git-private-toggle__help">
+                  Enable this when repository access requires a personal token.
+                </small>
+              </div>
+              <label class="git-private-toggle__control" for="is-private">
+                <input
+                  type="checkbox"
+                  class="git-private-toggle__input"
+                  id="is-private"
+                  name="is_private"
+                  aria-describedby="private-repository-help"
+                  aria-controls="access-token-group"
+                  aria-expanded="{% if git_repository.is_private %}true{% else %}false{% endif %}"
+                  {% if git_repository.is_private %}checked{% endif %}
+                >
+                <span class="git-private-toggle__switch" aria-hidden="true"></span>
+                <span class="git-private-toggle__label">Private</span>
               </label>
             </div>
           </div>
 
-          <div class="form-group{% if not git_repository.is_private %} d-none{% endif %}" id="access-token-group">
+          <div
+            class="form-group git-access-token-group{% if not git_repository.is_private %} d-none{% endif %}"
+            id="access-token-group"
+          >
             <label for="access-token">Access Token</label>
-            <input type="password" class="form-control" id="access-token"
-                   name="access_token"
-                   placeholder="Access token">
+            <input
+              type="password"
+              class="form-control"
+              id="access-token"
+              name="access_token"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              data-token-placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              data-token-has-placeholder="true"
+            >
+            <small class="form-text text-muted">
+              For private repositories only. Leave blank to keep the existing token on edit.
+            </small>
           </div>
 
           <div id="git-setup-alert" class="alert d-none" role="alert"></div>

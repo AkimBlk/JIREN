@@ -35,7 +35,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
         project = get_object_or_404(Project, id=project_id)
 
-        if self.request.user.is_superuser or self.request.user.is_staff:
+        if self.request.user.is_superuser:
             return project
 
         member_exists = ProjectMember.objects.filter(
@@ -90,7 +90,7 @@ class TagViewSet(viewsets.ModelViewSet):
         project, error = self._get_project_or_error()
         if error:
             return error
-        if project.manager_id != request.user.id and not request.user.is_staff:
+        if project.manager_id != request.user.id and not request.user.is_superuser:
             return Response(
                 {"detail": "Only project managers can delete tags."},
                 status=status.HTTP_403_FORBIDDEN,

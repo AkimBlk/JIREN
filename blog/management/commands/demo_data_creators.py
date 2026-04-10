@@ -65,8 +65,11 @@ def _create_project(code, name, manager, members):
         },
     )
     for user in members:
-        role = ProjectMember.ROLE_ADMIN if user == manager else ProjectMember.ROLE_CONTRIBUTOR
-        ProjectMember.objects.get_or_create(project=project, user=user, defaults={"role": role})
+        ProjectMember.objects.get_or_create(
+            project=project,
+            user=user,
+            defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
+        )
     return project
 
 

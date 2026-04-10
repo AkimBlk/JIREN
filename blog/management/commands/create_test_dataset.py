@@ -27,6 +27,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing test dataset before creating a fresh one.",
         )
+        parser.add_argument(
+            "--with-git-repositories",
+            action="store_true",
+            help="Create default Git repository links for sample projects.",
+        )
 
     def handle(self, *args, **options):
         User = get_user_model()
@@ -39,7 +44,6 @@ class Command(BaseCommand):
                 }
             )
             admin_user.email = "admin@jiren.com"
-            admin_user.is_staff = True
             admin_user.is_superuser = True
             admin_user.is_active = True
             admin_user.set_password("admin123")
@@ -105,8 +109,14 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"[OK] {len(attachments)} ticket attachments")
         )
 
-        repos = create_git_repositories(projects[0], projects[1])
-        self.stdout.write(self.style.SUCCESS(f"[OK] {len(repos)} git repositories"))
+        repos = []
+        if options["with_git_repositories"]:
+            repos = create_git_repositories(projects[0], projects[1])
+            self.stdout.write(self.style.SUCCESS(f"[OK] {len(repos)} git repositories"))
+        else:
+            self.stdout.write(
+                self.style.SUCCESS("[OK] 0 git repositories (skipped by default)")
+            )
 
         create_admin()
 
@@ -118,12 +128,23 @@ class Command(BaseCommand):
             tags,
             links,
             attachments,
+            repos,
         )
 
-    def _print_summary(self, users, projects, sprints, tickets, tags, links, attachments):
-        self.stdout.write("\n" + "━" * 50)
+    def _print_summary(
+        self,
+        users,
+        projects,
+        sprints,
+        tickets,
+        tags,
+        links,
+        attachments,
+        repos,
+    ):
+        self.stdout.write("\n" + "-" * 50)
         self.stdout.write(self.style.HTTP_INFO("TEST DATASET SUMMARY"))
-        self.stdout.write("━" * 50)
+        self.stdout.write("-" * 50)
         self.stdout.write(f"  Users        : {len(users)}")
         self.stdout.write(f"  Projects     : {len(projects)}")
 
@@ -144,7 +165,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Tags         : {len(tags)}")
         self.stdout.write(f"  Links        : {len(links)}")
         self.stdout.write(f"  Attachments  : {len(attachments)}")
-        self.stdout.write("━" * 50)
+        self.stdout.write(f"  Git repos    : {len(repos)}")
+        self.stdout.write("-" * 50)
         self.stdout.write(self.style.SUCCESS("Dataset ready."))
         self.stdout.write("Admin login: admintest / admin123")
         self.stdout.write("Test users password: testpass123")
+

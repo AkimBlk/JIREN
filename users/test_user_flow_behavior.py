@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 
 from django.contrib.auth.models import User
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -24,8 +24,8 @@ class UserFlowBehaviorTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.admin = User.objects.create_user(username="platform-admin", password="secret123")
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
 
         self.project = Project.objects.create(
             code_prefix="USR",
@@ -217,3 +217,4 @@ class UserFlowBehaviorTests(TestCase):
         user.profile.save()
         user.profile.refresh_from_db()
         self.assertEqual(user.profile.role, 'contributor')
+

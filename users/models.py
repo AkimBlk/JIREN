@@ -27,13 +27,13 @@ class Profile(models.Model):
         return f"{self.user.username} Profile ({self.role})"
 
     def is_admin(self):
-        return self.user.is_superuser or self.user.is_staff
+        return self.user.is_superuser
 
     def can_contribute(self):
         return self.user.is_authenticated
 
     def save(self, *args, **kwargs):
-        if self.user.is_superuser or self.user.is_staff:
+        if self.user.is_superuser:
             self.role = self.ROLE_ADMIN
         elif self.role not in self.EDITABLE_ROLES:
             self.role = self.ROLE_CONTRIBUTOR

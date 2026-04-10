@@ -36,7 +36,7 @@ CLOSED_SPRINT_COUNT = 3
 CLOSED_SPRINT_GAP_DAYS = 14
 
 DATASET_USERS = [
-    {"username": "jiren_admin",    "email": "admin@jiren.dev",    "first_name": "Admin",    "last_name": "Jiren",     "is_staff": True},
+    {"username": "jiren_admin",    "email": "admin@jiren.dev",    "first_name": "Admin",    "last_name": "Jiren",     "is_superuser": True},
     {"username": "alice_dev",      "email": "alice@jiren.dev",    "first_name": "Alice",    "last_name": "Durand"},
     {"username": "bob_dev",        "email": "bob@jiren.dev",      "first_name": "Bob",      "last_name": "Martin"},
     {"username": "charlie_dev",    "email": "charlie@jiren.dev",  "first_name": "Charlie",  "last_name": "Petit"},
@@ -66,15 +66,15 @@ def clear_test_dataset():
 def create_dataset_users():
     users = []
     for data in DATASET_USERS:
-        is_staff = data.pop("is_staff", False)
+        is_superuser = data.pop("is_superuser", False)
         user, created = User.objects.get_or_create(
             username=data["username"],
-            defaults={**data, "is_staff": is_staff},
+            defaults={**data, "is_superuser": is_superuser},
         )
         if created:
             user.set_password("testpass123")
             user.save(update_fields=["password"])
-        data["is_staff"] = is_staff
+        data["is_superuser"] = is_superuser
         users.append(user)
     return users
 
@@ -138,7 +138,7 @@ def _build_project(code, name, description, manager, members, start, end, unit, 
     ProjectMember.objects.get_or_create(
         project=project,
         user=manager,
-        defaults={"role": ProjectMember.ROLE_ADMIN},
+        defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
     )
     for user in members:
         ProjectMember.objects.get_or_create(
@@ -519,7 +519,7 @@ def _get_project_assignees(project, users):
     member_ids = set(
         project.members.values_list("user_id", flat=True)
     )
-    return [u for u in users if u.id in member_ids and not u.is_staff]
+    return [u for u in users if u.id in member_ids and not u.is_superuser]
 
 
 def _create_single_closed_sprint_tickets(project, sprint, admin, members, done_points, wip_points, title_offset):

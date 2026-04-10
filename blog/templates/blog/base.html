@@ -38,7 +38,7 @@
         </span>
     </a>
 
-    {% if user.is_staff or user.is_superuser %}
+    {% if user.is_superuser %}
         <a href="{% url 'project-create' %}" class="helb-sidebar-create">
             <span class="material-symbols-outlined">add</span>
             Create Project
@@ -113,7 +113,7 @@
             <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
             <span class="helb-user-chip__text d-none d-xl-flex">
                 <strong>{{ user.get_full_name|default:user.username }}</strong>
-                <small>{% if user.is_staff or user.is_superuser %}Curator{% else %}Contributor{% endif %}</small>
+                <small>{% if user.is_superuser %}Curator{% else %}Contributor{% endif %}</small>
             </span>
         </a>
 

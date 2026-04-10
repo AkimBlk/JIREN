@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+﻿from django.contrib.auth.models import User
 from django.db.models import Q
 from django.test import TestCase
 from django.urls import reverse
@@ -10,8 +10,8 @@ from blog.models import Project, Ticket, TicketLink
 class TicketCreationRulesTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(username="create-admin", password="secret123")
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
 
         self.project = Project.objects.create(
             code_prefix="CRT",
@@ -88,8 +88,8 @@ class TicketCreationRulesTests(TestCase):
 class TicketLinkTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(username="link-admin", password="secret123")
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
+        self.admin.is_superuser = True
+        self.admin.save(update_fields=["is_superuser"])
 
         self.project = Project.objects.create(
             code_prefix="LNK",
@@ -207,3 +207,4 @@ class TicketLinkTests(TestCase):
         )
         self.primary.delete()
         self.assertEqual(TicketLink.objects.count(), 0)
+
