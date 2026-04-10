@@ -50,7 +50,7 @@ class GitService:
     def get_repository_info(self) -> Dict:
         """Fetch repository metadata (cached 5 minutes)."""
         return self._cached_call(
-            f"git_repo_info_{self.repository.pk}",
+            f"git_repo_info_v2_{self.repository.pk}",
             self.provider.get_repository_info,
             self._get_fallback_repo_info()
         )

@@ -7,6 +7,80 @@ def format_stars(count: int) -> str:
     return f"{count / 1000:.1f}K" if count >= 1000 else str(count)
 
 
+def sanitize_repository_url(repository_url: str) -> str:
+    """Normalize repository URL for browser navigation."""
+    return (repository_url or "").rstrip("/").removesuffix(".git")
+
+
+def normalize_repository_info(data: Dict[str, Any], provider_type: str, repository_url: str) -> Dict[str, Any]:
+    """Normalize repository metadata across providers for UI rendering."""
+    fallback_url = sanitize_repository_url(repository_url)
+    if not isinstance(data, dict) or not data:
+        return {
+            "name": "",
+            "url": fallback_url,
+            "description": "",
+            "homepage_url": "",
+            "last_updated": None,
+            "visibility": "unknown",
+            "clone_url_https": repository_url,
+        }
+
+    if provider_type == "github":
+        return {
+            "name": data.get("name", ""),
+            "url": data.get("html_url") or fallback_url,
+            "description": data.get("description") or "",
+            "homepage_url": data.get("homepage") or "",
+            "last_updated": data.get("updated_at") or data.get("pushed_at"),
+            "visibility": "private" if data.get("private") else data.get("visibility", "public"),
+            "clone_url_https": data.get("clone_url") or repository_url,
+        }
+
+    if provider_type == "gitlab":
+        visibility = data.get("visibility")
+        if not visibility:
+            visibility_level = data.get("visibility_level")
+            if visibility_level == 20:
+                visibility = "public"
+            elif visibility_level == 10:
+                visibility = "internal"
+            elif visibility_level in (0, 5):
+                visibility = "private"
+            else:
+                visibility = "unknown"
+        return {
+            "name": data.get("name", ""),
+            "url": data.get("web_url") or fallback_url,
+            "description": data.get("description") or "",
+            "homepage_url": data.get("web_url") or "",
+            "last_updated": data.get("last_activity_at") or data.get("updated_at"),
+            "visibility": visibility,
+            "clone_url_https": data.get("http_url_to_repo") or repository_url,
+        }
+
+    if provider_type == "gitea":
+        return {
+            "name": data.get("name", ""),
+            "url": data.get("html_url") or fallback_url,
+            "description": data.get("description") or "",
+            "homepage_url": data.get("website") or "",
+            "last_updated": data.get("updated_at"),
+            "visibility": "private" if data.get("private") else "public",
+            "clone_url_https": data.get("clone_url") or repository_url,
+        }
+
+    return {
+        "name": data.get("name", ""),
+        "url": fallback_url,
+        "description": data.get("description") or "",
+        "homepage_url": data.get("homepage_url") or "",
+        "last_updated": data.get("last_updated"),
+        "visibility": data.get("visibility", "unknown"),
+        "clone_url_https": data.get("clone_url_https") or repository_url,
+    }
+
+
 def normalize_commit(commit: Dict[str, Any], provider_type: str) -> Dict:
     """Normalize commit data across all providers."""
     extractors = {

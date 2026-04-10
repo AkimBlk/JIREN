@@ -1,7 +1,13 @@
 """GitHub API v3 provider implementation."""
 from typing import Dict, List
 
-from ..git_data_mapper import normalize_commits, normalize_branches, base_metadata, format_stars
+from ..git_data_mapper import (
+    base_metadata,
+    format_stars,
+    normalize_branches,
+    normalize_commits,
+    normalize_repository_info,
+)
 from .base import GitProviderBase
 
 
@@ -12,7 +18,7 @@ class GitHubProvider(GitProviderBase):
         """Fetch repository info from GitHub API."""
         owner, repo = self._get_owner_repo()
         data = self._safe_request(f"https://api.github.com/repos/{owner}/{repo}")
-        return data if data else {}
+        return normalize_repository_info(data, "github", self.repository_url)
 
     def get_recent_commits(self, limit: int) -> List[Dict]:
         """Fetch recent commits from GitHub API."""
