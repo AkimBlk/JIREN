@@ -1,10 +1,23 @@
 """
-Data creation helpers for the create_test_dataset management command.
-Covers every model in the blog app: Project, Sprint, SprintUserCapacity,
-Ticket (EPIC/STORY/BUG/TASK), Tag, TicketLink, TicketAttachment,
-StoryPointsScheme, GitRepository, ProjectMember.
+Clean and chart-friendly demo dataset for JIREN.
+
+Creates:
+- 1 global admin account
+- 4 projects: Projet Equipe 1..4
+- 4 realistic users per project
+- default profile picture for everyone
+- 5 sprints per project (3 closed, 1 active, 1 planned)
+- richer tickets for charts and demo:
+    1 epic
+    6 stories
+    3 bugs
+    8 tasks
+- tags, ticket links, attachments
+- story point scheme for every project
+- Git repositories for first 2 projects
+- sprint capacities for per-user project
 """
-import io
+
 import struct
 import zlib
 from datetime import timedelta
@@ -26,130 +39,178 @@ from blog.models import (
     TicketLink,
 )
 
-# ── Constants ────────────────────────────────────────────────────────────────
-
-SPRINT_CAPACITY_POINTS = 40
+PASSWORD = "testpass123"
 SPRINT_DURATION_DAYS = 14
-MEMBER_CAPACITY_POINTS = 10
-MAX_CONTRIBUTORS_DISPLAYED = 5
-CLOSED_SPRINT_COUNT = 3
-CLOSED_SPRINT_GAP_DAYS = 14
 
 DATASET_USERS = [
-    {"username": "jiren_admin",    "email": "admin@jiren.dev",    "first_name": "Admin",    "last_name": "Jiren",     "is_superuser": True},
-    {"username": "alice_dev",      "email": "alice@jiren.dev",    "first_name": "Alice",    "last_name": "Durand"},
-    {"username": "bob_dev",        "email": "bob@jiren.dev",      "first_name": "Bob",      "last_name": "Martin"},
-    {"username": "charlie_dev",    "email": "charlie@jiren.dev",  "first_name": "Charlie",  "last_name": "Petit"},
-    {"username": "elena_design",   "email": "elena@jiren.dev",    "first_name": "Elena",    "last_name": "Voss"},
-    {"username": "sara_design",    "email": "sara@jiren.dev",     "first_name": "Sara",     "last_name": "Blanc"},
-    {"username": "marcus_qa",      "email": "marcus@jiren.dev",   "first_name": "Marcus",   "last_name": "Dahl"},
-    {"username": "jordan_qa",      "email": "jordan@jiren.dev",   "first_name": "Jordan",   "last_name": "Cruz"},
-    {"username": "leo_product",    "email": "leo@jiren.dev",      "first_name": "Leo",      "last_name": "Bernard"},
-    {"username": "nadia_product",  "email": "nadia@jiren.dev",    "first_name": "Nadia",    "last_name": "Kowalski"},
+    {
+        "username": "admin",
+        "email": "admin@jiren.dev",
+        "first_name": "Admin",
+        "last_name": "Jiren",
+        "is_staff": True,
+        "is_superuser": True,
+    },
+
+    # Projet Equipe 1
+    {"username": "lucas.martin", "email": "lucas.martin@jiren.dev", "first_name": "Lucas", "last_name": "Martin"},
+    {"username": "emma.dubois", "email": "emma.dubois@jiren.dev", "first_name": "Emma", "last_name": "Dubois"},
+    {"username": "nathan.leroy", "email": "nathan.leroy@jiren.dev", "first_name": "Nathan", "last_name": "Leroy"},
+    {"username": "chloe.bernard", "email": "chloe.bernard@jiren.dev", "first_name": "Chloe", "last_name": "Bernard"},
+
+    # Projet Equipe 2
+    {"username": "hugo.moreau", "email": "hugo.moreau@jiren.dev", "first_name": "Hugo", "last_name": "Moreau"},
+    {"username": "lea.petit", "email": "lea.petit@jiren.dev", "first_name": "Lea", "last_name": "Petit"},
+    {"username": "enzo.garcia", "email": "enzo.garcia@jiren.dev", "first_name": "Enzo", "last_name": "Garcia"},
+    {"username": "camille.fontaine", "email": "camille.fontaine@jiren.dev", "first_name": "Camille", "last_name": "Fontaine"},
+
+    # Projet Equipe 3
+    {"username": "tom.rousseau", "email": "tom.rousseau@jiren.dev", "first_name": "Tom", "last_name": "Rousseau"},
+    {"username": "ines.lambert", "email": "ines.lambert@jiren.dev", "first_name": "Ines", "last_name": "Lambert"},
+    {"username": "jules.michel", "email": "jules.michel@jiren.dev", "first_name": "Jules", "last_name": "Michel"},
+    {"username": "sarah.robin", "email": "sarah.robin@jiren.dev", "first_name": "Sarah", "last_name": "Robin"},
+
+    # Projet Equipe 4
+    {"username": "maxime.laurent", "email": "maxime.laurent@jiren.dev", "first_name": "Maxime", "last_name": "Laurent"},
+    {"username": "akim.belkacem", "email": "akim.belkacem@jiren.dev", "first_name": "Akim", "last_name": "Belkacem"},
+    {"username": "nathan.dolhen", "email": "nathan.dolhen@jiren.dev", "first_name": "Nathan", "last_name": "Dolhen"},
+    {"username": "enzo.lherisson", "email": "enzo.lherisson@jiren.dev", "first_name": "Enzo", "last_name": "Lherisson"},
 ]
 
-TAG_LABELS = [
-    "infrastructure", "frontend", "backend", "database",
-    "security", "ui-ux", "testing", "documentation",
+PROJECT_CONFIGS = [
+    {
+        "code": "EQ1",
+        "name": "Projet Equipe 1",
+        "description": "Project space for Equipe 1 demo dataset.",
+        "members": ["lucas.martin", "emma.dubois", "nathan.leroy", "chloe.bernard"],
+        "capacity_mode": Project.CAPACITY_MODE_GLOBAL,
+        "global_capacity": 36,
+        "epic_color": "#4F46E5",
+    },
+    {
+        "code": "EQ2",
+        "name": "Projet Equipe 2",
+        "description": "Project space for Equipe 2 demo dataset.",
+        "members": ["hugo.moreau", "lea.petit", "enzo.garcia", "camille.fontaine"],
+        "capacity_mode": Project.CAPACITY_MODE_GLOBAL,
+        "global_capacity": 34,
+        "epic_color": "#0EA5E9",
+    },
+    {
+        "code": "EQ3",
+        "name": "Projet Equipe 3",
+        "description": "Project space for Equipe 3 demo dataset.",
+        "members": ["tom.rousseau", "ines.lambert", "jules.michel", "sarah.robin"],
+        "capacity_mode": Project.CAPACITY_MODE_PER_USER,
+        "global_capacity": None,
+        "epic_color": "#10B981",
+    },
+    {
+        "code": "EQ4",
+        "name": "Projet Equipe 4",
+        "description": "Project space for Equipe 4 demo dataset.",
+        "members": ["maxime.laurent", "akim.belkacem", "nathan.dolhen", "enzo.lherisson"],
+        "capacity_mode": Project.CAPACITY_MODE_GLOBAL,
+        "global_capacity": 38,
+        "epic_color": "#F59E0B",
+    },
 ]
 
+TAG_LABELS = ["frontend", "backend", "ui", "urgent", "testing", "documentation"]
 
-# ── Cleanup ──────────────────────────────────────────────────────────────────
+
+# -----------------------------------------------------------------------------
+# Cleanup
+# -----------------------------------------------------------------------------
 
 def clear_test_dataset():
     User.objects.filter(username__in=[u["username"] for u in DATASET_USERS]).delete()
-    Project.objects.filter(code_prefix__in=["QIR", "API2", "MOB"]).delete()
+    Project.objects.filter(code_prefix__in=[p["code"] for p in PROJECT_CONFIGS]).delete()
 
 
-# ── Users ────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Users
+# -----------------------------------------------------------------------------
 
 def create_dataset_users():
     users = []
     for data in DATASET_USERS:
-        is_superuser = data.pop("is_superuser", False)
-        user, created = User.objects.get_or_create(
-            username=data["username"],
-            defaults={**data, "is_superuser": is_superuser},
-        )
-        if created:
-            user.set_password("testpass123")
-            user.save(update_fields=["password"])
-        data["is_superuser"] = is_superuser
+        username = data["username"]
+        user, _ = User.objects.get_or_create(username=username)
+
+        user.email = data["email"]
+        user.first_name = data["first_name"]
+        user.last_name = data["last_name"]
+        user.is_staff = data.get("is_staff", False)
+        user.is_superuser = data.get("is_superuser", False)
+        user.set_password(PASSWORD)
+        user.save()
+
+        if hasattr(user, "profile"):
+            user.profile.image = "default.jpg"
+            user.profile.save()
+
         users.append(user)
     return users
 
 
-# ── Projects ─────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Projects
+# -----------------------------------------------------------------------------
 
 def create_dataset_projects(users):
-    admin, alice, bob, charlie, elena, sara, marcus, jordan, leo, nadia = users
-    now = timezone.now()
+    users_by_username = {u.username: u for u in users}
+    admin = users_by_username["admin"]
+    today = timezone.now().date()
+    projects = []
 
-    qir = _build_project(
-        code="QIR",
-        name="Quantum Interface Redesign",
-        description="Full redesign of the flagship UI with glass-morphism and HTMX.",
-        manager=admin,
-        members=[alice, bob, charlie, elena, sara, marcus, jordan, leo, nadia],
-        start=now - timedelta(days=30),
-        end=now + timedelta(days=60),
-        unit=Project.WORKLOAD_UNIT_STORY_POINTS,
-        capacity_mode=Project.CAPACITY_MODE_PER_USER,
-    )
-    api2 = _build_project(
-        code="API2",
-        name="Backend API V2",
-        description="RESTful API v2 with DRF, JWT auth, and full test coverage.",
-        manager=leo,
-        members=[alice, bob, charlie, elena, marcus],
-        start=now - timedelta(days=15),
-        end=now + timedelta(days=75),
-        unit=Project.WORKLOAD_UNIT_STORY_POINTS,
-        capacity_mode=Project.CAPACITY_MODE_GLOBAL,
-    )
-    mob = _build_project(
-        code="MOB",
-        name="Mobile App",
-        description="Cross-platform mobile application planning phase.",
-        manager=admin,
-        members=[elena, sara, charlie, marcus],
-        start=now + timedelta(days=7),
-        end=now + timedelta(days=97),
-        unit=Project.WORKLOAD_UNIT_MAN_HOURS,
-        capacity_mode=Project.CAPACITY_MODE_GLOBAL,
-    )
-    return [qir, api2, mob]
+    for config in PROJECT_CONFIGS:
+        project, _ = Project.objects.get_or_create(
+            code_prefix=config["code"],
+            defaults={
+                "name": config["name"],
+                "description": config["description"],
+                "start_date": today - timedelta(days=70),
+                "end_date": today + timedelta(days=90),
+                "workload_unit": Project.WORKLOAD_UNIT_STORY_POINTS,
+                "sprint_duration_days": SPRINT_DURATION_DAYS,
+                "capacity_mode": config["capacity_mode"],
+                "global_capacity": config["global_capacity"],
+                "manager": admin,
+            },
+        )
 
+        project.name = config["name"]
+        project.description = config["description"]
+        project.start_date = today - timedelta(days=70)
+        project.end_date = today + timedelta(days=90)
+        project.workload_unit = Project.WORKLOAD_UNIT_STORY_POINTS
+        project.sprint_duration_days = SPRINT_DURATION_DAYS
+        project.capacity_mode = config["capacity_mode"]
+        project.global_capacity = config["global_capacity"]
+        project.manager = admin
+        project.save()
 
-def _build_project(code, name, description, manager, members, start, end, unit, capacity_mode):
-    project, _ = Project.objects.get_or_create(
-        code_prefix=code,
-        defaults={
-            "name": name,
-            "description": description,
-            "manager": manager,
-            "start_date": start.date(),
-            "end_date": end.date(),
-            "workload_unit": unit,
-            "capacity_mode": capacity_mode,
-            "sprint_duration_days": SPRINT_DURATION_DAYS,
-        },
-    )
-    ProjectMember.objects.get_or_create(
-        project=project,
-        user=manager,
-        defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
-    )
-    for user in members:
         ProjectMember.objects.get_or_create(
             project=project,
-            user=user,
+            user=admin,
             defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
         )
-    return project
 
+        for username in config["members"]:
+            ProjectMember.objects.get_or_create(
+                project=project,
+                user=users_by_username[username],
+                defaults={"role": ProjectMember.ROLE_CONTRIBUTOR},
+            )
 
-# ── Story Points Schemes ─────────────────────────────────────────────────────
+        projects.append(project)
+
+    return projects
+
+# -----------------------------------------------------------------------------
+# Story points
+# -----------------------------------------------------------------------------
 
 def create_story_points_schemes(projects):
     schemes = []
@@ -158,510 +219,607 @@ def create_story_points_schemes(projects):
             project=project,
             defaults={"scheme_type": StoryPointsScheme.FIBONACCI},
         )
+        scheme.scheme_type = StoryPointsScheme.FIBONACCI
+        scheme.save()
         schemes.append(scheme)
     return schemes
 
 
-# ── Sprints ──────────────────────────────────────────────────────────────────
-
-# Velocity data per closed sprint: list of (done_story_points, wip_story_points)
-CLOSED_SPRINT_VELOCITY = [
-    {"done": [5, 8, 3], "wip": [5]},          # 16 pts done, 40% consumption
-    {"done": [5, 8, 5, 3], "wip": [8]},        # 21 pts done, 52.5%
-    {"done": [8, 5, 3, 5, 8], "wip": [3]},     # 29 pts done, 72.5%
-]
-
-CLOSED_SPRINT_LABELS = ["a", "b", "c"]
-
+# -----------------------------------------------------------------------------
+# Sprints
+# -----------------------------------------------------------------------------
 
 def create_dataset_sprints(projects, users):
-    admin = users[0]
-    now = timezone.now()
-    all_sprints = []
+    admin = next(u for u in users if u.username == "admin")
+    today = timezone.now().date()
+    sprints = []
 
-    for idx, project in enumerate(projects):
-        closed = _create_closed_sprints(project, admin, idx, now)
-        active, planned = _create_active_and_planned_sprints(project, admin, idx, now)
-        all_sprints.extend(closed + [active, planned])
-
-    return all_sprints
-
-
-def _create_closed_sprints(project, admin, project_index, now):
-    uses_global = project.capacity_mode == Project.CAPACITY_MODE_GLOBAL
-    capacity = SPRINT_CAPACITY_POINTS if uses_global else None
-    mode = Sprint.CAPACITY_MODE_GLOBAL if uses_global else Sprint.CAPACITY_MODE_PER_USER
-    closed_sprints = []
-
-    for i in range(CLOSED_SPRINT_COUNT):
-        days_back = (CLOSED_SPRINT_COUNT - i) * CLOSED_SPRINT_GAP_DAYS + SPRINT_DURATION_DAYS
-        start = (now - timedelta(days=days_back)).date()
-        end = start + timedelta(days=CLOSED_SPRINT_GAP_DAYS - 1)
-        label = CLOSED_SPRINT_LABELS[i]
-
-        sprint, _ = Sprint.objects.get_or_create(
-            project=project,
-            name=f"Sprint {project_index + 1}.0{label}",
-            defaults={
-                "start_date": start,
-                "end_date": end,
-                "objective": f"Completed iteration {label} for {project.name}",
-                "capacity": capacity,
-                "status": Sprint.STATUS_CLOSED,
-                "capacity_mode": mode,
-                "created_by": admin,
-                "closed_at": now - timedelta(days=(CLOSED_SPRINT_COUNT - i) * CLOSED_SPRINT_GAP_DAYS),
-            },
+    for project in projects:
+        sprint_capacity_mode = (
+            Sprint.CAPACITY_MODE_PER_USER
+            if project.capacity_mode == Project.CAPACITY_MODE_PER_USER
+            else Sprint.CAPACITY_MODE_GLOBAL
         )
-        closed_sprints.append(sprint)
+        sprint_capacity = None if sprint_capacity_mode == Sprint.CAPACITY_MODE_PER_USER else int(project.global_capacity or 36)
 
-    return closed_sprints
+        sprint_specs = [
+            ("Sprint 1", Sprint.STATUS_CLOSED, today - timedelta(days=70), today - timedelta(days=57), "Set up dashboard and navigation."),
+            ("Sprint 2", Sprint.STATUS_CLOSED, today - timedelta(days=56), today - timedelta(days=43), "Deliver backlog ordering and ticket management."),
+            ("Sprint 3", Sprint.STATUS_CLOSED, today - timedelta(days=42), today - timedelta(days=29), "Stabilize sprint workflow and fix key bugs."),
+            ("Sprint 4", Sprint.STATUS_ACTIVE, today - timedelta(days=14), today - timedelta(days=1), "Finalize core workflow and improve visibility."),
+            ("Sprint 5", Sprint.STATUS_PLANNED, today + timedelta(days=1), today + timedelta(days=14), "Polish the product and prepare presentation."),
+        ]
 
+        for name, status, start_date, end_date, objective in sprint_specs:
+            sprint, _ = Sprint.objects.get_or_create(
+                project=project,
+                name=name,
+                defaults={
+                    "objective": objective,
+                    "status": status,
+                    "capacity_mode": sprint_capacity_mode,
+                    "capacity": sprint_capacity,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "created_by": admin,
+                    "activated_at": timezone.now() - timedelta(days=14) if status == Sprint.STATUS_ACTIVE else None,
+                    "closed_at": timezone.now() - timedelta(days=1) if status == Sprint.STATUS_CLOSED else None,
+                },
+            )
 
-def _create_active_and_planned_sprints(project, admin, project_index, now):
-    uses_global = project.capacity_mode == Project.CAPACITY_MODE_GLOBAL
-    active_capacity = SPRINT_CAPACITY_POINTS if uses_global else None
-    active_mode = Sprint.CAPACITY_MODE_GLOBAL if uses_global else Sprint.CAPACITY_MODE_PER_USER
-    sprint_start = (now - timedelta(days=7)).date()
+            sprint.objective = objective
+            sprint.status = status
+            sprint.capacity_mode = sprint_capacity_mode
+            sprint.capacity = sprint_capacity
+            sprint.start_date = start_date
+            sprint.end_date = end_date
+            sprint.created_by = admin
+            sprint.activated_at = timezone.now() - timedelta(days=10) if status == Sprint.STATUS_ACTIVE else None
+            sprint.closed_at = timezone.now() - timedelta(days=3) if status == Sprint.STATUS_CLOSED else None
+            sprint.save()
 
-    active, _ = Sprint.objects.get_or_create(
-        project=project,
-        name=f"Sprint {project_index + 1}.1",
-        defaults={
-            "start_date": sprint_start,
-            "end_date": sprint_start + timedelta(days=SPRINT_DURATION_DAYS - 1),
-            "objective": f"Deliver core features for {project.name}",
-            "capacity": active_capacity,
-            "status": Sprint.STATUS_ACTIVE,
-            "capacity_mode": active_mode,
-            "created_by": admin,
-        },
-    )
+            sprints.append(sprint)
 
-    next_start = sprint_start + timedelta(days=SPRINT_DURATION_DAYS)
-    planned, _ = Sprint.objects.get_or_create(
-        project=project,
-        name=f"Sprint {project_index + 1}.2",
-        defaults={
-            "start_date": next_start,
-            "end_date": next_start + timedelta(days=SPRINT_DURATION_DAYS - 1),
-            "objective": "Refinement, bug fixes, and polish.",
-            "capacity": active_capacity,
-            "status": Sprint.STATUS_PLANNED,
-            "capacity_mode": active_mode,
-            "created_by": admin,
-        },
-    )
+    return sprints
 
-    return active, planned
-
-
-# ── Sprint User Capacities ───────────────────────────────────────────────────
 
 def create_sprint_capacities(sprints, users):
-    alice, bob, charlie, elena, sara, marcus = users[1], users[2], users[3], users[4], users[5], users[6]
-
-    sprints_per_project = CLOSED_SPRINT_COUNT + 2
-    qir_closed = sprints[0:CLOSED_SPRINT_COUNT]
-    qir_active = sprints[CLOSED_SPRINT_COUNT]
-
-    capacity_assignments = [
-        (qir_active, alice,   12),
-        (qir_active, bob,     10),
-        (qir_active, charlie, 8),
-        (qir_active, elena,   10),
+    created = []
+    users_by_username = {u.username: u for u in users}
+    eq3_members = [
+        users_by_username["tom.rousseau"],
+        users_by_username["ines.lambert"],
+        users_by_username["jules.michel"],
+        users_by_username["sarah.robin"],
     ]
 
-    # Per-user capacity for QIR closed sprints (so consumption % computes)
-    for closed_sprint in qir_closed:
-        capacity_assignments.extend([
-            (closed_sprint, alice,   12),
-            (closed_sprint, bob,     10),
-            (closed_sprint, charlie, 8),
-            (closed_sprint, elena,   10),
-        ])
-
-    created = []
-    for sprint, user, points in capacity_assignments:
+    for sprint in [s for s in sprints if s.project.code_prefix == "EQ3"]:
         if sprint.capacity_mode != Sprint.CAPACITY_MODE_PER_USER:
             continue
-        entry, _ = SprintUserCapacity.objects.get_or_create(
-            sprint=sprint, user=user, defaults={"capacity": points}
-        )
-        created.append(entry)
+
+        for user, capacity in zip(eq3_members, [10, 9, 8, 9]):
+            obj, _ = SprintUserCapacity.objects.get_or_create(
+                sprint=sprint,
+                user=user,
+                defaults={"capacity": capacity},
+            )
+            obj.capacity = capacity
+            obj.save()
+            created.append(obj)
+
     return created
 
 
-# ── Tags ─────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Tags
+# -----------------------------------------------------------------------------
 
 def create_dataset_tags(projects):
     tags = []
     for project in projects:
         for label in TAG_LABELS:
-            tag, _ = Tag.objects.get_or_create(name=label, project=project)
+            tag, _ = Tag.objects.get_or_create(project=project, name=label)
             tags.append(tag)
     return tags
 
 
-# ── Tags by name helper ───────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Ticket helpers
+# -----------------------------------------------------------------------------
 
-def _tags_named(tags, project, *names):
+def _story_template(goal, benefit, developer_description, business_rules, done_when):
+    return f"""As a user,
+
+I want {goal}
+
+so that {benefit}
+
+
+
+Developer description
+
+{developer_description}
+
+
+
+Business rules
+
+{business_rules}
+
+
+
+Done when
+
+{done_when}
+"""
+
+
+def _bug_description(summary, expected, actual):
+    return f"""Problem
+
+{summary}
+
+
+
+Expected result
+
+{expected}
+
+
+
+Actual result
+
+{actual}
+"""
+
+
+def _task_description(text):
+    return text
+
+
+def _project_tags(tags, project, *names):
     return [t for t in tags if t.project == project and t.name in names]
 
 
-# ── Tickets ──────────────────────────────────────────────────────────────────
+def _make_ticket(
+    *,
+    project,
+    sprint,
+    title,
+    description,
+    issue_type,
+    status,
+    priority,
+    author,
+    assignee=None,
+    epic=None,
+    story_points=0,
+    initial_load=0,
+    remaining_load=0,
+    color=None,
+    backlog_order=0,
+):
+    return Ticket.objects.create(
+        project=project,
+        sprint=sprint,
+        title=title,
+        description=description,
+        issue_type=issue_type,
+        status=status,
+        priority=priority,
+        author=author,
+        assignee=assignee,
+        epic=epic,
+        story_points=story_points,
+        initial_load=initial_load,
+        remaining_load=remaining_load,
+        color=color,
+        backlog_order=backlog_order,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Tickets
+# -----------------------------------------------------------------------------
 
 def create_dataset_tickets(projects, sprints, users, tags):
-    admin, alice, bob, charlie, elena, sara, marcus, jordan = users[:8]
-
-    qir, api2, mob = projects
-    sprints_per_project = CLOSED_SPRINT_COUNT + 2
-
-    qir_closed = sprints[0:CLOSED_SPRINT_COUNT]
-    qir_active = sprints[CLOSED_SPRINT_COUNT]
-
-    api_offset = sprints_per_project
-    api_closed = sprints[api_offset:api_offset + CLOSED_SPRINT_COUNT]
-    api_active = sprints[api_offset + CLOSED_SPRINT_COUNT]
-
-    mob_offset = sprints_per_project * 2
-    mob_closed = sprints[mob_offset:mob_offset + CLOSED_SPRINT_COUNT]
-    mob_active = sprints[mob_offset + CLOSED_SPRINT_COUNT]
-
-    qir_tickets = _create_qir_tickets(qir, qir_active, admin, alice, bob, elena, sara, marcus, tags)
-    api_tickets = _create_api_tickets(api2, api_active, alice, bob, charlie, marcus, tags)
-    mob_tickets = _create_mob_tickets(mob, mob_active, elena, sara, charlie, tags)
-
-    closed_tickets = _create_all_closed_sprint_tickets(
-        projects, [qir_closed, api_closed, mob_closed], users,
-    )
-
-    return qir_tickets + api_tickets + mob_tickets + closed_tickets
-
-
-def _make_ticket(project, sprint, title, desc, issue_type, status, priority,
-                 author, assignee=None, epic=None, sp=0, load=0,
-                 color="#6B7FF0", order=0):
-    return Ticket.objects.create(
-        project=project, sprint=sprint,
-        title=title, description=desc,
-        issue_type=issue_type, status=status, priority=priority,
-        author=author, assignee=assignee, epic=epic,
-        story_points=sp, initial_load=load, remaining_load=load,
-        color=color, backlog_order=order,
-    )
-
-
-def _create_qir_tickets(project, sprint, admin, alice, bob, elena, sara, marcus, tags):
-    t = tags
-    T, I, D = Ticket.STATUS_TODO, Ticket.STATUS_IN_PROGRESS, Ticket.STATUS_DONE
-
-    epic_ui = _make_ticket(project, sprint, "UI Design System", "Establish component library", "EPIC", I, "HIGH", admin, color="#7C3AED", order=1)
-    epic_ui.tags.set(_tags_named(t, project, "ui-ux", "frontend"))
-
-    epic_infra = _make_ticket(project, None, "Infrastructure Modernisation", "Docker + CI/CD pipeline", "EPIC", T, "MEDIUM", admin, color="#059669", order=2)
-    epic_infra.tags.set(_tags_named(t, project, "infrastructure", "backend"))
-
-    s1 = _make_ticket(project, sprint, "Design token CSS variables", "Map all tokens in main.css", "STORY", D, "HIGH", elena, assignee=elena, epic=epic_ui, sp=5, load=5, order=3)
-    s1.tags.set(_tags_named(t, project, "ui-ux", "frontend"))
-
-    s2 = _make_ticket(project, sprint, "Glass-morphism card component", "Implement backdrop-blur card", "STORY", I, "HIGH", elena, assignee=sara, epic=epic_ui, sp=8, load=8, order=4)
-    s2.tags.set(_tags_named(t, project, "ui-ux", "frontend"))
-
-    s3 = _make_ticket(project, sprint, "Dark/Light theme toggle", "Persist preference in localStorage", "STORY", I, "MEDIUM", alice, assignee=alice, epic=epic_ui, sp=3, load=3, order=5)
-    s3.tags.set(_tags_named(t, project, "frontend"))
-
-    s4 = _make_ticket(project, sprint, "HTMX live ticket search", "Real-time search without full reload", "STORY", T, "MEDIUM", bob, assignee=bob, sp=8, load=8, order=6)
-    s4.tags.set(_tags_named(t, project, "frontend", "backend"))
-
-    s5 = _make_ticket(project, None, "Accessibility audit", "WCAG 2.1 AA compliance check", "STORY", T, "LOW", marcus, sp=5, load=5, order=7)
-    s5.tags.set(_tags_named(t, project, "testing", "documentation"))
-
-    b1 = _make_ticket(project, sprint, "Sidebar collapse flicker on Firefox", "Sidebar animation jank on resize", "BUG", I, "HIGH", alice, assignee=alice, order=8)
-    b1.tags.set(_tags_named(t, project, "frontend"))
-
-    b2 = _make_ticket(project, sprint, "Dark mode badge colour broken", "Badge uses hardcoded #fff in dark mode", "BUG", T, "MEDIUM", sara, assignee=sara, order=9)
-    b2.tags.set(_tags_named(t, project, "ui-ux", "frontend"))
-
-    b3 = _make_ticket(project, None, "Profile image upload fails", "JPEG > 2 MB causes 500 error", "BUG", T, "HIGH", marcus, order=10)
-    b3.tags.set(_tags_named(t, project, "backend", "security"))
-
-    task1 = _make_ticket(project, sprint, "Write CHANGELOG for v2", "Document all breaking changes", "TASK", I, "LOW", admin, assignee=alice, load=3, order=11)
-    task1.tags.set(_tags_named(t, project, "documentation"))
-
-    task2 = _make_ticket(project, sprint, "Docker Compose local dev setup", "Add docker-compose.yml with hot-reload", "TASK", T, "MEDIUM", bob, assignee=bob, epic=epic_infra, load=8, order=12)
-    task2.tags.set(_tags_named(t, project, "infrastructure"))
-
-    task3 = _make_ticket(project, None, "Add GitHub Actions CI pipeline", "Lint + test on every PR", "TASK", T, "HIGH", admin, epic=epic_infra, load=13, order=13)
-    task3.tags.set(_tags_named(t, project, "infrastructure", "testing"))
-
-    return [epic_ui, epic_infra, s1, s2, s3, s4, s5, b1, b2, b3, task1, task2, task3]
-
-
-def _create_api_tickets(project, sprint, alice, bob, charlie, marcus, tags):
-    t = tags
-    T, I, D = Ticket.STATUS_TODO, Ticket.STATUS_IN_PROGRESS, Ticket.STATUS_DONE
-
-    epic_auth = _make_ticket(project, sprint, "JWT Authentication System", "Access + refresh token flow", "EPIC", I, "HIGH", alice, color="#DC2626", order=1)
-    epic_auth.tags.set(_tags_named(t, project, "backend", "security"))
-
-    s1 = _make_ticket(project, sprint, "Token refresh endpoint", "POST /api/auth/refresh/", "STORY", D, "HIGH", alice, assignee=alice, epic=epic_auth, sp=5, load=5, order=2)
-    s1.tags.set(_tags_named(t, project, "backend"))
-
-    s2 = _make_ticket(project, sprint, "Permission middleware", "Role-based access on all routes", "STORY", I, "HIGH", bob, assignee=bob, epic=epic_auth, sp=8, load=8, order=3)
-    s2.tags.set(_tags_named(t, project, "backend", "security"))
-
-    s3 = _make_ticket(project, sprint, "OpenAPI schema generation", "drf-spectacular integration", "STORY", T, "MEDIUM", charlie, assignee=charlie, sp=3, load=3, order=4)
-    s3.tags.set(_tags_named(t, project, "backend", "documentation"))
-
-    s4 = _make_ticket(project, sprint, "Rate limiting on auth endpoints", "django-ratelimit on /login /refresh", "STORY", T, "HIGH", alice, assignee=alice, sp=5, load=5, order=5)
-    s4.tags.set(_tags_named(t, project, "security", "backend"))
-
-    s5 = _make_ticket(project, None, "Pagination helper mixin", "Cursor-based pagination for all list views", "STORY", T, "MEDIUM", bob, sp=5, load=5, order=6)
-    s5.tags.set(_tags_named(t, project, "backend"))
-
-    b1 = _make_ticket(project, sprint, "Token expiry not enforced on logout", "Blacklist not checked on logout", "BUG", I, "HIGH", marcus, assignee=marcus, epic=epic_auth, order=7)
-    b1.tags.set(_tags_named(t, project, "security", "backend"))
-
-    b2 = _make_ticket(project, sprint, "500 on nullable profile field", "Profile.bio raises AttributeError", "BUG", T, "MEDIUM", charlie, order=8)
-    b2.tags.set(_tags_named(t, project, "backend"))
-
-    b3 = _make_ticket(project, None, "N+1 query on ticket list endpoint", "select_related missing on assignee", "BUG", T, "HIGH", alice, order=9)
-    b3.tags.set(_tags_named(t, project, "backend", "database"))
-
-    task1 = _make_ticket(project, sprint, "Write DRF test suite", "Cover all ViewSets with pytest-django", "TASK", I, "HIGH", marcus, assignee=marcus, load=13, order=10)
-    task1.tags.set(_tags_named(t, project, "testing"))
-
-    task2 = _make_ticket(project, None, "Migrate to PostgreSQL locally", "Replace SQLite in dev docker-compose", "TASK", T, "MEDIUM", bob, load=5, order=11)
-    task2.tags.set(_tags_named(t, project, "database", "infrastructure"))
-
-    task3 = _make_ticket(project, None, "Add coverage badge to README", "codecov.io integration", "TASK", T, "LOW", charlie, load=2, order=12)
-    task3.tags.set(_tags_named(t, project, "documentation", "testing"))
-
-    return [epic_auth, s1, s2, s3, s4, s5, b1, b2, b3, task1, task2, task3]
-
-
-def _create_mob_tickets(project, sprint, elena, sara, charlie, tags):
-    t = tags
-    T, I = Ticket.STATUS_TODO, Ticket.STATUS_IN_PROGRESS
-
-    epic_ux = _make_ticket(project, sprint, "Mobile UX Foundation", "Core screens and navigation structure", "EPIC", I, "HIGH", elena, color="#0891B2", order=1)
-    epic_ux.tags.set(_tags_named(t, project, "ui-ux", "frontend"))
-
-    s1 = _make_ticket(project, sprint, "Onboarding flow screens", "4-step onboarding with skip logic", "STORY", T, "HIGH", elena, assignee=elena, epic=epic_ux, sp=8, load=8, order=2)
-    s1.tags.set(_tags_named(t, project, "ui-ux"))
-
-    s2 = _make_ticket(project, sprint, "Bottom navigation bar", "Tab bar with active state indicators", "STORY", T, "MEDIUM", sara, assignee=sara, epic=epic_ux, sp=5, load=5, order=3)
-    s2.tags.set(_tags_named(t, project, "frontend", "ui-ux"))
-
-    s3 = _make_ticket(project, None, "Push notification service", "Firebase FCM integration plan", "STORY", T, "MEDIUM", charlie, sp=13, load=13, order=4)
-    s3.tags.set(_tags_named(t, project, "backend", "infrastructure"))
-
-    s4 = _make_ticket(project, None, "Offline sync strategy", "Define conflict resolution approach", "STORY", T, "LOW", elena, sp=8, load=8, order=5)
-    s4.tags.set(_tags_named(t, project, "backend", "documentation"))
-
-    b1 = _make_ticket(project, sprint, "Layout breaks on small screens < 320px", "Flex overflow on tiny devices", "BUG", T, "HIGH", sara, order=6)
-    b1.tags.set(_tags_named(t, project, "frontend", "ui-ux"))
-
-    task1 = _make_ticket(project, sprint, "Write mobile design spec", "Figma handoff doc for all screens", "TASK", I, "MEDIUM", elena, assignee=elena, load=8, order=7)
-    task1.tags.set(_tags_named(t, project, "documentation", "ui-ux"))
-
-    task2 = _make_ticket(project, None, "Research React Native vs Flutter", "Technical feasibility report", "TASK", T, "HIGH", charlie, load=5, order=8)
-    task2.tags.set(_tags_named(t, project, "documentation"))
-
-    return [epic_ux, s1, s2, s3, s4, b1, task1, task2]
-
-
-# ── Closed Sprint Tickets (statistics data) ──────────────────────────────────
-
-CLOSED_SPRINT_STORY_TITLES = [
-    "Setup project scaffolding",
-    "Implement user authentication flow",
-    "Build dashboard layout",
-    "Add filtering and search",
-    "Create data export feature",
-    "Implement notification system",
-    "Build settings page",
-    "Add role-based permissions",
-    "Create activity log module",
-    "Implement caching layer",
-    "Build analytics dashboard",
-    "Add email integration",
-    "Create batch processing pipeline",
-    "Implement websocket updates",
-    "Build reporting module",
-    "Add audit trail",
-    "Create onboarding wizard",
-    "Implement file upload service",
-]
-
-
-def _create_all_closed_sprint_tickets(projects, closed_sprints_per_project, users):
-    admin = users[0]
     all_tickets = []
-    title_offset = 0
 
-    for project, closed_sprints in zip(projects, closed_sprints_per_project):
-        members = _get_project_assignees(project, users)
-        for sprint_index, sprint in enumerate(closed_sprints):
-            velocity = CLOSED_SPRINT_VELOCITY[sprint_index]
-            tickets = _create_single_closed_sprint_tickets(
-                project, sprint, admin, members,
-                velocity["done"], velocity["wip"], title_offset,
-            )
-            all_tickets.extend(tickets)
-            title_offset += len(velocity["done"]) + len(velocity["wip"])
+    for project in projects:
+        members = [
+            pm.user
+            for pm in project.members.select_related("user").all()
+            if pm.user.username != "admin"
+        ]
+        members = members[:4]
+
+        sprint_1 = Sprint.objects.get(project=project, name="Sprint 1")
+        sprint_2 = Sprint.objects.get(project=project, name="Sprint 2")
+        sprint_3 = Sprint.objects.get(project=project, name="Sprint 3")
+        sprint_4 = Sprint.objects.get(project=project, name="Sprint 4")
+
+        config = next(c for c in PROJECT_CONFIGS if c["code"] == project.code_prefix)
+
+        tickets = _create_project_ticket_set(
+            project=project,
+            sprint_1=sprint_1,
+            sprint_2=sprint_2,
+            sprint_3=sprint_3,
+            sprint_4=sprint_4,
+            members=members,
+            tags=tags,
+            epic_color=config["epic_color"],
+        )
+        all_tickets.extend(tickets)
 
     return all_tickets
 
 
-def _get_project_assignees(project, users):
-    member_ids = set(
-        project.members.values_list("user_id", flat=True)
-    )
-    return [u for u in users if u.id in member_ids and not u.is_superuser]
-
-
-def _create_single_closed_sprint_tickets(project, sprint, admin, members, done_points, wip_points, title_offset):
-    D = Ticket.STATUS_DONE
+def _create_project_ticket_set(project, sprint_1, sprint_2, sprint_3, sprint_4, members, tags, epic_color):
+    a1, a2, a3, a4 = members
+    T = Ticket.STATUS_TODO
     I = Ticket.STATUS_IN_PROGRESS
+    D = Ticket.STATUS_DONE
+
     tickets = []
     order = 1
 
-    for idx, story_points in enumerate(done_points):
-        assignee = members[idx % len(members)] if members else admin
-        title_index = (title_offset + idx) % len(CLOSED_SPRINT_STORY_TITLES)
-        ticket = _make_ticket(
-            project, sprint,
-            f"{CLOSED_SPRINT_STORY_TITLES[title_index]} ({sprint.name})",
-            f"Completed in {sprint.name}",
-            "STORY", D, "MEDIUM", admin,
-            assignee=assignee, sp=story_points, load=story_points, order=order,
+    epic = _make_ticket(
+        project=project,
+        sprint=None,
+        title="Core project management workflow",
+        description="Main epic covering the core project management workflow.",
+        issue_type=Ticket.ISSUE_TYPE_EPIC,
+        status=I,
+        priority="HIGH",
+        author=a1,
+        assignee=None,
+        color=epic_color,
+        backlog_order=order,
+    )
+    epic.tags.set(_project_tags(tags, project, "frontend", "backend"))
+    tickets.append(epic)
+    order += 1
+
+    story_specs = [
+        {
+            "title": "As a user, I want to access the project dashboard",
+            "goal": "to access the project dashboard",
+            "benefit": "I can quickly understand the current state of the project.",
+            "developer": "Display the main project information, recent activity and key indicators on the dashboard page.",
+            "rules": "The dashboard must be accessible to project members.\nThe displayed data must belong to the selected project only.",
+            "done_when": "The user can open the dashboard.\nThe dashboard displays the main project information.\nThe page loads correctly without errors.",
+            "sprint": sprint_1,
+            "status": D,
+            "priority": "HIGH",
+            "points": 3,
+            "initial": 3,
+            "remaining": 0,
+            "author": a1,
+            "assignee": a1,
+            "tags": ("frontend", "ui"),
+        },
+        {
+            "title": "As a user, I want to manage the product backlog",
+            "goal": "to manage the product backlog",
+            "benefit": "I can organize and prioritize the work of the project.",
+            "developer": "Allow users to view backlog items, reorder them and manage their priority inside the project.",
+            "rules": "Only project members can access the backlog.\nOnly valid backlog items must be displayed.\nThe backlog order must be saved after changes.",
+            "done_when": "The user can open the backlog page.\nStories and bugs are displayed in priority order.\nA ticket can be moved up or down in the backlog.",
+            "sprint": sprint_2,
+            "status": D,
+            "priority": "HIGH",
+            "points": 5,
+            "initial": 5,
+            "remaining": 0,
+            "author": a2,
+            "assignee": a2,
+            "tags": ("backend",),
+        },
+        {
+            "title": "As a user, I want to manage sprint content",
+            "goal": "to manage sprint content",
+            "benefit": "I can organize the work planned for the current sprint.",
+            "developer": "Allow users to add tickets to a sprint, remove them and view the sprint objective and associated content.",
+            "rules": "Only one sprint can be active at a time for a given project.\nOnly valid tickets can be assigned to a sprint.\nSprint information must remain linked to the correct project.",
+            "done_when": "The user can open a sprint detail page.\nTickets can be added to the sprint.\nTickets can be removed from the sprint.\nThe sprint objective is displayed correctly.",
+            "sprint": sprint_3,
+            "status": D,
+            "priority": "MEDIUM",
+            "points": 5,
+            "initial": 5,
+            "remaining": 0,
+            "author": a3,
+            "assignee": a3,
+            "tags": ("backend", "documentation"),
+        },
+        {
+            "title": "As a user, I want to track work on a Kanban board",
+            "goal": "to track work on a Kanban board",
+            "benefit": "I can visualize the progress of the sprint.",
+            "developer": "Display sprint tickets in Kanban columns and allow status changes through the board interface.",
+            "rules": "Only tickets assigned to the selected sprint must appear on the board.\nEach ticket must appear in the column matching its current status.\nA status change must update the ticket correctly.",
+            "done_when": "The user can open the Kanban board.\nTickets appear in the correct columns.\nA ticket can move from TODO to IN_PROGRESS and to DONE.\nThe board updates the ticket status successfully.",
+            "sprint": sprint_4,
+            "status": I,
+            "priority": "HIGH",
+            "points": 8,
+            "initial": 8,
+            "remaining": 3,
+            "author": a4,
+            "assignee": a4,
+            "tags": ("frontend", "ui"),
+        },
+        {
+            "title": "As a user, I want to manage ticket attachments",
+            "goal": "to manage ticket attachments",
+            "benefit": "I can keep project files directly linked to tickets.",
+            "developer": "Allow users to upload, view and download attachments from the ticket detail page.",
+            "rules": "Only allowed image formats may be uploaded.\nAttachments must remain linked to the correct ticket.",
+            "done_when": "The user can upload a file.\nThe attachment appears on the ticket detail page.\nThe attachment can be opened successfully.",
+            "sprint": sprint_4,
+            "status": T,
+            "priority": "MEDIUM",
+            "points": 3,
+            "initial": 3,
+            "remaining": 3,
+            "author": a1,
+            "assignee": a2,
+            "tags": ("backend", "testing"),
+        },
+        {
+            "title": "As a user, I want to view project statistics",
+            "goal": "to view project statistics",
+            "benefit": "I can better understand project progress and team activity.",
+            "developer": "Display project metrics such as completed work, sprint distribution and other key indicators.",
+            "rules": "Statistics must only use data from the selected project.\nThe page must stay available even if the project has limited history.",
+            "done_when": "The user can open the statistics page.\nCharts are displayed correctly.\nCompleted and remaining work are visible.",
+            "sprint": None,
+            "status": T,
+            "priority": "HIGH",
+            "points": 5,
+            "initial": 5,
+            "remaining": 5,
+            "author": a2,
+            "assignee": a3,
+            "tags": ("frontend", "documentation"),
+        },
+    ]
+
+    story_objects = []
+    for spec in story_specs:
+        obj = _make_ticket(
+            project=project,
+            sprint=spec["sprint"],
+            title=spec["title"],
+            description=_story_template(
+                goal=spec["goal"],
+                benefit=spec["benefit"],
+                developer_description=spec["developer"],
+                business_rules=spec["rules"],
+                done_when=spec["done_when"],
+            ),
+            issue_type=Ticket.ISSUE_TYPE_STORY,
+            status=spec["status"],
+            priority=spec["priority"],
+            author=spec["author"],
+            assignee=spec["assignee"],
+            epic=epic,
+            story_points=spec["points"],
+            initial_load=spec["initial"],
+            remaining_load=spec["remaining"],
+            backlog_order=order,
         )
-        tickets.append(ticket)
+        obj.tags.set(_project_tags(tags, project, *spec["tags"]))
+        story_objects.append(obj)
+        tickets.append(obj)
         order += 1
 
-    for idx, story_points in enumerate(wip_points):
-        assignee = members[(len(done_points) + idx) % len(members)] if members else admin
-        title_index = (title_offset + len(done_points) + idx) % len(CLOSED_SPRINT_STORY_TITLES)
-        ticket = _make_ticket(
-            project, sprint,
-            f"{CLOSED_SPRINT_STORY_TITLES[title_index]} ({sprint.name})",
-            f"Carried over from {sprint.name}",
-            "STORY", I, "HIGH", admin,
-            assignee=assignee, sp=story_points, load=story_points, order=order,
+    bug_specs = [
+        {
+            "title": "Kanban board does not refresh after status change",
+            "summary": "When a ticket status changes on the Kanban board, the column does not always refresh correctly.",
+            "expected": "The board updates immediately after the status change.",
+            "actual": "The user sometimes needs to refresh the page manually.",
+            "sprint": sprint_2,
+            "status": D,
+            "priority": "HIGH",
+            "points": 2,
+            "initial": 2,
+            "remaining": 0,
+            "author": a1,
+            "assignee": a2,
+            "tags": ("frontend", "urgent"),
+        },
+        {
+            "title": "Backlog ordering becomes inconsistent after moving stories",
+            "summary": "When several stories are reordered in the backlog, their position may not update correctly.",
+            "expected": "The new order remains consistent after the page reload.",
+            "actual": "Some items appear in the wrong order after a refresh.",
+            "sprint": sprint_3,
+            "status": D,
+            "priority": "MEDIUM",
+            "points": 3,
+            "initial": 3,
+            "remaining": 0,
+            "author": a2,
+            "assignee": a3,
+            "tags": ("backend", "testing"),
+        },
+        {
+            "title": "Attachment preview fails on ticket detail page",
+            "summary": "An uploaded image does not always render in the ticket detail page preview.",
+            "expected": "The attachment preview is visible immediately.",
+            "actual": "The preview sometimes stays blank until the page is refreshed.",
+            "sprint": sprint_4,
+            "status": T,
+            "priority": "MEDIUM",
+            "points": 2,
+            "initial": 2,
+            "remaining": 2,
+            "author": a3,
+            "assignee": a4,
+            "tags": ("frontend", "urgent"),
+        },
+    ]
+
+    bug_objects = []
+    for spec in bug_specs:
+        obj = _make_ticket(
+            project=project,
+            sprint=spec["sprint"],
+            title=spec["title"],
+            description=_bug_description(
+                summary=spec["summary"],
+                expected=spec["expected"],
+                actual=spec["actual"],
+            ),
+            issue_type=Ticket.ISSUE_TYPE_BUG,
+            status=spec["status"],
+            priority=spec["priority"],
+            author=spec["author"],
+            assignee=spec["assignee"],
+            epic=epic,
+            story_points=spec["points"],
+            initial_load=spec["initial"],
+            remaining_load=spec["remaining"],
+            backlog_order=order,
         )
-        tickets.append(ticket)
+        obj.tags.set(_project_tags(tags, project, *spec["tags"]))
+        bug_objects.append(obj)
+        tickets.append(obj)
         order += 1
+
+    task_specs = [
+        ("Create dashboard layout", "Create the main layout of the project dashboard including header, summary cards and navigation.", D, "MEDIUM", 2, 0, a1, a1, ("frontend", "ui")),
+        ("Implement backlog ordering logic", "Implement the logic used to move stories up and down in the backlog.", D, "HIGH", 3, 0, a2, a2, ("backend",)),
+        ("Create sprint detail page", "Create the sprint detail page displaying objective, dates and sprint content.", D, "MEDIUM", 3, 0, a3, a3, ("frontend",)),
+        ("Implement Kanban status update", "Implement ticket status updates from the Kanban board interface.", I, "HIGH", 5, 2, a4, a4, ("frontend", "urgent")),
+        ("Add ticket tag support", "Allow tags to be attached to tickets and displayed in ticket views.", D, "LOW", 2, 0, a1, a2, ("backend", "documentation")),
+        ("Create ticket attachment upload", "Allow users to attach files to a ticket and display them in the detail page.", I, "MEDIUM", 3, 1, a2, a4, ("backend", "testing")),
+        ("Implement project statistics cards", "Create the statistics cards visible on the project analytics page.", T, "MEDIUM", 5, 5, a3, a1, ("frontend", "documentation")),
+        ("Add ticket filtering by tag", "Allow ticket lists to be filtered using tags.", T, "LOW", 2, 2, a4, a3, ("frontend", "ui")),
+    ]
+
+    task_objects = []
+    for title, description, status, priority, initial, remaining, author, assignee, tag_names in task_specs:
+        obj = _make_ticket(
+            project=project,
+            sprint=None,
+            title=title,
+            description=_task_description(description),
+            issue_type=Ticket.ISSUE_TYPE_TASK,
+            status=status,
+            priority=priority,
+            author=author,
+            assignee=assignee,
+            epic=epic,
+            initial_load=initial,
+            remaining_load=remaining,
+            backlog_order=order,
+        )
+        obj.tags.set(_project_tags(tags, project, *tag_names))
+        task_objects.append(obj)
+        tickets.append(obj)
+        order += 1
+
+    # Ticket links to exercise link feature
+    TicketLink.objects.get_or_create(
+        source_ticket=story_objects[0],
+        target_ticket=story_objects[1],
+        link_type=TicketLink.TYPE_RELATES_TO,
+    )
+    TicketLink.objects.get_or_create(
+        source_ticket=story_objects[2],
+        target_ticket=story_objects[3],
+        link_type=TicketLink.TYPE_RELATES_TO,
+    )
+    TicketLink.objects.get_or_create(
+        source_ticket=bug_objects[0],
+        target_ticket=story_objects[3],
+        link_type=TicketLink.TYPE_BLOCKED_BY,
+    )
+    TicketLink.objects.get_or_create(
+        source_ticket=task_objects[1],
+        target_ticket=story_objects[1],
+        link_type=TicketLink.TYPE_RELATES_TO,
+    )
+    TicketLink.objects.get_or_create(
+        source_ticket=task_objects[5],
+        target_ticket=story_objects[4],
+        link_type=TicketLink.TYPE_RELATES_TO,
+    )
 
     return tickets
 
 
-# ── Ticket Links ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Ticket links / attachments / git repos
+# -----------------------------------------------------------------------------
 
 def create_ticket_links(project_tickets_map):
-    created = []
-    for tickets in project_tickets_map.values():
-        _add_links_within_project(tickets, created)
-    return created
+    # Links are already created inside _create_project_ticket_set.
+    # We keep this function for compatibility with the management command.
+    return list(TicketLink.objects.all())
 
-
-def _add_links_within_project(tickets, created):
-    stories = [t for t in tickets if t.issue_type == "STORY"]
-    bugs    = [t for t in tickets if t.issue_type == "BUG"]
-    tasks   = [t for t in tickets if t.issue_type == "TASK"]
-
-    link_pairs = []
-    if len(stories) >= 2:
-        link_pairs.append((stories[0], stories[1], TicketLink.TYPE_RELATES_TO))
-    if len(stories) >= 4:
-        link_pairs.append((stories[2], stories[3], TicketLink.TYPE_RELATES_TO))
-    if stories and bugs:
-        link_pairs.append((bugs[0], stories[0], TicketLink.TYPE_BLOCKED_BY))
-    if len(bugs) >= 2 and stories:
-        link_pairs.append((bugs[1], stories[0], TicketLink.TYPE_RELATES_TO))
-    if tasks and stories:
-        link_pairs.append((tasks[0], stories[0], TicketLink.TYPE_BLOCKED_BY))
-    if len(tasks) >= 2 and len(stories) >= 2:
-        link_pairs.append((tasks[1], stories[1], TicketLink.TYPE_RELATES_TO))
-
-    for src, tgt, link_type in link_pairs:
-        link = _safe_create_link(src, tgt, link_type)
-        if link:
-            created.append(link)
-
-
-def _safe_create_link(source, target, link_type):
-    try:
-        link, created = TicketLink.objects.get_or_create(
-            source_ticket=source,
-            target_ticket=target,
-            link_type=link_type,
-        )
-        return link if created else None
-    except Exception:
-        return None
-
-
-# ── Ticket Attachments ───────────────────────────────────────────────────────
 
 def create_ticket_attachments(tickets_with_attachments):
     created = []
     for ticket in tickets_with_attachments:
         attachment = TicketAttachment(ticket=ticket)
-        png_bytes = _minimal_png(ticket.id)
         attachment.file.save(
             f"attachment_ticket_{ticket.id}.png",
-            ContentFile(png_bytes),
+            ContentFile(_minimal_png(ticket.id)),
             save=True,
         )
         created.append(attachment)
     return created
 
 
+def create_git_repositories(project_1, project_2):
+    repos = []
+
+    repo_1, _ = GitRepository.objects.get_or_create(
+        project=project_1,
+        defaults={
+            "repository_url": "https://github.com/jiren-demo/projet-equipe-1",
+            "repository_type": GitRepository.REPOSITORY_TYPE_GITHUB,
+            "is_private": False,
+        },
+    )
+    repos.append(repo_1)
+
+    repo_2, _ = GitRepository.objects.get_or_create(
+        project=project_2,
+        defaults={
+            "repository_url": "https://gitlab.com/jiren-demo/projet-equipe-2",
+            "repository_type": GitRepository.REPOSITORY_TYPE_GITLAB,
+            "is_private": False,
+        },
+    )
+    repos.append(repo_2)
+
+    return repos
+
+
+# -----------------------------------------------------------------------------
+# Minimal PNG generator
+# -----------------------------------------------------------------------------
+
 def _minimal_png(seed):
-    """Generate a deterministic 1×1 PNG using pure Python (no external deps)."""
     r = (seed * 47 + 3) % 256
     g = (seed * 97 + 7) % 256
     b = (seed * 137 + 11) % 256
     raw = struct.pack(">BBBBBBBB", 0, r, g, b, 255, r, g, b)
     compressed = zlib.compress(raw)
-    png = (
+    return (
         b"\x89PNG\r\n\x1a\n"
         + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
         + _png_chunk(b"IDAT", compressed)
         + _png_chunk(b"IEND", b"")
     )
-    return png
 
 
 def _png_chunk(chunk_type, data):
     crc = zlib.crc32(chunk_type + data) & 0xFFFFFFFF
     return struct.pack(">I", len(data)) + chunk_type + data + struct.pack(">I", crc)
-
-
-# ── Git Repositories ─────────────────────────────────────────────────────────
-
-def create_git_repositories(qir_project, api_project):
-    repos = []
-    qir_repo, _ = GitRepository.objects.get_or_create(
-        project=qir_project,
-        defaults={
-            "repository_url": "https://github.com/jiren-demo/quantum-interface",
-            "repository_type": GitRepository.REPOSITORY_TYPE_GITHUB,
-            "is_private": False,
-        },
-    )
-    repos.append(qir_repo)
-
-    api_repo, _ = GitRepository.objects.get_or_create(
-        project=api_project,
-        defaults={
-            "repository_url": "https://gitlab.com/jiren-demo/backend-api-v2",
-            "repository_type": GitRepository.REPOSITORY_TYPE_GITLAB,
-            "is_private": True,
-            "access_token": "glpat-test-placeholder-token",
-        },
-    )
-    repos.append(api_repo)
-    return repos
