@@ -1,6 +1,8 @@
 """Common data transformations for Git providers."""
 from typing import Any, Dict, List
 
+_GITLAB_VISIBILITY_LEVELS: Dict[int, str] = {20: "public", 10: "internal", 0: "private", 5: "private"}
+
 
 def format_stars(count: int) -> str:
     """Format star count with K suffix for thousands."""
@@ -38,17 +40,9 @@ def normalize_repository_info(data: Dict[str, Any], provider_type: str, reposito
         }
 
     if provider_type == "gitlab":
-        visibility = data.get("visibility")
-        if not visibility:
-            visibility_level = data.get("visibility_level")
-            if visibility_level == 20:
-                visibility = "public"
-            elif visibility_level == 10:
-                visibility = "internal"
-            elif visibility_level in (0, 5):
-                visibility = "private"
-            else:
-                visibility = "unknown"
+        visibility = data.get("visibility") or _GITLAB_VISIBILITY_LEVELS.get(
+            data.get("visibility_level"), "unknown"
+        )
         return {
             "name": data.get("name", ""),
             "url": data.get("web_url") or fallback_url,

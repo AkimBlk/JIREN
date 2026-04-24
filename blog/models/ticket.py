@@ -9,6 +9,7 @@ from .project import Project
 from .sprint import Sprint, SprintUserCapacity
 from .tag import Tag
 from .ticket_validators import (
+    SprintCapacityContext,
     validate_color,
     validate_epic_hierarchy,
     validate_global_sprint_capacity,
@@ -120,8 +121,11 @@ class Ticket(models.Model):
             validate_global_sprint_capacity(self.sprint, self.pk, self.story_points, Ticket, errors)
         elif self.sprint.capacity_mode == Sprint.CAPACITY_MODE_PER_USER:
             validate_per_user_sprint_capacity(
-                self.sprint, self.pk, self.story_points,
-                self.assignee, SprintUserCapacity, Ticket, errors,
+                SprintCapacityContext(
+                    sprint=self.sprint, ticket_pk=self.pk, story_points=self.story_points,
+                    assignee=self.assignee, capacity_model=SprintUserCapacity, ticket_model=Ticket,
+                ),
+                errors,
             )
 
     def save(self, *args, **kwargs):

@@ -4,12 +4,12 @@ from django.db import migrations, models
 LEGACY_ROLE_VALUES = ("admin", "member", "read_only", "read-only")
 
 
-def normalize_project_member_roles_forward(apps, schema_editor):
+def normalize_project_member_roles_forward(apps, _schema_editor):
     ProjectMember = apps.get_model("blog", "ProjectMember")
     ProjectMember.objects.filter(role__in=LEGACY_ROLE_VALUES).update(role="contributor")
 
 
-def normalize_project_member_roles_reverse(apps, schema_editor):
+def normalize_project_member_roles_reverse(apps, _schema_editor):
     # Keep contributor values on rollback to avoid reintroducing deprecated roles.
     return
 

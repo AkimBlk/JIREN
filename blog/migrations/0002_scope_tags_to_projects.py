@@ -4,7 +4,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def assign_projects_to_existing_tags(apps, schema_editor):
+def assign_projects_to_existing_tags(apps, _schema_editor):
     Tag = apps.get_model("blog", "Tag")
     Ticket = apps.get_model("blog", "Ticket")
     TagAssignment = Ticket.tags.through
@@ -42,7 +42,7 @@ def assign_projects_to_existing_tags(apps, schema_editor):
             ).update(tag_id=duplicate_tag.id)
 
 
-def remove_project_scope_from_tags(apps, schema_editor):
+def remove_project_scope_from_tags(apps, _schema_editor):
     Tag = apps.get_model("blog", "Tag")
     Ticket = apps.get_model("blog", "Ticket")
     TagAssignment = Ticket.tags.through

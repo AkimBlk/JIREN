@@ -48,10 +48,10 @@ class TagViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        if not self.kwargs.get("project_id"):
+            return context
         try:
             context["project"] = self.get_project()
-        except ValueError:
-            pass
         except Exception as exc:
             logger.error("Error getting project context: %s", exc, exc_info=True)
         return context

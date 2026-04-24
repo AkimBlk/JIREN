@@ -1,6 +1,17 @@
+from typing import Any, NamedTuple
+
 from django.db.models import Sum
 
 LOAD_TYPES = frozenset(["STORY", "BUG", "TASK"])
+
+
+class SprintCapacityContext(NamedTuple):
+    sprint: Any
+    ticket_pk: Any
+    story_points: int
+    assignee: Any
+    capacity_model: Any
+    ticket_model: Any
 STORY_BUG_TYPES = frozenset(["STORY", "BUG"])
 EPIC_TASK_TYPES = frozenset(["EPIC", "TASK"])
 
@@ -80,13 +91,11 @@ def validate_global_sprint_capacity(sprint, ticket_pk, story_points, ticket_mode
         errors["sprint"] = f"Would exceed capacity: {new_total}/{sprint.capacity}"
 
 
-def validate_per_user_sprint_capacity(sprint, ticket_pk, story_points, assignee, capacity_model, ticket_model, errors):
+def validate_per_user_sprint_capacity(ctx: SprintCapacityContext, errors: dict) -> None:
+    sprint, ticket_pk, story_points, assignee, capacity_model, ticket_model = ctx
     total_cap = sprint.configured_capacity()
     other_points = (
-        ticket_model.objects.filter(
-            sprint=sprint,
-            issue_type__in=list(STORY_BUG_TYPES),
-        )
+        ticket_model.objects.filter(sprint=sprint, issue_type__in=list(STORY_BUG_TYPES))
         .exclude(pk=ticket_pk)
         .aggregate(total=Sum("story_points"))
         .get("total") or 0
@@ -108,9 +117,7 @@ def validate_per_user_sprint_capacity(sprint, ticket_pk, story_points, assignee,
 
     user_points = (
         ticket_model.objects.filter(
-            sprint=sprint,
-            assignee=assignee,
-            issue_type__in=list(STORY_BUG_TYPES),
+            sprint=sprint, assignee=assignee, issue_type__in=list(STORY_BUG_TYPES),
         )
         .exclude(pk=ticket_pk)
         .aggregate(total=Sum("story_points"))
