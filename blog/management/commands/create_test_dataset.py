@@ -15,7 +15,7 @@ from .test_dataset_creators import (
     create_ticket_links,
 )
 
-ATTACHMENT_TICKET_INDICES = [0, 2, 4, 6, 8]
+ATTACHMENT_TICKET_INDICES = [1, 4, 7, 10, 14, 18, 22, 27, 31, 36]
 
 
 class Command(BaseCommand):
@@ -92,9 +92,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(all_tickets)} tickets"))
 
         project_tickets_map = {
-            projects[0]: [t for t in all_tickets if t.project == projects[0]],
-            projects[1]: [t for t in all_tickets if t.project == projects[1]],
-            projects[2]: [t for t in all_tickets if t.project == projects[2]],
+            project: [t for t in all_tickets if t.project == project]
+            for project in projects
         }
         links = create_ticket_links(project_tickets_map)
         self.stdout.write(self.style.SUCCESS(f"[OK] {len(links)} ticket links"))
