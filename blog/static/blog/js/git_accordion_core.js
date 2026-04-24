@@ -71,9 +71,11 @@
     });
   }
 
+  const TIMESTAMP_REFRESH_MS = 60_000;
+
   function initTimestamps() {
     GitAccordionUtils.updateRelativeTimestamps();
-    setInterval(GitAccordionUtils.updateRelativeTimestamps, 60000);
+    setInterval(GitAccordionUtils.updateRelativeTimestamps, TIMESTAMP_REFRESH_MS);
   }
 
   document.addEventListener('DOMContentLoaded', function () {

@@ -68,11 +68,7 @@
 
     updatePrivateModeState();
 
-    var PROVIDER_PATTERNS = {
-      github: /github\.com/i,
-      gitlab: /gitlab\.(com|org)/i,
-      gitea: /gitea\.|codeberg\.org/i
-    };
+    var PROVIDER_PATTERNS = { github: /github\.com/i, gitlab: /gitlab\.(com|org)/i, gitea: /gitea\.|codeberg\.org/i };
 
     if (repoUrlInput) {
       repoUrlInput.addEventListener('input', function () {
@@ -102,77 +98,64 @@
       submitSpinner.classList.toggle('d-none', !loading);
     }
 
+    var HTTP_STATUS_UNAUTHORIZED = 401;
+    var HTTP_STATUS_FORBIDDEN    = 403;
+    var HTTP_STATUS_NOT_FOUND    = 404;
+    var HTTP_STATUS_CONFLICT     = 409;
+    var HTTP_STATUS_BAD_REQUEST  = 400;
+    var REDIRECT_DELAY_MS        = 600;
+
+    var ERROR_MESSAGES = {};
+    ERROR_MESSAGES[HTTP_STATUS_UNAUTHORIZED] = 'Session expired. Please sign in again.';
+    ERROR_MESSAGES[HTTP_STATUS_FORBIDDEN]    = 'Access denied for this project.';
+    ERROR_MESSAGES[HTTP_STATUS_NOT_FOUND]    = 'Git repository not found for this project.';
+    ERROR_MESSAGES[HTTP_STATUS_CONFLICT]     = 'Repository already configured. Reload the page and edit it.';
+
+    function errorMessageForStatus(httpStatus, rawText, data) {
+      if (data && data.error) return data.error;
+      if (ERROR_MESSAGES[httpStatus]) return ERROR_MESSAGES[httpStatus];
+      if (httpStatus === HTTP_STATUS_BAD_REQUEST && rawText.toLowerCase().indexOf('csrf') !== -1) {
+        return 'Security check failed (CSRF). Reload the page and try again.';
+      }
+      return 'Request failed (' + httpStatus + ').';
+    }
+
+    async function submitGitSetupForm(csrfToken) {
+      try {
+        var response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          credentials: 'same-origin',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken.value }
+        });
+        var contentType = (response.headers.get('content-type') || '').toLowerCase();
+        var data    = contentType.indexOf('application/json') !== -1 ? await response.json() : null;
+        var rawText = data === null ? await response.text() : '';
+        setLoading(false);
+        if (!response.ok) {
+          showAlert(errorMessageForStatus(response.status, rawText, data), 'danger');
+          return;
+        }
+        if (data && data.success) {
+          showAlert(data.message || 'Repository configured.', 'success');
+          await new Promise(function (resolve) { setTimeout(resolve, REDIRECT_DELAY_MS); });
+          window.location.href = data.redirect_url;
+        } else {
+          showAlert((data && data.error) || 'An error occurred. Check the form.', 'danger');
+        }
+      } catch (error) {
+        setLoading(false);
+        showAlert((error && error.message) || 'Network error. Please try again.', 'danger');
+      }
+    }
+
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       hideAlert();
-
-      var formData = new FormData(form);
       var csrfToken = form.querySelector('[name=csrfmiddlewaretoken]');
       if (!csrfToken) return;
-
       setLoading(true);
-
-      fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrfToken.value
-        }
-      })
-        .then(function (response) {
-          var contentType = response.headers.get('content-type') || '';
-          var isJson = contentType.toLowerCase().indexOf('application/json') !== -1;
-          if (isJson) {
-            return response.json().then(function (data) {
-              return { response: response, data: data, rawText: '' };
-            });
-          }
-          return response.text().then(function (rawText) {
-            return { response: response, data: null, rawText: rawText || '' };
-          });
-        })
-        .then(function (result) {
-          var response = result.response;
-          var data = result.data;
-          var rawText = result.rawText;
-          setLoading(false);
-
-          if (!response.ok) {
-            var errorMessage = (data && data.error) ? data.error : '';
-            if (!errorMessage) {
-              if (response.status === 401) {
-                errorMessage = 'Session expired. Please sign in again.';
-              } else if (response.status === 403) {
-                errorMessage = 'Access denied for this project.';
-              } else if (response.status === 404) {
-                errorMessage = 'Git repository not found for this project.';
-              } else if (response.status === 409) {
-                errorMessage = 'Repository already configured. Reload the page and edit it.';
-              } else if (response.status === 400 && rawText.toLowerCase().indexOf('csrf') !== -1) {
-                errorMessage = 'Security check failed (CSRF). Reload the page and try again.';
-              } else {
-                errorMessage = 'Request failed (' + response.status + ').';
-              }
-            }
-            showAlert(errorMessage, 'danger');
-            return;
-          }
-
-          if (data && data.success) {
-            showAlert(data.message || 'Repository configured.', 'success');
-            setTimeout(function () {
-              window.location.href = data.redirect_url;
-            }, 600);
-          } else {
-            showAlert((data && data.error) || 'An error occurred. Check the form.', 'danger');
-          }
-        })
-        .catch(function (error) {
-          setLoading(false);
-          showAlert((error && error.message) || 'Network error. Please try again.', 'danger');
-        });
+      submitGitSetupForm(csrfToken);
     });
   });
 })();

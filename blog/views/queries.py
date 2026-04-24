@@ -125,7 +125,7 @@ def filter_tickets_by_tag(ticket_queryset, selected_tag):
 
 
 def project_linkable_tickets(project, exclude_ticket=None):
-    queryset = project.tickets.order_by("title", "id")
+    qs = project.tickets.order_by("title", "id")
     if exclude_ticket is not None:
-        queryset = queryset.exclude(pk=exclude_ticket.pk)
-    return queryset
+        qs = qs.exclude(pk=exclude_ticket.pk)
+    return qs

@@ -1,26 +1,32 @@
 /**
  * Git Accordion Utilities — Timestamps and notifications
  */
+// eslint-disable-next-line no-unused-vars
 const GitAccordionUtils = (function () {
   'use strict';
 
-  const TOAST_DURATION = 1500;
+  const TOAST_DURATION_MS   = 1500;
+  const SECS_PER_MINUTE     = 60;
+  const SECS_PER_HOUR       = 3_600;
+  const SECS_PER_DAY        = 86_400;
+  const SECS_PER_WEEK       = 604_800;
+  const SECS_PER_MONTH      = 2_592_000;
+  const SECS_PER_YEAR       = 31_536_000;
 
   function getRelativeTime(isoString) {
     if (!isoString) return "";
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return isoString;
 
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
-    if (seconds < 60) return "just now";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
-    if (seconds < 31536000) return `${Math.floor(seconds / 2592000)}mo ago`;
-    return `${Math.floor(seconds / 31536000)}y ago`;
+    if (seconds < SECS_PER_MINUTE) return "just now";
+    if (seconds < SECS_PER_HOUR)   return `${Math.floor(seconds / SECS_PER_MINUTE)}m ago`;
+    if (seconds < SECS_PER_DAY)    return `${Math.floor(seconds / SECS_PER_HOUR)}h ago`;
+    if (seconds < SECS_PER_WEEK)   return `${Math.floor(seconds / SECS_PER_DAY)}d ago`;
+    if (seconds < SECS_PER_MONTH)  return `${Math.floor(seconds / SECS_PER_WEEK)}w ago`;
+    if (seconds < SECS_PER_YEAR)   return `${Math.floor(seconds / SECS_PER_MONTH)}mo ago`;
+    return `${Math.floor(seconds / SECS_PER_YEAR)}y ago`;
   }
 
   function showToast(message) {
@@ -62,7 +68,7 @@ const GitAccordionUtils = (function () {
     setTimeout(() => {
       toast.classList.add("fade-out");
       setTimeout(() => toast.remove(), 300);
-    }, TOAST_DURATION);
+    }, TOAST_DURATION_MS);
   }
 
   function updateRelativeTimestamps() {

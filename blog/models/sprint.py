@@ -136,8 +136,7 @@ class Sprint(models.Model):
             raise ValidationError("Only active sprints can be closed.")
 
         with transaction.atomic():
-            from .ticket import Ticket
-            self.tickets.exclude(status=Ticket.STATUS_DONE).update(sprint=None)
+            self.tickets.exclude(status="DONE").update(sprint=None)
             self.status = self.STATUS_CLOSED
             self.closed_at = timezone.now()
             self.save(update_fields=["status", "closed_at"])
@@ -146,11 +145,9 @@ class Sprint(models.Model):
         return self.tickets.count()
 
     def total_story_points(self):
-        from .ticket import Ticket
         return (
-            self.tickets.filter(
-                issue_type__in=[Ticket.ISSUE_TYPE_STORY, Ticket.ISSUE_TYPE_BUG]
-            ).aggregate(total=Sum("story_points")).get("total") or 0
+            self.tickets.filter(issue_type__in=["STORY", "BUG"])
+            .aggregate(total=Sum("story_points")).get("total") or 0
         )
 
     def configured_capacity(self):
