@@ -1,6 +1,6 @@
 # project_django jiren equipe 4
 
-Projet réalisé par :
+Projet réalisé en BAC2 durant l'année scolaire 2025-2026 par :
 
 - EnzoLaurenceau
 - Maximus-0101
