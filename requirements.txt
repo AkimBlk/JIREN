@@ -1,0 +1,7 @@
+Django>=4.2,<5.0
+django-crispy-forms==2.3
+crispy-bootstrap4==2024.10
+Pillow>=10.0.0
+python-dotenv
+djangorestframework<3.17
+requests

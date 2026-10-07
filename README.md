@@ -1,4 +1,15 @@
-# project_django jiren equipe4
+# project_django jiren equipe 4
+
+Projet réalisé par :
+
+- EnzoLaurenceau
+- Maximus-0101
+- NathanDolhen
+- AkimBelkouaci
+
+Dans le cadre de nos études.
+L'objectif du projet était de fournir une alternative à Jira.
+
 ### 0. Recuperer le projet
 git clone https://github.com/Leviantan07/JIREN-RESURECTION.git <br>
 cd JIREN-RESURECTION <br>
