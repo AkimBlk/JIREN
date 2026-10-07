@@ -1,0 +1,15 @@
+<div class="git-accordion-empty">
+  <div class="git-accordion-empty__icon">📦</div>
+  <h3 class="git-accordion-empty__title">No Git Repository Configured</h3>
+  <p class="git-accordion-empty__message">
+    Link a Git repository to this project to see commits, branches, and activity here.
+  </p>
+  {% if user_can_configure_git %}
+    <button type="button"
+            class="git-accordion-empty__cta"
+            data-toggle="modal"
+            data-target="#git-setup-modal">
+      Configure Git Repository
+    </button>
+  {% endif %}
+</div>

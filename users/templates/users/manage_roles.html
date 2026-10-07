@@ -1,0 +1,85 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<section class="atelier-page-header">
+    <div>
+        <span class="atelier-page-header__eyebrow">Governance</span>
+        <h1 class="atelier-page-header__title">Manage User Roles</h1>
+        <p class="atelier-page-header__subtitle">Review platform roles.</p>
+    </div>
+    <div class="atelier-page-header__actions">
+        <a href="{% url 'invite-user' %}" class="btn btn-primary">
+            <span class="material-symbols-outlined" style="font-size:16px;">person_add</span>
+            Invite user
+        </a>
+    </div>
+</section>
+
+<section class="atelier-stats-grid atelier-stats-grid--compact">
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Profiles</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.total }}</strong>
+        <span class="atelier-stat-card__meta">Total accounts</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Admins</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.admins }}</strong>
+        <span class="atelier-stat-card__meta">Admin accounts</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Contributors</span>
+        <strong class="atelier-stat-card__value">{{ role_summary.contributors }}</strong>
+        <span class="atelier-stat-card__meta">Contributor accounts</span>
+    </article>
+</section>
+
+<div class="atelier-role-table-shell">
+    <div class="table-responsive">
+        <table class="table atelier-table atelier-table--roles mb-0">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for profile in profiles %}
+                <tr>
+                    <td>
+                        <div class="atelier-user-cell">
+                            <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}" class="atelier-user-cell__avatar">
+                            <div class="atelier-user-cell__info">
+                                <strong class="atelier-user-cell__name">
+                                    {{ profile.user.get_full_name|default:profile.user.username }}
+                                </strong>
+                                <small class="atelier-user-cell__email">
+                                    {{ profile.user.email|default:"No email set" }}
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="atelier-mono-cell">{{ profile.user.username }}</td>
+                    <td>
+                        {% if profile.role == 'admin' %}
+                            <span class="atelier-badge atelier-badge--admin">Admin</span>
+                        {% else %}
+                            <span class="atelier-badge atelier-badge--contributor">Contributor</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">
+                        <div class="atelier-empty-state atelier-empty-state--table">
+                            <span class="material-symbols-outlined atelier-empty-state__icon">group_off</span>
+                            <h3 class="atelier-empty-state__title">No profiles found</h3>
+                            <p class="atelier-empty-state__copy">Invite users to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

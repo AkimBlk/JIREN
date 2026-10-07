@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <script>
+    (function () {
+        const storageKey = "jiren-theme";
+        const storedTheme = localStorage.getItem(storageKey);
+        const preferredTheme = storedTheme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", preferredTheme);
+        document.documentElement.classList.toggle("dark", preferredTheme === "dark");
+        }());
+    </script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/index.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'blog/images/helb-logo.png' %}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    {% if title %}<title>JIREN - {{ title }}</title>{% else %}<title>JIREN</title>{% endif %}    {% block extra_head %}{% endblock %}</head>
+<body class="helb-app-shell">
+
+<!-- HELB Arc Decorations -->
+<div class="helb-arc-bg"></div>
+<div class="helb-arc-bg-2"></div>
+
+{% if user.is_authenticated %}
+<aside class="helb-sidebar d-none d-lg-flex">
+    <a class="helb-sidebar-brand" href="{% url 'project-list' %}">
+        <img class="helb-brand-logo" src="{% static 'blog/images/helb-logo.png' %}" alt="HELB logo">
+        <span class="helb-sidebar-brand-copy">
+            <strong>     JIREN</strong>
+            <small>Academic Atelier</small>
+        </span>
+    </a>
+
+    {% if user.is_superuser %}
+        <a href="{% url 'project-create' %}" class="helb-sidebar-create">
+            <span class="material-symbols-outlined">add</span>
+            Create Project
+        </a>
+        <a href="{% url 'invite-user' %}" class="helb-sidebar-create helb-sidebar-create--secondary">
+            <span class="material-symbols-outlined">person_add</span>
+            Invite User
+        </a>
+    {% endif %}
+
+    <nav class="helb-sidebar-nav">
+        <a href="{% url 'project-list' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'project-list' or request.resolver_match.url_name == 'blog-home' %}active{% endif %}">
+            <span class="material-symbols-outlined">folder</span>
+            <span>Projects</span>
+        </a>
+        <a href="{{ shell_backlog_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'project-backlog' %}active{% endif %}">
+            <span class="material-symbols-outlined">list_alt</span>
+            <span>Backlog</span>
+        </a>
+        <a href="{{ shell_kanban_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'kanban' or request.resolver_match.url_name == 'project-active-sprint' %}active{% endif %}">
+            <span class="material-symbols-outlined">view_kanban</span>
+            <span>Kanban</span>
+        </a>
+        <a href="{{ shell_sprint_url }}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'sprint-list' or request.resolver_match.url_name == 'sprint-create' or request.resolver_match.url_name == 'sprint-detail' or request.resolver_match.url_name == 'sprint-admin' or request.resolver_match.url_name == 'sprint-update' or request.resolver_match.url_name == 'sprint-delete' %}active{% endif %}">
+            <span class="material-symbols-outlined">sprint</span>
+            <span>Sprint</span>
+        </a>
+        <a href="{% url 'all-tickets' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'all-tickets' or 'ticket' in request.resolver_match.url_name %}active{% endif %}">
+            <span class="material-symbols-outlined">confirmation_number</span>
+            <span>Tickets</span>
+        </a>
+         <a href="{% url 'analytics' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+            <span class="material-symbols-outlined">analytics</span>
+            <span>Analytics</span>
+        </a>
+        <a href="{% url 'help' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'help' %}active{% endif %}">
+            <span class="material-symbols-outlined">help</span>
+            <span>Help</span>
+        </a>
+        <a href="{% url 'profile' %}" class="helb-sidebar-link {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'password_change' or request.resolver_match.url_name == 'manage-roles' or request.resolver_match.url_name == 'update-role' or request.resolver_match.url_name == 'invite-user' %}active{% endif %}">
+            <span class="material-symbols-outlined">account_circle</span>
+            <span>Profile</span>
+        </a>
+        
+       
+        
+    </nav>
+
+</aside>
+
+<header class="helb-topnav helb-topnav--app">
+    <div class="helb-topnav-left">
+        <a class="helb-topnav-mobile-brand d-lg-none" href="{% url 'project-list' %}">
+            <img class="helb-brand-logo" src="{% static 'blog/images/helb-logo.png' %}" alt="HELB logo">
+            <span class="helb-sidebar-brand-copy">
+                <strong>JIREN</strong>
+            </span>
+        </a>
+    </div>
+
+    <div class="helb-topnav-right">
+        <button type="button" class="helb-theme-toggle" id="themeToggleButton" aria-label="Switch color theme">
+            <span class="material-symbols-outlined" id="themeToggleIcon">dark_mode</span>
+            <span class="helb-theme-toggle__label" id="themeToggleLabel">Dark Mode</span>
+        </button>
+        <span class="helb-theme-fab" hidden aria-hidden="true"></span>
+
+        <a href="{% url 'help' %}" class="helb-icon-button" aria-label="Open help">
+            <span class="material-symbols-outlined">help</span>
+        </a>
+
+        <a href="{% url 'profile' %}" class="helb-user-chip">
+            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
+            <span class="helb-user-chip__text d-none d-xl-flex">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                <small>{% if user.is_superuser %}Curator{% else %}Contributor{% endif %}</small>
+            </span>
+        </a>
+
+        <form method="post" action="{% url 'logout' %}" class="helb-inline-form">
+            {% csrf_token %}
+            <button type="submit" class="helb-icon-button" aria-label="Logout">
+                <span class="material-symbols-outlined">logout</span>
+            </button>
+        </form>
+    </div>
+</header>
+{% else %}
+<header class="helb-topnav helb-topnav--public">
+    <a class="helb-public-brand" href="{% url 'login' %}">
+        <img class="helb-brand-logo" src="{% static 'blog/images/helb-logo.png' %}" alt="HELB logo">
+        <span class="helb-sidebar-brand-copy">
+            <strong>JIREN</strong>
+            <small>Academic Atelier</small>
+        </span>
+    </a>
+    <div class="helb-topnav-right">
+        <a href="{% url 'help' %}" class="helb-topnav-new">Help</a>
+        <a href="{% url 'login' %}" class="helb-topnav-new">Sign In</a>
+    </div>
+</header>
+{% endif %}
+
+<!-- Main Content -->
+<main class="helb-main {% if not user.is_authenticated %}helb-main--public{% endif %}">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mb-3" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const storageKey = "jiren-theme";
+        const toggleButton = document.getElementById("themeToggleButton");
+        const toggleIcon = document.getElementById("themeToggleIcon");
+        const toggleLabel = document.getElementById("themeToggleLabel");
+
+        function getTheme() {
+            return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        }
+
+        function updateToggle(theme) {
+            if (!toggleButton || !toggleIcon || !toggleLabel) {
+                return;
+            }
+
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            toggleIcon.textContent = theme === "dark" ? "light_mode" : "dark_mode";
+            toggleLabel.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+            toggleButton.setAttribute("aria-label", "Switch to " + nextTheme + " mode");
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.classList.toggle("dark", theme === "dark");
+            updateToggle(theme);
+        }
+
+        if (!toggleButton) {
+            return;
+        }
+
+        applyTheme(getTheme());
+
+        toggleButton.addEventListener("click", function () {
+            const nextTheme = getTheme() === "dark" ? "light" : "dark";
+            localStorage.setItem(storageKey, nextTheme);
+            applyTheme(nextTheme);
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<section class="stitch-project-header">
+    <div>
+        <div class="stitch-meta-row">
+            {% if project.code_prefix %}<span class="atelier-code-chip">{{ project.code_prefix }}</span>{% endif %}
+            <span class="stitch-meta-row__text">Established {{ project.date_created|date:"M Y" }}</span>
+        </div>
+        <h1 class="atelier-page-header__title mb-2">{{ project.name }}</h1>
+        <div class="stitch-meta-row">
+            <img src="{{ project.manager.profile.image.url }}" alt="{{ project.manager.username }}" class="atelier-user-inline__avatar">
+            <span class="stitch-meta-row__text">{{ project.manager.get_full_name|default:project.manager.username }}</span>
+            <span class="stitch-meta-row__text">{{ project_summary.member_count }} collaborators</span>
+        </div>
+    </div>
+
+    <div class="stitch-project-actions">
+        {% if user_is_admin %}
+            <a href="{% url 'project-update' project.pk %}" class="btn stitch-btn-orange">Edit</a>
+            <a href="{% url 'project-delete' project.pk %}" class="btn btn-outline-danger">Delete</a>
+        {% endif %}
+    </div>
+</section>
+
+<section class="stitch-project-shell">
+    <div class="stitch-project-main">
+        <article class="stitch-intent-card">
+            <h3 class="stitch-card-title">
+                <span class="material-symbols-outlined">subject</span>
+                Project Intent
+            </h3>
+            <p>{{ project.description|default:"Define the project direction and capture the core delivery narrative." }}</p>
+        </article>
+
+        <div class="stitch-info-grid">
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">shield</span>
+                <strong>Permissions</strong>
+                <small>
+                    {% if user_is_admin %}
+                        Super admin access
+                    {% else %}
+                        Contributor
+                    {% endif %}
+                </small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">cloud_sync</span>
+                <strong>Integrations</strong>
+                <small>{% if git_repository %}{{ git_repository.get_repository_type_display }} connected{% else %}No repository linked{% endif %}</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">history</span>
+                <strong>Changelog</strong>
+                <small>Created {{ project.date_created|date:"d M Y" }}</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">groups</span>
+                <strong>Members</strong>
+                <small>{{ project_summary.member_count }} active collaborators</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">timer</span>
+                <strong>Sprint cadence</strong>
+                <small>{{ project.sprint_duration_days }} day cycle</small>
+            </article>
+            <article class="stitch-info-tile">
+                <span class="material-symbols-outlined">architecture</span>
+                <strong>Framework</strong>
+                <small>{{ project.get_capacity_mode_display }}</small>
+            </article>
+        </div>
+
+        <div class="stitch-kpi-grid">
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-blue-sante);">
+                <span>Tickets</span>
+                <strong>{{ project_summary.ticket_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-orange);">
+                <span>In Progress</span>
+                <strong>{{ project_summary.in_progress_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-green);">
+                <span>Done</span>
+                <strong>{{ project_summary.done_count }}</strong>
+            </article>
+            <article class="stitch-kpi-tile" style="--tile-accent: var(--helb-red);">
+                <span>Bugs</span>
+                <strong>{{ project_summary.bug_count }}</strong>
+            </article>
+        </div>
+
+        <section class="stitch-section">
+            <div class="stitch-section__header">
+                <h2>Active Tickets</h2>
+                <form method="get" class="stitch-toolbar-form">
+                    <select name="tag" id="tag" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
+                        <option value="">All tags</option>
+                        {% for tag in available_tags %}
+                            <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if selected_tag %}
+                        <a href="{% url 'project-detail' project.pk %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            {% if selected_tag %}
+                <div class="atelier-inline-note mb-4">
+                    <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
+                    Filtering tickets by <strong>#{{ selected_tag.name }}</strong>.
+                </div>
+            {% endif %}
+
+            <div class="stitch-ticket-list">
+                {% for ticket in project_tickets|slice:":6" %}
+                    <article class="stitch-ticket-row {% if ticket.issue_type == 'EPIC' %}stitch-ticket-row--epic{% elif ticket.issue_type == 'BUG' %}stitch-ticket-row--bug{% elif ticket.issue_type == 'STORY' %}stitch-ticket-row--story{% else %}stitch-ticket-row--task{% endif %}">
+                        <div>
+                            <div class="stitch-chip-row stitch-chip-row--compact">
+                                {% if ticket.issue_type == 'EPIC' %}
+                                    <span class="atelier-badge atelier-badge--epic">Epic</span>
+                                {% elif ticket.issue_type == 'BUG' %}
+                                    <span class="atelier-badge atelier-badge--bug">Bug</span>
+                                {% elif ticket.issue_type == 'STORY' %}
+                                    <span class="atelier-badge atelier-badge--story">Story</span>
+                                {% else %}
+                                    <span class="atelier-badge atelier-badge--task">Task</span>
+                                {% endif %}
+                                <span class="atelier-status-pill atelier-status-pill--{% if ticket.status == 'DONE' %}done{% elif ticket.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">{{ ticket.get_status_display }}</span>
+                            </div>
+
+                            <a href="{% url 'ticket-detail' pk=project.pk tpk=ticket.pk %}"
+                               class="stitch-ticket-row__title"
+                               {% if ticket.issue_type == 'EPIC' and ticket.display_color %}
+                               style="color: {{ ticket.display_color }};"
+                               {% endif %}>
+                                {{ ticket.title }}
+                            </a>
+
+                            <div class="stitch-ticket-row__meta">
+                                {% if ticket.sprint %}<span>{{ ticket.sprint.name }}</span>{% endif %}
+                                {% if ticket.epic %}
+                                    <span style="color: {{ ticket.epic.display_color }};">Epic: {{ ticket.epic.title }}</span>
+                                {% endif %}
+                                {% if ticket.issue_type == 'STORY' or ticket.issue_type == 'BUG' or ticket.issue_type == 'TASK' %}
+                                    <span>{{ ticket.remaining_load }} remaining</span>
+                                {% endif %}
+                            </div>
+
+                            {% include "blog/includes/tag_chips.html" with ticket=ticket %}
+                        </div>
+
+                        <div class="stitch-ticket-row__aside">
+                            {% if ticket.assignee %}
+                                <span>Assigned to</span>
+                                <strong>{{ ticket.assignee.get_full_name|default:ticket.assignee.username }}</strong>
+                            {% else %}
+                                <span>Assigned to</span>
+                                <strong>Unassigned</strong>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="atelier-empty-state atelier-empty-state--table">
+                        <span class="material-symbols-outlined atelier-empty-state__icon">confirmation_number</span>
+                        <h3 class="atelier-empty-state__title">No ticket yet</h3>
+                        <p class="atelier-empty-state__copy">Create a ticket to start tracking delivery from this project space.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        {% if has_done_tickets %}
+        <section class="analytics-charts-section">
+            <div class="analytics-chart-container">
+                <canvas id="projectChart"></canvas>
+            </div>
+
+            <fieldset class="analytics-chart-selector">
+                <legend>Chart Type</legend>
+                <label><input type="radio" name="chart_type" value="velocity" checked> Velocity</label>
+                <label><input type="radio" name="chart_type" value="consumption"> Capacity</label>
+                <label><input type="radio" name="chart_type" value="burndown"> Burndown</label>
+            </fieldset>
+        </section>
+        {{ velocity_labels|json_script:"velocityLabelsData" }}
+        {{ velocity_values|json_script:"velocityValuesData" }}
+        {{ consumption_values|json_script:"consumptionValuesData" }}
+        {{ burndown|json_script:"burndownData" }}
+        {% endif %}
+    </div>
+
+    <aside class="stitch-project-side">
+        <article class="stitch-quick-panel">
+            <h3>Quick Actions</h3>
+            <div class="stitch-quick-panel__actions">
+                <a href="{% url 'project-backlog' project.pk %}" class="btn stitch-btn-orange">View Backlog</a>
+                {% if user_can_create_ticket %}
+                    <a href="{% url 'ticket-create' pk=project.pk %}" class="btn stitch-btn-green">Create New Ticket</a>
+                {% endif %}
+                {% if user_can_manage_sprints %}
+                    <a href="{% url 'sprint-list' project.pk %}" class="btn stitch-btn-orange">Sprint</a>
+                {% endif %}
+                {% if active_sprint %}
+                    <a href="{% url 'sprint-kanban' pk=project.pk spk=active_sprint.pk %}" class="btn stitch-btn-ghost">Active Sprint</a>
+                {% else %}
+                    <span class="btn stitch-btn-ghost disabled">No Active Sprint</span>
+                {% endif %}
+            </div>
+        </article>
+
+        <article class="stitch-member-panel">
+            <div class="stitch-panel-head">
+                <h3>Project Members</h3>
+                {% if user_is_admin %}<span class="stitch-muted-note">Super admin view</span>{% endif %}
+            </div>
+            {% if membership_management_enabled %}
+                <form method="post" action="{% url 'project-members-add' project.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <div class="form-group mb-2">
+                        <label for="{{ member_form.user.id_for_label }}">User</label>
+                        {{ member_form.user }}
+                        {% for error in member_form.user.errors %}
+                            <small class="text-danger d-block">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="{{ member_form.role.id_for_label }}">Role</label>
+                        {{ member_form.role }}
+                        {% for error in member_form.role.errors %}
+                            <small class="text-danger d-block">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Add member</button>
+                </form>
+            {% endif %}
+            <div class="stitch-member-list">
+                {% for membership in members %}
+                    <div class="stitch-member-chip{% if forloop.counter > 6 %} stitch-member-chip--hidden d-none{% endif %}">
+                        <img src="{{ membership.user.profile.image.url }}" alt="{{ membership.user.username }}" class="atelier-user-inline__avatar">
+                        <span>{{ membership.user.get_full_name|default:membership.user.username }}</span>
+                        {% if membership_management_enabled and membership.user_id != project.manager_id %}
+                            <form method="post" action="{% url 'project-members-role' project.pk membership.user_id %}" class="d-inline-flex align-items-center ml-2">
+                                {% csrf_token %}
+                                <select name="role" class="form-control form-control-sm mr-1">
+                                    {% for role_value, role_label in member_role_choices %}
+                                        <option value="{{ role_value }}" {% if membership.role == role_value %}selected{% endif %}>{{ role_label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+                            </form>
+                            <form method="post" action="{% url 'project-members-remove' project.pk membership.user_id %}" class="d-inline ml-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="stitch-muted-note mb-0">No member assigned yet.</p>
+                {% endfor %}
+            </div>
+            {% if members|length > 6 %}
+                <button type="button" class="stitch-muted-note mb-0 btn btn-link p-0 mt-1" id="show-all-members">
+                    +{{ members|length|add:"-6" }} more collaborators
+                </button>
+            {% endif %}
+        </article>
+
+        <article class="stitch-repository-card">
+            {% include "blog/includes/git_accordion.html" %}
+        </article>
+    </aside>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chartCanvas = document.getElementById("projectChart");
+    if (!chartCanvas) return;
+
+    const velocityLabelsElem = document.getElementById("velocityLabelsData");
+    const velocityValuesElem = document.getElementById("velocityValuesData");
+    const consumptionValuesElem = document.getElementById("consumptionValuesData");
+    const burndownElem = document.getElementById("burndownData");
+
+    const velocityLabels = velocityLabelsElem ? JSON.parse(velocityLabelsElem.textContent) : [];
+    const velocityValues = velocityValuesElem ? JSON.parse(velocityValuesElem.textContent) : [];
+    const consumptionValues = consumptionValuesElem ? JSON.parse(consumptionValuesElem.textContent) : [];
+    const burndownData = burndownElem ? JSON.parse(burndownElem.textContent) : null;
+
+    let currentChart = null;
+
+    function destroyChart() {
+        if (currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+    }
+
+    function createVelocityChart() {
+        destroyChart();
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: velocityLabels,
+                datasets: [{
+                    label: "Story Points Completed",
+                    data: velocityValues,
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#6366f1"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    function createConsumptionChart() {
+        destroyChart();
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: velocityLabels,
+                datasets: [{
+                    label: "Capacity Consumption (%)",
+                    data: consumptionValues,
+                    backgroundColor: "rgba(34, 197, 94, 0.7)",
+                    borderColor: "#22c55e",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    function createBurndownChart() {
+        destroyChart();
+        if (!burndownData) {
+            const ctx = chartCanvas.getContext("2d");
+            ctx.fillStyle = "var(--helb-on-surface-variant)";
+            ctx.font = "16px Plus Jakarta Sans";
+            ctx.textAlign = "center";
+            ctx.fillText("No burndown data available", chartCanvas.width / 2, chartCanvas.height / 2);
+            return;
+        }
+
+        const ctx = chartCanvas.getContext("2d");
+        currentChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: burndownData.labels,
+                datasets: [
+                    {
+                        label: "Ideal Burndown",
+                        data: burndownData.ideal,
+                        borderColor: "#94a3b8",
+                        borderDash: [5, 5],
+                        tension: 0.3,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: "Actual Burndown",
+                        data: burndownData.actual,
+                        borderColor: "#6366f1",
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#6366f1"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: "top" }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        chartCanvas.style.height = "350px";
+    }
+
+    createVelocityChart();
+
+    document.querySelectorAll('input[name="chart_type"]').forEach(radio => {
+        radio.addEventListener("change", function() {
+            if (this.value === "velocity") createVelocityChart();
+            else if (this.value === "consumption") createConsumptionChart();
+            else if (this.value === "burndown") createBurndownChart();
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const showAllMembersButton = document.getElementById("show-all-members");
+    if (showAllMembersButton) {
+        showAllMembersButton.addEventListener("click", function () {
+            document.querySelectorAll(".stitch-member-chip--hidden").forEach(function (element) {
+                element.classList.remove("d-none");
+            });
+            this.remove();
+        });
+    }
+
+    const getCsrfToken = function () {
+        const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : "";
+    };
+
+    document.querySelectorAll(".commit-link-trigger").forEach(function (button) {
+        button.addEventListener("click", async function () {
+            const container = button.closest(".git-accordion-activity__linker");
+            const ticketSelect = container ? container.querySelector(".commit-link-ticket-select") : null;
+            const badge = container ? container.querySelector(".commit-linked-badge") : null;
+            const ticketId = ticketSelect ? ticketSelect.value : "";
+            if (!ticketId) {
+                if (badge) {
+                    badge.textContent = "Select a ticket first";
+                    badge.classList.remove("d-none", "commit-linked-badge--success");
+                    badge.classList.add("commit-linked-badge--error");
+                }
+                return;
+            }
+
+            const urlTemplate = button.dataset.linkUrlTemplate || "";
+            const url = urlTemplate.replace("/0/", "/" + ticketId + "/");
+            const payload = {
+                sha: button.dataset.commitSha || "",
+                message: button.dataset.commitMessage || "",
+                url: button.dataset.commitUrl || "",
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCsrfToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await response.json();
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.error || "Unable to link commit");
+                }
+                if (badge) {
+                    badge.textContent = "Commit linked";
+                    badge.classList.remove("d-none", "commit-linked-badge--error");
+                    badge.classList.add("commit-linked-badge--success");
+                }
+            } catch (error) {
+                if (badge) {
+                    badge.textContent = error.message || "Unable to link commit";
+                    badge.classList.remove("d-none", "commit-linked-badge--success");
+                    badge.classList.add("commit-linked-badge--error");
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

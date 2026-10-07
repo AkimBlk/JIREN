@@ -1,0 +1,123 @@
+/* ============================================================
+   Stitch Sprint & Agile Components
+   ============================================================ */
+
+/* ============================================================
+   Project-specific
+   ============================================================ */
+
+.project-header-card,
+.project-info-card,
+.project-table-card {
+  background: var(--helb-surface-container-lowest);
+  border: none;
+  border-radius: var(--helb-radius-lg);
+  box-shadow: var(--helb-shadow-md);
+  padding: 1.5rem 2rem;
+}
+
+.ticket-row-card {
+  background: var(--helb-surface-container-lowest);
+  border: none;
+  border-radius: var(--helb-radius-md);
+  box-shadow: var(--helb-shadow-sm);
+  padding: 1rem 1.25rem;
+  transition: all 0.2s;
+}
+
+.ticket-row-card:hover {
+  box-shadow: var(--helb-shadow-md);
+  transform: translateY(-1px);
+}
+
+.project-code {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--helb-secondary);
+  background: var(--helb-secondary-fixed);
+  border: none;
+  border-radius: var(--helb-radius-full);
+  padding: 0.3rem 0.75rem;
+}
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--helb-on-surface);
+}
+
+.project-table-card .table {
+  margin-bottom: 0;
+}
+
+.project-table-card thead th {
+  border-top: 0;
+  background: var(--helb-surface-container-low);
+}
+
+/* Ticket links */
+.ticket-title-link {
+  font-weight: 700;
+  color: var(--helb-on-surface);
+  text-decoration: none;
+}
+
+.ticket-title-link:hover {
+  text-decoration: none;
+  color: var(--helb-secondary);
+}
+
+.article-title {
+  color: var(--helb-on-surface);
+}
+
+a.article-title:hover {
+  color: var(--helb-secondary);
+  text-decoration: none;
+}
+
+.article-content {
+  white-space: pre-line;
+}
+
+/* Account */
+.account-img {
+  height: 120px;
+  width: 120px;
+  margin-right: 20px;
+  margin-bottom: 16px;
+  border-radius: var(--helb-radius-lg);
+  object-fit: cover;
+  box-shadow: var(--helb-shadow-sm);
+}
+
+.account-heading {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.article-img {
+  height: 65px;
+  width: 65px;
+  margin-right: 16px;
+}
+
+.article-metadata {
+  padding-bottom: 1px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(195, 198, 208, 0.15);
+}
+
+.article-metadata a:hover {
+  color: var(--helb-on-surface);
+  text-decoration: none;
+}
+
+.article-svg {
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
+}
+

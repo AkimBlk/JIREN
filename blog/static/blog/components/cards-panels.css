@@ -1,0 +1,68 @@
+/* ============================================================
+   Cards & Panels - HELB Styles (Deduplication Phase 1)
+   
+   TRIMMED: Removed 316 lines of duplicated content that exists in:
+   - buttons-badges.css (button styles)
+   - forms-inputs.css (form controls)
+   - tables.css (table styles)
+   - lists-alerts.css (alert variants)
+   
+   This file maintains ONLY card-specific styling.
+   ============================================================ */
+
+/* ============================================================
+   Cards & Containers (Fluid Academic)
+   ============================================================ */
+
+.helb-card {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 92%, transparent);
+  border-radius: var(--helb-radius-lg);
+  box-shadow: var(--helb-shadow-md);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 1.5rem 2rem;
+  border: none;
+}
+
+.helb-card-sm {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 94%, transparent);
+  border-radius: var(--helb-radius-md);
+  box-shadow: var(--helb-shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 1.25rem 1.5rem;
+  border: none;
+}
+
+/* Override Bootstrap .card to match HELB */
+.card {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 92%, transparent);
+  border-radius: var(--helb-radius-md) !important;
+  border: none !important;
+  box-shadow: var(--helb-shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.card-header {
+  background: var(--helb-surface-container-low);
+  border-bottom: none;
+  border-radius: var(--helb-radius-md) var(--helb-radius-md) 0 0 !important;
+  font-weight: 700;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.content-section {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 92%, transparent);
+  padding: 2rem;
+  border: none;
+  border-radius: var(--helb-radius-lg);
+  box-shadow: var(--helb-shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  margin-bottom: 1.5rem;
+}
+

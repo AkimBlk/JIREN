@@ -1,0 +1,20 @@
+{% extends "users/auth_base.html" %}
+
+{% block title_text %}Signed Out{% endblock %}
+
+{% block content %}
+<section class="helb-auth-shell helb-auth-shell--center">
+    <main class="helb-auth-card helb-auth-card--compact text-center">
+        <div class="helb-auth-card__icon">
+            <span class="material-symbols-outlined">waving_hand</span>
+        </div>
+        <div class="helb-auth-heading">
+            <h1>Signed out</h1>
+            <p>Your session has ended.</p>
+        </div>
+        <a href="{% url 'login' %}" class="btn btn-primary helb-auth-submit mt-3">
+            Back to sign in
+        </a>
+    </main>
+</section>
+{% endblock content %}

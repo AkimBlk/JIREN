@@ -1,0 +1,90 @@
+<div class="git-accordion-info">
+  <!-- Provider Badge -->
+  <div class="git-accordion-info__header">
+    <span class="git-accordion-info__provider-badge git-provider-{{ git_extended_data.icon }}">
+      {{ git_extended_data.provider }}
+    </span>
+    <a href="{{ git_info.url }}" target="_blank" rel="noopener" class="git-accordion-info__external-link">
+      View on {{ git_extended_data.provider }} ↗
+    </a>
+  </div>
+
+  <!-- Repository URL -->
+  <div class="git-accordion-info__field">
+    <label class="git-accordion-info__label">Repository URL</label>
+    <div class="git-accordion-info__value-with-copy">
+      <code class="git-accordion-info__monospace">{{ git_repository.repository_url }}</code>
+      <button
+        class="copy-btn"
+        data-clipboard="{{ git_repository.repository_url }}"
+        aria-label="Copy repository URL">
+        📋
+      </button>
+    </div>
+  </div>
+
+  <!-- Description -->
+  {% if git_extended_data.description %}
+  <div class="git-accordion-info__field">
+    <label class="git-accordion-info__label">Description</label>
+    <p class="git-accordion-info__description">{{ git_extended_data.description }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Metadata Row -->
+  <div class="git-accordion-info__metadata">
+    <!-- Stars Badge -->
+    {% if git_extended_data.stars_display %}
+    <div class="git-accordion-info__badge">
+      <span class="git-accordion-info__badge-icon">⭐</span>
+      <span class="git-accordion-info__badge-value">{{ git_extended_data.stars_display }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Visibility -->
+    <div class="git-accordion-info__badge">
+      <span class="git-accordion-info__badge-icon">
+        {% if git_info.visibility == "private" %}🔒{% else %}🔓{% endif %}
+      </span>
+      <span class="git-accordion-info__badge-value">
+        {{ git_info.visibility|upper }}
+      </span>
+    </div>
+
+    <!-- Language (GitHub only) -->
+    {% if git_extended_data.language %}
+    <div class="git-accordion-info__badge">
+      <span class="git-accordion-info__badge-icon">💻</span>
+      <span class="git-accordion-info__badge-value">{{ git_extended_data.language }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Pipeline Status (GitLab only) -->
+    {% if git_extended_data.pipeline_status %}
+    <div class="git-accordion-info__badge">
+      <span class="git-accordion-info__badge-icon">
+        {% if git_extended_data.pipeline_status == "success" %}🟢
+        {% elif git_extended_data.pipeline_status == "failed" %}🔴
+        {% elif git_extended_data.pipeline_status == "running" %}🟡
+        {% else %}⚪
+        {% endif %}
+      </span>
+      <span class="git-accordion-info__badge-value">
+        Pipeline: {{ git_extended_data.pipeline_status|upper }}
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Last Synced -->
+  {% if git_info.last_updated %}
+  <div class="git-accordion-info__timestamp">
+    <small>
+      Last updated
+      <time data-timestamp="{{ git_info.last_updated }}">
+        {{ git_info.last_updated }}
+      </time>
+    </small>
+  </div>
+  {% endif %}
+</div>

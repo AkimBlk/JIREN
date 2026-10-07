@@ -1,0 +1,309 @@
+{% extends "blog/base.html" %}
+{% load ticket_extras %}
+
+{% block content %}
+<style>
+  .ticket-description { line-height: 1.7; }
+  .ticket-description img { display: block; max-width: 100%; height: auto; margin: 1rem 0; border-radius: var(--helb-radius-md); }
+  .ticket-description p:last-child, .ticket-description ul:last-child, .ticket-description ol:last-child,
+  .ticket-description blockquote:last-child, .ticket-description pre:last-child { margin-bottom: 0; }
+</style>
+
+<section class="stitch-ticket-layout">
+  <div class="stitch-ticket-main">
+
+    <div class="stitch-ticket-heading">
+      <div class="stitch-ticket-kicker">
+        <span class="atelier-status-pill atelier-status-pill--{% if object.status == 'DONE' %}done{% elif object.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">
+          {{ object.get_status_display }}
+        </span>
+        <span class="stitch-meta-row__text">Project / {{ object.project.name }}</span>
+      </div>
+
+      <h1 class="stitch-ticket-title"
+          {% if object.issue_type == 'EPIC' and object.display_color %}
+          style="color: {{ object.display_color }};"
+          {% endif %}>
+          {{ object.title }}
+      </h1>
+
+      <p class="stitch-ticket-subtitle">
+        ID: {{ object.project.code_prefix|default:'HELB' }}-{{ object.id }} • Created {{ object.date_posted|date:"d M Y" }}
+      </p>
+    </div>
+
+    <article class="stitch-ticket-card">
+      <div class="stitch-panel-head">
+        <h3 class="stitch-card-title">
+          <span class="material-symbols-outlined">description</span>
+          Description
+        </h3>
+        {% if can_edit_ticket %}<a href="{% url 'ticket-update' object.id %}">Edit Markdown</a>{% endif %}
+      </div>
+      <div class="article-content ticket-description">
+        {{ object.description|render_ticket_description }}
+      </div>
+    </article>
+
+    {% if blocked_by_tickets or blocks_tickets or related_tickets %}
+      <article class="stitch-ticket-card">
+        <h3 class="stitch-card-title mb-4">
+          <span class="material-symbols-outlined">link</span>
+          Linked Tickets
+        </h3>
+
+        <div class="stitch-linked-grid">
+
+          <div>
+            <p class="stitch-link-label stitch-link-label--error">Blocked By</p>
+            {% for ticket in blocked_by_tickets %}
+              <a href="{% url 'ticket-detail' ticket.id %}" class="stitch-link-row">
+                <div>
+                  <strong>#{{ ticket.id }} · {{ ticket.title }}</strong>
+                  <small>{{ ticket.author.username|default:"Reported internally" }}</small>
+                </div>
+                <span class="atelier-badge atelier-badge--bug">{{ ticket.get_status_display }}</span>
+              </a>
+            {% empty %}
+              <p class="stitch-muted-note">No blocking ticket.</p>
+            {% endfor %}
+          </div>
+
+          <div>
+            <p class="stitch-link-label stitch-link-label--primary">Blocks</p>
+            {% for ticket in blocks_tickets %}
+              <a href="{% url 'ticket-detail' ticket.id %}" class="stitch-link-row">
+                <div>
+                  <strong>#{{ ticket.id }} · {{ ticket.title }}</strong>
+                  <small>{{ ticket.project.name }}</small>
+                </div>
+                <span class="atelier-badge atelier-badge--task">{{ ticket.get_status_display }}</span>
+              </a>
+            {% empty %}
+              <p class="stitch-muted-note">No dependent ticket.</p>
+            {% endfor %}
+          </div>
+
+          <div>
+            <p class="stitch-link-label stitch-link-label--secondary">Relates To</p>
+            <div class="stitch-related-grid">
+              {% for ticket in related_tickets %}
+                <a href="{% url 'ticket-detail' ticket.id %}" class="stitch-related-chip">
+                  <span class="material-symbols-outlined">compare_arrows</span>
+                  <span>#{{ ticket.id }} · {{ ticket.title }}</span>
+                </a>
+              {% empty %}
+                <p class="stitch-muted-note">No related ticket.</p>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </article>
+    {% endif %}
+
+    {% if object.attachments.exists %}
+      <article class="stitch-ticket-card">
+        <div class="stitch-panel-head">
+          <h3 class="stitch-card-title">
+            <span class="material-symbols-outlined">attach_file</span>
+            Attachments
+          </h3>
+          <span class="atelier-empty-chip">{{ ticket_summary.attachment_count }} files</span>
+        </div>
+        <div class="stitch-attachments-grid">
+          {% for att in object.attachments.all %}
+            <a href="{{ att.file.url }}" target="_blank" class="stitch-attachment-card">
+              <img src="{{ att.file.url }}" alt="Attachment">
+            </a>
+          {% endfor %}
+        </div>
+      </article>
+    {% endif %}
+
+    {% if object.issue_type == 'EPIC' %}
+      <article class="stitch-ticket-card">
+        <h3 class="stitch-card-title mb-4">
+          <span class="material-symbols-outlined">format_list_bulleted</span>
+          Stories in this Epic
+        </h3>
+
+        <div class="stitch-ticket-list">
+          {% for child in object.stories.all %}
+            <article class="stitch-ticket-row">
+              <div>
+                <div class="stitch-chip-row stitch-chip-row--compact">
+                  {% if child.issue_type == 'STORY' %}
+                    <span class="atelier-badge atelier-badge--story">Story</span>
+                  {% elif child.issue_type == 'BUG' %}
+                    <span class="atelier-badge atelier-badge--bug">Bug</span>
+                  {% else %}
+                    <span class="atelier-badge atelier-badge--task">Task</span>
+                  {% endif %}
+                </div>
+
+                <a href="{% url 'ticket-detail' child.id %}" class="stitch-ticket-row__title">
+                  {{ child.title }}
+                </a>
+
+              </div>
+
+              <div class="stitch-ticket-row__aside">
+                <span class="atelier-status-pill atelier-status-pill--{% if child.status == 'DONE' %}done{% elif child.status == 'IN_PROGRESS' %}progress{% else %}todo{% endif %}">
+                  {{ child.get_status_display }}
+                </span>
+              </div>
+            </article>
+          {% empty %}
+            <p class="stitch-muted-note">No linked ticket yet.</p>
+          {% endfor %}
+        </div>
+
+      </article>
+    {% endif %}
+
+  </div>
+
+
+  <aside class="stitch-ticket-sidebar">
+
+    <article class="stitch-ticket-sidebar-card">
+      <h3 class="stitch-card-title mb-4">Metadata & Details</h3>
+
+      <div class="stitch-ticket-meta-list">
+
+        <div class="stitch-ticket-meta-row">
+          <span>Type</span>
+
+          {% if object.issue_type == 'EPIC' %}
+            <span class="atelier-badge atelier-badge--epic"
+                  {% if object.display_color %}
+                  style="background: {{ object.display_color }}; border-color: {{ object.display_color }}; color:#fff;"
+                  {% endif %}>
+              Epic
+            </span>
+
+          {% elif object.issue_type == 'STORY' %}
+            <span class="atelier-badge atelier-badge--story">Story</span>
+
+          {% elif object.issue_type == 'BUG' %}
+            <span class="atelier-badge atelier-badge--bug">Bug</span>
+
+          {% else %}
+            <span class="atelier-badge atelier-badge--task">Task</span>
+          {% endif %}
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Priority</span>
+          <strong>{{ object.get_priority_display }}</strong>
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Project</span>
+          <a href="{% url 'project-detail' object.project.pk %}">
+            {{ object.project.name }}
+          </a>
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Sprint</span>
+          {% if object.sprint %}
+            <a href="{% url 'sprint-admin' object.project.pk %}">
+              {{ object.sprint.name }}
+            </a>
+          {% else %}
+            <strong>No sprint</strong>
+          {% endif %}
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Epic</span>
+          {% if object.epic %}
+            <a href="{% url 'ticket-detail' object.epic.id %}"
+               class="epic-color-text"
+               style="color: {{ object.epic.display_color }};">
+               {{ object.epic.title }}
+            </a>
+          {% else %}
+            <strong>None</strong>
+          {% endif %}
+        </div>
+
+        <div class="stitch-ticket-meta-row stitch-ticket-meta-row--stacked">
+          <span>Tags</span>
+          {% include "blog/includes/tag_chips.html" with ticket=object show_empty=True %}
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Story Points</span>
+          <strong>{{ object.story_points }}</strong>
+        </div>
+
+        <div class="stitch-ticket-meta-row">
+          <span>Links</span>
+          <strong>{{ ticket_summary.link_count }}</strong>
+        </div>
+        {% if object.linked_commit_sha %}
+        <div class="stitch-ticket-meta-row stitch-ticket-meta-row--stacked">
+          <span>Linked Commit</span>
+          <div class="stitch-chip-row stitch-chip-row--compact">
+            {% if object.linked_commit_url %}
+              <a href="{{ object.linked_commit_url }}" target="_blank" rel="noopener" class="atelier-empty-chip">{{ object.linked_commit_sha|slice:":8" }}</a>
+            {% else %}
+              <span class="atelier-empty-chip">{{ object.linked_commit_sha|slice:":8" }}</span>
+            {% endif %}
+            {% if object.linked_commit_message %}<small>{{ object.linked_commit_message }}</small>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% if object.origin_commit_sha %}
+        <div class="stitch-ticket-meta-row">
+          <span>Origin Commit</span>
+          <strong>{{ object.origin_commit_sha|slice:":8" }}</strong>
+        </div>
+        {% endif %}
+
+      </div>
+
+      {% if can_edit_ticket %}
+        <div class="stitch-sidebar-actions">
+          <a class="btn stitch-btn-orange" href="{% url 'ticket-update' object.id %}">
+            Edit Ticket
+          </a>
+          <a class="btn btn-outline-danger" href="{% url 'ticket-delete' object.id %}">
+            Delete
+          </a>
+        </div>
+      {% endif %}
+
+    </article>
+
+    <article class="stitch-ticket-assignee-card">
+      <span class="stitch-ticket-assignee-card__label">Assignee</span>
+
+      <div class="stitch-ticket-assignee-card__content">
+
+        {% if object.assignee %}
+          <img src="{{ object.assignee.profile.image.url }}" class="atelier-user-inline__avatar">
+
+          <div>
+            <strong>{{ object.assignee.get_full_name|default:object.assignee.username }}</strong>
+            <small>{{ object.assignee.username }}</small>
+          </div>
+
+        {% else %}
+          <div>
+            <strong>Unassigned</strong>
+            <small>No owner yet</small>
+          </div>
+        {% endif %}
+
+      </div>
+
+    </article>
+
+  </aside>
+
+</section>
+{% endblock content %}

@@ -1,0 +1,133 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mb-5">
+  <div class="col-md-8 col-lg-7">
+    <div class="helb-card">
+      <h3 class="mb-4" style="font-weight:800;">
+        <span class="material-symbols-outlined" style="font-size:24px; color:var(--helb-on-primary-container); vertical-align:-4px;">
+          {% if object %}edit{% else %}add_circle{% endif %}
+        </span>
+        {% if object %}Edit Project{% else %}Create a New Project{% endif %}
+      </h3>
+
+      <form method="POST">
+        {% csrf_token %}
+        {{ form.code_prefix|as_crispy_field }}
+        {{ form.name|as_crispy_field }}
+        {{ form.description|as_crispy_field }}
+        {{ form.start_date|as_crispy_field }}
+        {{ form.end_date|as_crispy_field }}
+
+        <div class="form-group">
+          <label for="membersDropdownButton">{{ form.members.label }}</label>
+          <div class="dropdown w-100">
+            <button
+              class="btn btn-outline-secondary dropdown-toggle w-100 text-left d-flex justify-content-between align-items-center"
+              type="button"
+              id="membersDropdownButton"
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <span id="membersDropdownLabel">Choose members</span>
+            </button>
+            <div
+              class="dropdown-menu w-100 p-3"
+              aria-labelledby="membersDropdownButton"
+              id="membersDropdownMenu"
+              style="max-height: 260px; overflow-y: auto;"
+            >
+              <div id="membersDropdownOptions"></div>
+            </div>
+          </div>
+          <div class="d-none">
+            {{ form.members }}
+          </div>
+          {% if form.members.help_text %}
+            <small class="form-text text-muted">{{ form.members.help_text }}</small>
+          {% endif %}
+          {% if form.members.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.members.errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-end mt-4" style="gap:0.75rem; padding-top:1rem; border-top:1px solid rgba(195,198,208,0.15);">
+          <a class="btn btn-outline-secondary" href="{% url 'blog-home' %}">Cancel</a>
+          <button class="btn btn-primary" type="submit">
+            <span class="material-symbols-outlined" style="font-size:16px;">save</span>
+            {% if object %}Update{% else %}Create project{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("id_members");
+    const optionsContainer = document.getElementById("membersDropdownOptions");
+    const label = document.getElementById("membersDropdownLabel");
+    const menu = document.getElementById("membersDropdownMenu");
+
+    if (!select || !optionsContainer || !label) {
+      return;
+    }
+
+    function updateLabel() {
+      const selected = Array.from(select.selectedOptions).map(function (option) {
+        return option.text;
+      });
+
+      if (!selected.length) {
+        label.textContent = "Choose members";
+        return;
+      }
+
+      if (selected.length <= 2) {
+        label.textContent = selected.join(", ");
+        return;
+      }
+
+      label.textContent = selected.length + " selected members";
+    }
+
+    Array.from(select.options).forEach(function (option) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "custom-control custom-checkbox mb-2";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "custom-control-input";
+      checkbox.id = "member-option-" + option.value;
+      checkbox.checked = option.selected;
+
+      const checkboxLabel = document.createElement("label");
+      checkboxLabel.className = "custom-control-label";
+      checkboxLabel.setAttribute("for", checkbox.id);
+      checkboxLabel.textContent = option.text;
+
+      checkbox.addEventListener("change", function () {
+        option.selected = checkbox.checked;
+        updateLabel();
+      });
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(checkboxLabel);
+      optionsContainer.appendChild(wrapper);
+    });
+
+    menu.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+
+    updateLabel();
+  });
+</script>
+{% endblock content %}

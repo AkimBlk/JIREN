@@ -1,0 +1,1168 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    prefix: 'tw-',
+    corePlugins: { preflight: false }
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="tw-max-w-6xl tw-mx-auto tw-mt-6 tw-mb-10 tw-px-4">
+  <div class="ticket-form-shell tw-bg-[var(--helb-surface-container-lowest)] tw-border tw-border-[var(--helb-outline-variant)] tw-rounded-lg tw-shadow-sm tw-overflow-hidden">
+    <div class="ticket-form-block ticket-form-block--header tw-px-6 tw-pt-6 tw-pb-4 tw-border-b tw-border-[var(--helb-outline-variant)]">
+      <h4 class="tw-font-extrabold tw-text-lg tw-text-[var(--helb-on-surface)] tw-m-0">
+        {% if object %}
+          Edit ticket: Ticket #{{ object.id }}
+        {% else %}
+          Create a new ticket
+        {% endif %}
+      </h4>
+    </div>
+
+    <form method="POST"
+          enctype="multipart/form-data"
+          data-origin-sha="{{ origin_sha|default:'' }}"
+          data-is-create-form="{% if object %}0{% else %}1{% endif %}">
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="alert alert-danger tw-mx-6 tw-mt-4">
+          <strong>Error:</strong>
+          {{ form.non_field_errors }}
+          <ul class="tw-mb-0">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if not object %}
+        <div class="alert alert-info tw-mx-6 tw-mt-4 tw-mb-0">
+          <strong>Status:</strong> To Do
+        </div>
+      {% endif %}
+
+      {# ── Issue type pills (full width) ────────────────────── #}
+      <div class="ticket-form-block tw-px-6 tw-pt-5 tw-pb-2">
+        <label class="tw-block tw-text-xs tw-font-semibold tw-uppercase tw-tracking-wider tw-text-[var(--helb-on-surface-variant)] tw-mb-2">Issue type</label>
+        <div class="tw-flex tw-flex-wrap tw-gap-2" id="issueTypePills">
+          {% for radio in form.issue_type %}
+            <label class="issue-type-pill tw-cursor-pointer tw-inline-flex tw-items-center tw-gap-1.5
+                          tw-px-4 tw-py-2 tw-rounded-full tw-border tw-border-[var(--helb-outline-variant)]
+                          tw-text-sm tw-font-semibold tw-select-none
+                          tw-bg-[var(--helb-surface-container-low)] tw-text-[var(--helb-on-surface)]
+                          tw-transition-all tw-duration-200 tw-whitespace-nowrap tw-overflow-visible
+                          hover:tw-shadow-md"
+                   data-issue-type="{{ radio.data.value }}">
+              <span class="tw-hidden">{{ radio.tag }}</span>
+              {% if radio.data.value == "EPIC" %}
+                <span class="material-symbols-outlined tw-text-base">bolt</span> Epic
+              {% elif radio.data.value == "STORY" %}
+                <span class="material-symbols-outlined tw-text-base">auto_stories</span> Story
+              {% elif radio.data.value == "BUG" %}
+                <span class="material-symbols-outlined tw-text-base">bug_report</span> Bug
+              {% elif radio.data.value == "TASK" %}
+                <span class="material-symbols-outlined tw-text-base">task_alt</span> Task
+              {% endif %}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Two-column grid (lg+) ────────────────────────────── #}
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+
+        {# LEFT COLUMN — Title + Description (3/5) #}
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.title|as_crispy_field }}
+
+          {{ form.description|as_crispy_field }}
+
+        </div>
+
+        {# RIGHT COLUMN — Fields (2/5) #}
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {% if form.project %}
+            {{ form.project|as_crispy_field }}
+          {% endif %}
+          {{ form.sprint|as_crispy_field }}
+          {{ form.epic|as_crispy_field }}
+          {{ form.assignee|as_crispy_field }}
+          {% if form.status %}
+            {{ form.status|as_crispy_field }}
+          {% endif %}
+          {{ form.priority|as_crispy_field }}
+          <div id="color-field-wrapper">
+            {{ form.color|as_crispy_field }}
+          </div>
+          {{ form.story_points|as_crispy_field }}
+          <div id="origin-commit-block" hidden>
+            {{ form.origin_commit_sha|as_crispy_field }}
+          </div>
+        </div>
+      </div>
+
+      {# ── Tags + Attachments ────────────────────────────────── #}
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.tags_input|as_crispy_field }}
+
+        </div>
+
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {{ form.initial_load|as_crispy_field }}
+          {{ form.remaining_load|as_crispy_field }}
+        </div>
+      </div>
+
+      {# ── Ticket Links ────────────────────────────────────────── #}
+      {% if form.blocked_by_tickets %}
+      <div class="ticket-form-block tw-px-6 tw-py-4 lg:tw-grid lg:tw-grid-cols-5 lg:tw-gap-8">
+        <div class="lg:tw-col-span-3 tw-space-y-4">
+          {{ form.blocked_by_tickets|as_crispy_field }}
+        </div>
+        <div class="lg:tw-col-span-2 tw-space-y-4">
+          {{ form.relates_to_tickets|as_crispy_field }}
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Submit Button ────────────────────────────────────────── #}
+      <div class="ticket-form-block tw-px-6 tw-py-4 tw-flex tw-gap-3">
+        <button type="submit" class="btn btn-primary">
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">{% if object %}save{% else %}add_circle{% endif %}</span>
+          {% if object %}Update{% else %}Create{% endif %}
+        </button>
+        <a href="{% url 'kanban' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if ticket_project_data %}
+  {{ ticket_project_data|json_script:"ticketProjectData" }}
+{% endif %}
+
+<style>
+  .ticket-form-shell {
+    border-width: 2px !important;
+    border-color: var(--helb-outline-variant) !important;
+  }
+  .ticket-form-block {
+    border-top: 1px solid rgba(195, 198, 208, 0.24);
+  }
+  .ticket-form-block--header {
+    border-top: 0;
+  }
+  .ticket-form-shell .form-control,
+  .ticket-form-shell select.form-control,
+  .ticket-form-shell textarea.form-control,
+  .ticket-form-shell input.form-control,
+  .ticket-form-shell .rich-editor-shell,
+  .ticket-form-shell .link-selector-panel,
+  .ticket-form-shell .link-selector-chip {
+    border-width: 1.5px;
+    border-color: var(--helb-outline-variant);
+  }
+  html:not([data-theme="dark"]) .ticket-form-shell,
+  html:not([data-theme="dark"]) .ticket-form-shell .form-control,
+  html:not([data-theme="dark"]) .ticket-form-shell .rich-editor-shell,
+  html:not([data-theme="dark"]) .ticket-form-shell .link-selector-panel,
+  html:not([data-theme="dark"]) .ticket-form-shell .link-selector-chip {
+    border-color: var(--helb-outline) !important;
+  }
+  html:not([data-theme="dark"]) .ticket-form-shell .ticket-link-select.form-control {
+    box-shadow: inset 0 0 0 1px rgba(20, 37, 58, 0.16);
+  }
+  html[data-theme="dark"] .ticket-form-shell,
+  html[data-theme="dark"] .ticket-form-shell .form-control,
+  html[data-theme="dark"] .ticket-form-shell .rich-editor-shell,
+  html[data-theme="dark"] .ticket-form-shell .link-selector-panel,
+  html[data-theme="dark"] .ticket-form-shell .link-selector-chip {
+    border-color: var(--helb-outline-variant) !important;
+  }
+
+  .rich-editor-source--enhanced { display: none; }
+  .rich-editor-shell {
+    background: var(--helb-surface-container-lowest);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    resize: vertical;
+    overflow: auto;
+    min-height: 320px;
+  }
+  .rich-editor-shell.is-focused {
+    border-color: var(--helb-secondary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--helb-secondary) 25%, transparent);
+  }
+  .rich-editor-shell.is-invalid { border-color: var(--helb-error); }
+  .rich-editor-toolbar {
+    display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.75rem;
+    border-bottom: 1px solid var(--helb-outline-variant);
+    background: var(--helb-surface-container-low);
+  }
+  .rich-editor-toolbar button {
+    min-width: 2.25rem; padding: 0.35rem 0.65rem;
+    border: 1px solid var(--helb-outline-variant); border-radius: 0.35rem;
+    background: var(--helb-surface-container-lowest); color: var(--helb-on-surface);
+    font-size: 0.95rem; line-height: 1.2;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .rich-editor-toolbar button:hover {
+    background: var(--helb-surface-container);
+    border-color: var(--helb-secondary-container);
+  }
+  .rich-editor-surface {
+    min-height: 260px; height: 100%; padding: 1rem;
+    outline: none; line-height: 1.6; color: var(--helb-on-surface);
+  }
+  .rich-editor-surface:empty:before {
+    content: attr(data-placeholder); color: var(--helb-outline); white-space: pre-line;
+  }
+  .rich-editor-surface img {
+    display: block; max-width: 100%; height: auto;
+    margin: 1rem 0; border-radius: 0.5rem;
+  }
+  .link-selector-panel {
+    background: var(--helb-surface-container-lowest);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.25rem;
+  }
+  .link-selector-options { max-height: 220px; overflow-y: auto; }
+  .link-selector-chip {
+    display: inline-flex; align-items: center;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 999px;
+    background: var(--helb-surface-container-low);
+    margin-right: 0.5rem; margin-bottom: 0.5rem; font-size: 0.9rem;
+  }
+  .link-selector-chip button {
+    border: 0; background: transparent; color: var(--helb-outline);
+    margin-left: 0.5rem; padding: 0; line-height: 1; font-size: 1rem;
+    transition: color 0.15s;
+  }
+  .link-selector-chip button:hover { color: var(--helb-on-surface); }
+
+  #id_tags_input.form-control {
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.75rem;
+  }
+  #id_tags_input.form-control::placeholder {
+    color: var(--helb-outline);
+    opacity: 1;
+  }
+  .ticket-link-select.form-control {
+    min-height: 11rem;
+    padding: 0.5rem;
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    border: 1px solid var(--helb-outline-variant);
+    border-radius: 0.75rem;
+    box-shadow: inset 0 0 0 1px rgba(195, 198, 208, 0.18);
+  }
+  .ticket-link-select.form-control option {
+    background: var(--helb-surface-container-lowest);
+    color: var(--helb-on-surface);
+    padding: 0.3rem 0.45rem;
+  }
+  #id_tags_input.form-control:focus,
+  .ticket-link-select.form-control:focus {
+    border-color: var(--helb-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--helb-primary) 22%, transparent);
+    outline: none;
+  }
+
+  html[data-theme="dark"] #id_tags_input.form-control {
+    background: var(--helb-surface-container-low);
+    border-color: var(--helb-outline-variant);
+    color: var(--helb-on-surface);
+  }
+  html[data-theme="dark"] #id_tags_input.form-control::placeholder {
+    color: var(--helb-on-surface-variant);
+  }
+  html[data-theme="dark"] .ticket-link-select.form-control {
+    background: var(--helb-surface-container-low);
+    border-color: var(--helb-outline-variant);
+    color: var(--helb-on-surface);
+    box-shadow: inset 0 0 0 1px rgba(167, 200, 252, 0.12);
+  }
+  html[data-theme="dark"] .ticket-link-select.form-control option {
+    background: var(--helb-surface-container-high);
+    color: var(--helb-on-surface);
+  }
+
+  /* Issue type pill styles - distinct colors for each type */
+  .issue-type-pill[data-issue-type="EPIC"] {
+    background: rgba(156, 39, 176, 0.12); color: #C77DFF;
+    border-color: #C77DFF;
+  }
+  .issue-type-pill[data-issue-type="EPIC"].is-active-EPIC {
+    background: #C77DFF; color: #fff;
+    border-color: #C77DFF;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(199, 125, 255, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="STORY"] {
+    background: rgba(52, 211, 153, 0.12); color: #10B981;
+    border-color: #10B981;
+  }
+  .issue-type-pill[data-issue-type="STORY"].is-active-STORY {
+    background: #10B981; color: #fff;
+    border-color: #10B981;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="BUG"] {
+    background: rgba(239, 68, 68, 0.12); color: #EF4444;
+    border-color: #EF4444;
+  }
+  .issue-type-pill[data-issue-type="BUG"].is-active-BUG {
+    background: #EF4444; color: #fff;
+    border-color: #EF4444;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+  
+  .issue-type-pill[data-issue-type="TASK"] {
+    background: rgba(59, 130, 246, 0.12); color: #3B82F6;
+    border-color: #3B82F6;
+  }
+  .issue-type-pill[data-issue-type="TASK"].is-active-TASK {
+    background: #3B82F6; color: #fff;
+    border-color: #3B82F6;
+    transform: scale(1.05); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  }
+
+  /* Epic color picker: thicker modern rounded stroke */
+  #id_color {
+    min-height: 2.2rem;
+    padding: 0.2rem;
+    border: 4px solid color-mix(in srgb, var(--helb-outline-variant) 85%, var(--helb-primary) 15%);
+    border-radius: 40px;
+    background: var(--helb-surface-container-lowest);
+    cursor: pointer;
+  }
+  #id_color::-webkit-color-swatch-wrapper { padding: 0; border-radius: 40px; }
+  #id_color::-webkit-color-swatch { border: none; border-radius: 40px; }
+  #id_color::-moz-color-swatch { border: none; border-radius: 40px; }
+  #id_color:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>
+
+<script>
+  // Ticket templates for each issue type
+  const TEMPLATES = {
+    "STORY": "📖 USER STORY (As... I want... so that...)\n\nAs a <role/persona>,\nI want <action/feature>,\nso that <benefit/value>.\n\n✅ ACCEPTANCE CRITERIA:\n- Criteria 1: ...\n- Criteria 2: ...\n- Criteria 3: ...\n\n📎 RESOURCES / REFERENCES:\n- Link 1: ...\n\n🎯 NOTES:\n...",
+    "BUG": "🐛 BUG REPORT\n\n🔍 CONTEXT:\n- Environment: (dev/staging/prod)\n- Browser/Version:\n- Steps: ...\n\n❌ PROBLEM:\nWhat is not working correctly?\n\n✅ EXPECTED BEHAVIOR:\nWhat should happen instead?\n\n📸 ACTUAL RESULT:\nWhat did you observe? (screenshot/error)\n\n🔄 STEPS TO REPRODUCE:\n1. ...\n2. ...\n3. ...\n\n💾 ADDITIONAL INFORMATION:\n- App version:\n- Error log: ...",
+    "TASK": "☑️ TASK (Technical work)\n\n📋 DESCRIPTION:\nWhat do we need to do?\n\n🎯 OBJECTIVE:\nWhat is the expected outcome?\n\n📝 ITEMS TO COVER:\n- [ ] Item 1\n- [ ] Item 2\n- [ ] Item 3\n\n⚙️ TECHNICAL DETAILS:\n- Files to modify: ...\n- Dependencies: ...\n\n📎 REFERENCES:\n- PR: ...\n- Documentation: ...",
+    "EPIC": "🏔️ EPIC (Major initiative)\n\n📖 DESCRIPTION:\nWhat is this epic about?\n\n🎯 OBJECTIVES:\n- Objective 1: ...\n- Objective 2: ...\n\n📝 USER STORIES INCLUDED:\n- US#1: ...\n- US#2: ...\n\n⏱️ TIMELINE:\n- Phase 1: ...\n- Phase 2: ...\n\n📊 SUCCESS METRICS:\n- Metric 1: ...\n- Metric 2: ..."
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const ticketForm = document.querySelector('form[data-origin-sha]');
+    const IS_CREATE_FORM = !ticketForm || ticketForm.dataset.isCreateForm === "1";
+
+    /* ── Issue type pills ── */
+    (function setupIssueTypePills() {
+      var pills = document.querySelectorAll(".issue-type-pill");
+      var hiddenRadios = document.querySelectorAll('input[name="issue_type"]');
+
+      function syncPillStates() {
+        var checkedRadio = document.querySelector('input[name="issue_type"]:checked');
+        var activeValue = checkedRadio ? checkedRadio.value : "";
+        pills.forEach(function (pill) {
+          var type = pill.getAttribute("data-issue-type");
+          pill.classList.remove("is-active");
+          pill.classList.remove("is-active-EPIC", "is-active-STORY", "is-active-BUG", "is-active-TASK");
+          if (type === activeValue) {
+            pill.classList.add("is-active");
+            pill.classList.add("is-active-" + type);
+          }
+        });
+      }
+
+      pills.forEach(function (pill) {
+        pill.addEventListener("click", function () {
+          var type = pill.getAttribute("data-issue-type");
+          hiddenRadios.forEach(function (radio) {
+            radio.checked = (radio.value === type);
+          });
+          var checkedRadio = document.querySelector('input[name="issue_type"]:checked');
+          if (checkedRadio) {
+            checkedRadio.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          syncPillStates();
+        });
+      });
+
+      hiddenRadios.forEach(function (radio) {
+        radio.addEventListener("change", syncPillStates);
+      });
+
+      syncPillStates();
+    })();
+    function setupRichTextEditor() {
+      const textarea = document.getElementById("id_description");
+      const CREATE_TEMPLATE_HTML = `
+        <p>As a user,</p>
+        <p>I want</p>
+        <p>so that</p>
+        <p><br></p>
+        <p>Developer description</p>
+        <p><br></p>
+        <p>Business rules</p>
+        <p><br></p>
+        <p>Done when</p>
+      `;
+
+      if (!textarea) {
+        return;
+      }
+
+      const fieldWrapper = textarea.closest(".form-group");
+      if (!fieldWrapper) {
+        return;
+      }
+
+      const shell = document.createElement("div");
+      shell.className = "rich-editor-shell";
+
+      if (textarea.classList.contains("is-invalid")) {
+        shell.classList.add("is-invalid");
+      }
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "rich-editor-toolbar";
+
+      const editor = document.createElement("div");
+      editor.className = "rich-editor-surface";
+      editor.contentEditable = "true";
+      editor.setAttribute("role", "textbox");
+      editor.setAttribute("aria-multiline", "true");
+      editor.setAttribute("data-placeholder", "Description");
+
+      const imageInput = document.createElement("input");
+      imageInput.type = "file";
+      imageInput.accept = "image/png,image/jpeg,image/jpg,image/gif,image/webp";
+      imageInput.multiple = true;
+      imageInput.className = "d-none";
+
+      let savedRange = null;
+
+      function saveSelection() {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        if (editor.contains(range.commonAncestorContainer)) {
+          savedRange = range.cloneRange();
+        }
+      }
+
+      function restoreSelection() {
+        if (!savedRange) {
+          return;
+        }
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+
+      function hasEditorContent() {
+        const textContent = editor.textContent.replace(/\u00a0/g, " ").trim();
+        return Boolean(textContent || editor.querySelector("img, ul, ol, li, blockquote, pre"));
+      }
+
+      function syncTextarea() {
+        const html = editor.innerHTML.trim();
+        textarea.value = hasEditorContent() ? html : "";
+      }
+
+      function focusEditor() {
+        editor.focus();
+        restoreSelection();
+      }
+
+      function runCommand(command, value) {
+        focusEditor();
+        document.execCommand(command, false, value);
+        syncTextarea();
+        saveSelection();
+      }
+
+      function createToolbarButton(label, title, handler) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.title = title;
+        button.setAttribute("aria-label", title);
+        button.addEventListener("click", handler);
+        toolbar.appendChild(button);
+      }
+
+      function insertNodeAtCursor(node) {
+        focusEditor();
+
+        const selection = window.getSelection();
+        let range = null;
+
+        if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
+          range = selection.getRangeAt(0);
+        }
+
+        if (!range) {
+          range = document.createRange();
+          range.selectNodeContents(editor);
+          range.collapse(false);
+        }
+
+        range.deleteContents();
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        saveSelection();
+        syncTextarea();
+      }
+
+      function insertImage(dataUrl, fileName) {
+        const image = document.createElement("img");
+        image.src = dataUrl;
+        image.alt = fileName || "Inserted image";
+        insertNodeAtCursor(image);
+      }
+
+      createToolbarButton("B", "Bold", function () {
+        runCommand("bold");
+      });
+      createToolbarButton("I", "Italic", function () {
+        runCommand("italic");
+      });
+      createToolbarButton("U", "Underline", function () {
+        runCommand("underline");
+      });
+      createToolbarButton("UL", "Bulleted list", function () {
+        runCommand("insertUnorderedList");
+      });
+      createToolbarButton("OL", "Numbered list", function () {
+        runCommand("insertOrderedList");
+      });
+      createToolbarButton("Link", "Insert link", function () {
+        const url = window.prompt("Enter a link URL");
+        if (!url) {
+          return;
+        }
+        runCommand("createLink", url);
+      });
+      createToolbarButton("Image", "Insert image", function () {
+        imageInput.click();
+      });
+
+      imageInput.addEventListener("change", function () {
+        Array.from(imageInput.files || []).forEach(function (file) {
+          if (!file.type.startsWith("image/")) {
+            return;
+          }
+
+          if (file.size > 5 * 1024 * 1024) {
+            window.alert("Each inserted image must be 5 MB or smaller.");
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.addEventListener("load", function () {
+            insertImage(reader.result, file.name);
+          });
+          reader.readAsDataURL(file);
+        });
+
+        imageInput.value = "";
+      });
+
+      try {
+        document.execCommand("defaultParagraphSeparator", false, "p");
+      } catch (error) {
+      }
+
+      editor.setAttribute("data-placeholder", "Description");
+
+      if (IS_CREATE_FORM && !String(textarea.value || "").trim()) {
+        editor.innerHTML = CREATE_TEMPLATE_HTML;
+      } else {
+        editor.innerHTML = textarea.value || "";
+      }
+      textarea.classList.add("rich-editor-source--enhanced");
+      textarea.setAttribute("aria-hidden", "true");
+      textarea.insertAdjacentElement("afterend", shell);
+
+      shell.appendChild(toolbar);
+      shell.appendChild(editor);
+      shell.appendChild(imageInput);
+
+      editor.addEventListener("input", syncTextarea);
+      editor.addEventListener("focus", function () {
+        shell.classList.add("is-focused");
+        saveSelection();
+      });
+      editor.addEventListener("blur", function () {
+        syncTextarea();
+        saveSelection();
+        shell.classList.remove("is-focused");
+      });
+      ["keyup", "mouseup", "touchend"].forEach(function (eventName) {
+        editor.addEventListener(eventName, saveSelection);
+      });
+      editor.addEventListener("paste", function () {
+        window.setTimeout(function () {
+          syncTextarea();
+          saveSelection();
+        }, 0);
+      });
+
+      if (textarea.form) {
+        textarea.form.addEventListener("submit", syncTextarea);
+      }
+
+      syncTextarea();
+    }
+
+    function setupSingleSelectDropdown(config) {
+      const select = document.getElementById(config.selectId);
+      const button = document.getElementById(config.buttonId);
+      const optionsContainer = document.getElementById(config.optionsContainerId);
+      const label = document.getElementById(config.labelId);
+      const menu = document.getElementById(config.menuId);
+
+      if (!select || !button || !optionsContainer || !label || !menu) {
+        return {
+          render: function () {},
+        };
+      }
+
+      function realOptions() {
+        return Array.from(select.options).filter(function (option) {
+          return option.value;
+        });
+      }
+
+      function updateLabel() {
+        const selectedOption = select.options[select.selectedIndex];
+        const hasOptions = realOptions().length > 0;
+
+        if (selectedOption && selectedOption.value) {
+          label.textContent = selectedOption.text;
+        } else if (!hasOptions) {
+          label.textContent = config.emptyStateLabel;
+        } else {
+          label.textContent = config.placeholder;
+        }
+
+        button.disabled = select.disabled || !hasOptions;
+      }
+
+      function renderRadio(option, index) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "custom-control custom-radio mb-2";
+
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.className = "custom-control-input";
+        radio.name = config.selectId + "-dropdown";
+        radio.id = config.selectId + "-option-" + index;
+        radio.checked = option.selected;
+
+        const radioLabel = document.createElement("label");
+        radioLabel.className = "custom-control-label";
+        radioLabel.setAttribute("for", radio.id);
+        radioLabel.textContent = option.value ? option.text : config.emptyLabel;
+
+        radio.addEventListener("change", function () {
+          select.value = option.value;
+          select.dispatchEvent(new Event("change"));
+          updateLabel();
+        });
+
+        wrapper.appendChild(radio);
+        wrapper.appendChild(radioLabel);
+        optionsContainer.appendChild(wrapper);
+      }
+
+      function render() {
+        const options = Array.from(select.options);
+        optionsContainer.innerHTML = "";
+
+        if (!realOptions().length) {
+          const emptyMessage = document.createElement("p");
+          emptyMessage.className = "text-muted small mb-0";
+          emptyMessage.textContent = config.noOptionsLabel;
+          optionsContainer.appendChild(emptyMessage);
+          updateLabel();
+          return;
+        }
+
+        options.forEach(function (option, index) {
+          renderRadio(option, index);
+        });
+
+        updateLabel();
+      }
+
+      menu.addEventListener("click", function (event) {
+        event.stopPropagation();
+      });
+
+      select.addEventListener("change", updateLabel);
+      render();
+
+      return { render: render };
+    }
+
+    function replaceOptions(select, items, emptyLabel) {
+      if (!select) {
+        return;
+      }
+
+      const previousValue = select.value;
+      select.innerHTML = "";
+
+      const blankOption = document.createElement("option");
+      blankOption.value = "";
+      blankOption.text = emptyLabel;
+      select.appendChild(blankOption);
+
+      items.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.text = item.label;
+        select.appendChild(option);
+      });
+
+      const hasPreviousValue = items.some(function (item) {
+        return item.value === previousValue;
+      });
+      select.value = hasPreviousValue ? previousValue : "";
+      select.dispatchEvent(new Event("change"));
+    }
+
+    function replaceMultiOptions(select, items) {
+      if (!select) {
+        return;
+      }
+
+      const previousValues = Array.from(select.selectedOptions).map(function (option) {
+        return option.value;
+      });
+
+      select.innerHTML = "";
+
+      items.forEach(function (item) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.text = item.label;
+        option.selected = previousValues.includes(item.value);
+        select.appendChild(option);
+      });
+
+      select.disabled = items.length === 0;
+      select.dispatchEvent(new Event("change"));
+    }
+
+    function setupLinkSelector(config) {
+      const select = document.getElementById(config.selectId);
+      const toggleButton = document.getElementById(config.toggleButtonId);
+      const panel = document.getElementById(config.panelId);
+      const optionsContainer = document.getElementById(config.optionsContainerId);
+      const selectedContainer = document.getElementById(config.selectedContainerId);
+      const emptyState = document.getElementById(config.emptyStateId);
+
+      if (!select || !toggleButton || !panel || !optionsContainer || !selectedContainer || !emptyState) {
+        return {
+          render: function () {},
+        };
+      }
+
+      function realOptions() {
+        return Array.from(select.options).filter(function (option) {
+          return option.value;
+        });
+      }
+
+      function selectedOptions() {
+        return realOptions().filter(function (option) {
+          return option.selected;
+        });
+      }
+
+      function updateToggleButton() {
+        const hasOptions = realOptions().length > 0;
+        const isOpen = !panel.classList.contains("d-none");
+
+        if (!hasOptions) {
+          panel.classList.add("d-none");
+        }
+
+        toggleButton.disabled = select.disabled || !hasOptions;
+        toggleButton.textContent = !hasOptions ? config.addLabel : (isOpen ? "Close" : config.addLabel);
+        toggleButton.setAttribute("aria-expanded", hasOptions && isOpen ? "true" : "false");
+      }
+
+      function setValueSelected(value, isSelected) {
+        const option = Array.from(select.options).find(function (item) {
+          return item.value === value;
+        });
+
+        if (!option) {
+          return;
+        }
+
+        option.selected = isSelected;
+        select.dispatchEvent(new Event("change"));
+      }
+
+      function renderSummary() {
+        const selected = selectedOptions();
+        selectedContainer.innerHTML = "";
+        emptyState.style.display = selected.length ? "none" : "";
+
+        selected.forEach(function (option) {
+          const chip = document.createElement("span");
+          chip.className = "link-selector-chip";
+
+          const label = document.createElement("span");
+          label.textContent = option.text;
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.setAttribute("aria-label", "Remove " + option.text);
+          removeButton.textContent = "×";
+          removeButton.addEventListener("click", function () {
+            setValueSelected(option.value, false);
+          });
+
+          chip.appendChild(label);
+          chip.appendChild(removeButton);
+          selectedContainer.appendChild(chip);
+        });
+      }
+
+      function renderOptions() {
+        const options = realOptions();
+        optionsContainer.innerHTML = "";
+
+        if (!options.length) {
+          const emptyMessage = document.createElement("p");
+          emptyMessage.className = "text-muted small mb-0";
+          emptyMessage.textContent = config.noOptionsLabel;
+          optionsContainer.appendChild(emptyMessage);
+          return;
+        }
+
+        options.forEach(function (option, index) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "custom-control custom-checkbox mb-2";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "custom-control-input";
+          checkbox.id = config.selectId + "-checkbox-" + index;
+          checkbox.checked = option.selected;
+
+          const checkboxLabel = document.createElement("label");
+          checkboxLabel.className = "custom-control-label";
+          checkboxLabel.setAttribute("for", checkbox.id);
+          checkboxLabel.textContent = option.text;
+
+          checkbox.addEventListener("change", function () {
+            setValueSelected(option.value, checkbox.checked);
+          });
+
+          wrapper.appendChild(checkbox);
+          wrapper.appendChild(checkboxLabel);
+          optionsContainer.appendChild(wrapper);
+        });
+      }
+
+      function render() {
+        renderSummary();
+        renderOptions();
+        updateToggleButton();
+      }
+
+      toggleButton.addEventListener("click", function () {
+        if (toggleButton.disabled) {
+          return;
+        }
+
+        panel.classList.toggle("d-none");
+        updateToggleButton();
+      });
+
+      select.addEventListener("change", render);
+      render();
+
+      return { render: render };
+    }
+
+    const epicDropdown = setupSingleSelectDropdown({
+      selectId: "id_epic",
+      buttonId: "epicDropdownButton",
+      optionsContainerId: "epicDropdownOptions",
+      labelId: "epicDropdownLabel",
+      menuId: "epicDropdownMenu",
+      placeholder: "Epic",
+      emptyLabel: "No epic",
+      emptyStateLabel: "No epic available",
+      noOptionsLabel: "No epic available for this project.",
+    });
+
+    const assigneeDropdown = setupSingleSelectDropdown({
+      selectId: "id_assignee",
+      buttonId: "assigneeDropdownButton",
+      optionsContainerId: "assigneeDropdownOptions",
+      labelId: "assigneeDropdownLabel",
+      menuId: "assigneeDropdownMenu",
+      placeholder: "Assignee",
+      emptyLabel: "Unassigned",
+      emptyStateLabel: "No member available",
+      noOptionsLabel: "No member available for this project.",
+    });
+
+    const blockedBySelector = setupLinkSelector({
+      selectId: "id_blocked_by_tickets",
+      toggleButtonId: "blockedByToggleButton",
+      panelId: "blockedByPanel",
+      optionsContainerId: "blockedByOptions",
+      selectedContainerId: "blockedBySelected",
+      emptyStateId: "blockedByEmptyState",
+      addLabel: "Add link",
+      noOptionsLabel: "No ticket available for this project.",
+    });
+
+    const relatesToSelector = setupLinkSelector({
+      selectId: "id_relates_to_tickets",
+      toggleButtonId: "relatesToToggleButton",
+      panelId: "relatesToPanel",
+      optionsContainerId: "relatesToOptions",
+      selectedContainerId: "relatesToSelected",
+      emptyStateId: "relatesToEmptyState",
+      addLabel: "Add link",
+      noOptionsLabel: "No ticket available for this project.",
+    });
+
+    const projectSelect = document.getElementById("id_project");
+    const sprintSelect = document.getElementById("id_sprint");
+    const epicSelect = document.getElementById("id_epic");
+    const assigneeSelect = document.getElementById("id_assignee");
+    const blockedBySelect = document.getElementById("id_blocked_by_tickets");
+    const relatesToSelect = document.getElementById("id_relates_to_tickets");
+    const issueTypeInputs = document.querySelectorAll('input[name="issue_type"]');
+    const projectDataElement = document.getElementById("ticketProjectData");
+    const projectData = projectDataElement ? JSON.parse(projectDataElement.textContent) : {};
+
+    function getFieldWrapper(fieldName) {
+      return (
+        document.getElementById("div_id_" + fieldName + "_wrapper")
+        || document.getElementById("div_id_" + fieldName)
+      );
+    }
+
+    const sprintWrapper = getFieldWrapper("sprint");
+    const epicWrapper = getFieldWrapper("epic");
+    const storyPointsWrapper = getFieldWrapper("story_points");
+    const initialLoadWrapper = getFieldWrapper("initial_load");
+    const remainingLoadWrapper = getFieldWrapper("remaining_load");
+    const storyPointsInput = document.getElementById("id_story_points");
+    const initialLoadInput = document.getElementById("id_initial_load");
+    const remainingLoadInput = document.getElementById("id_remaining_load");
+    const originCommitBlock = document.getElementById("origin-commit-block");
+    const originCommitInput = document.getElementById("id_origin_commit_sha");
+    const colorInput = document.getElementById("id_color");
+    const colorWrapper = document.getElementById("color-field-wrapper") || getFieldWrapper("color");
+    
+
+    [storyPointsInput, initialLoadInput, remainingLoadInput].forEach(function (input) {
+      if (!input) return;
+      input.placeholder = "0";
+      if (IS_CREATE_FORM && String(input.value).trim() === "0") {
+        input.value = "";
+      }
+    });
+
+    setupRichTextEditor();
+
+    function getSelectedIssueType() {
+      const activePill = document.querySelector(".issue-type-pill.is-active[data-issue-type]");
+      if (activePill) {
+        return activePill.dataset.issueType || "";
+      }
+      const selectedInput = document.querySelector('input[name="issue_type"]:checked');
+      return selectedInput ? selectedInput.value : "";
+    }
+
+    function syncIssueTypeRestrictions() {
+      const type = getSelectedIssueType();
+      if (!type) {
+        return;
+      }
+
+      const isEpic = type === "EPIC";
+      const isTask = type === "TASK";
+      const supportsStoryPoints = type === "STORY" || type === "BUG";
+      const supportsLoad = type === "STORY" || type === "BUG" || type === "TASK";
+
+      if (sprintSelect) {
+        if (isEpic) {
+          sprintSelect.value = "";
+        }
+        sprintSelect.disabled = isEpic;
+      }
+
+      if (epicSelect) {
+        if (isEpic) {
+          epicSelect.value = "";
+        }
+        epicSelect.disabled = isEpic;
+      }
+
+      if (sprintWrapper) {
+        sprintWrapper.style.display = isEpic ? "none" : "";
+      }
+
+      if (epicWrapper) {
+        epicWrapper.style.display = isEpic ? "none" : "";
+      }
+
+      if (storyPointsWrapper) {
+        storyPointsWrapper.style.display = supportsStoryPoints ? "" : "none";
+      }
+      if (IS_CREATE_FORM && supportsStoryPoints && storyPointsInput && String(storyPointsInput.value).trim() === "0") {
+        storyPointsInput.value = "";
+      }
+
+      if (originCommitBlock) {
+        originCommitBlock.hidden = type !== "BUG";
+      }
+      if (originCommitInput && type !== "BUG") {
+        originCommitInput.value = "";
+      }
+
+      if (initialLoadWrapper) {
+        initialLoadWrapper.style.display = supportsLoad ? "" : "none";
+      }
+
+      if (remainingLoadWrapper) {
+        remainingLoadWrapper.style.display = supportsLoad ? "" : "none";
+      }
+      if (IS_CREATE_FORM && supportsLoad) {
+        if (initialLoadInput && String(initialLoadInput.value).trim() === "0") {
+          initialLoadInput.value = "";
+        }
+        if (remainingLoadInput && String(remainingLoadInput.value).trim() === "0") {
+          remainingLoadInput.value = "";
+        }
+      }
+
+      if (colorInput) {
+        if (isEpic) {
+          colorInput.disabled = false;
+        } else {
+          colorInput.value = "";
+          colorInput.disabled = true;
+        }
+      }
+
+      if (colorWrapper) {
+        colorWrapper.style.display = isEpic ? "" : "none";
+      }
+
+      if (!supportsStoryPoints && storyPointsInput) {
+        storyPointsInput.value = 0;
+      }
+
+      if (!supportsLoad) {
+        if (initialLoadInput) {
+          initialLoadInput.value = 0;
+        }
+        if (remainingLoadInput) {
+          remainingLoadInput.value = 0;
+        }
+      }
+
+      if (isTask && storyPointsInput) {
+        storyPointsInput.value = 0;
+      }
+
+      epicDropdown.render();
+    }
+
+    function syncProjectOptions() {
+      if (!projectSelect || !projectDataElement) {
+        syncIssueTypeRestrictions();
+        assigneeDropdown.render();
+        blockedBySelector.render();
+        relatesToSelector.render();
+        return;
+      }
+
+      const projectOptions = projectData[projectSelect.value] || {
+        sprints: [],
+        epics: [],
+        assignees: [],
+        linkables: [],
+      };
+
+      replaceOptions(sprintSelect, projectOptions.sprints, "Backlog");
+      replaceOptions(epicSelect, projectOptions.epics, "No epic");
+      replaceOptions(assigneeSelect, projectOptions.assignees, "Unassigned");
+      replaceMultiOptions(blockedBySelect, projectOptions.linkables);
+      replaceMultiOptions(relatesToSelect, projectOptions.linkables);
+
+      epicDropdown.render();
+      assigneeDropdown.render();
+      blockedBySelector.render();
+      relatesToSelector.render();
+      syncIssueTypeRestrictions();
+    }
+
+    if (projectSelect && projectDataElement) {
+      projectSelect.addEventListener("change", syncProjectOptions);
+      syncProjectOptions();
+    } else {
+      syncIssueTypeRestrictions();
+      assigneeDropdown.render();
+      blockedBySelector.render();
+      relatesToSelector.render();
+    }
+
+    if (issueTypeInputs.length) {
+      issueTypeInputs.forEach(function (input) {
+        input.addEventListener("change", syncIssueTypeRestrictions);
+      });
+      syncIssueTypeRestrictions();
+    }
+
+    if (ticketForm && originCommitInput && !originCommitInput.value) {
+      originCommitInput.value = ticketForm.dataset.originSha || "";
+    }
+  });
+</script>
+
+{% endblock content %}

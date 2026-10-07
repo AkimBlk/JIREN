@@ -1,0 +1,213 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<section class="atelier-page-header">
+    <div>
+        <span class="atelier-page-header__eyebrow">Access provisioning</span>
+        <h1 class="atelier-page-header__title">Invite User</h1>
+        <p class="atelier-page-header__subtitle">Create and manage invitation links.</p>
+    </div>
+    <div class="atelier-page-header__actions">
+        <a href="{% url 'manage-roles' %}" class="btn btn-outline-secondary">
+            <span class="material-symbols-outlined" style="font-size:16px;">admin_panel_settings</span>
+            
+        </a>
+    </div>
+</section>
+
+<section class="atelier-stats-grid atelier-stats-grid--compact">
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Invitations</span>
+        <strong class="atelier-stat-card__value">{{ invitation_summary.total }}</strong>
+        <span class="atelier-stat-card__meta">Total links</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Pending</span>
+        <strong class="atelier-stat-card__value">{{ invitation_summary.pending }}</strong>
+        <span class="atelier-stat-card__meta">Waiting to register</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Used</span>
+        <strong class="atelier-stat-card__value">{{ invitation_summary.used }}</strong>
+        <span class="atelier-stat-card__meta">Completed</span>
+    </article>
+    <article class="atelier-stat-card">
+        <span class="atelier-stat-card__label">Default role</span>
+        <strong class="atelier-stat-card__value">Contributor</strong>
+        <span class="atelier-stat-card__meta">Assigned on signup</span>
+    </article>
+</section>
+
+<div class="atelier-profile-layout atelier-profile-layout--admin">
+    <section class="atelier-panel atelier-form-panel">
+        <h3 class="atelier-panel__title">
+            <span class="material-symbols-outlined">mail</span>
+            Create invitation
+        </h3>
+
+        <form method="POST" class="atelier-form-stack">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+                Create invitation
+            </button>
+        </form>
+    </section>
+
+    <section class="atelier-role-table-shell">
+        <div class="atelier-panel__split-header atelier-panel__split-header--table">
+            <h3 class="atelier-panel__title mb-0">
+                <span class="material-symbols-outlined">mark_email_read</span>
+                Sent invitations
+            </h3>
+            <span class="atelier-panel__caption">Pending links stay available until used.</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table atelier-table atelier-table--roles atelier-table--invite mb-0" style="table-layout: fixed; width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th style="width: 48%;">Invite Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for inv in invitations %}
+                    <tr>
+                        <td class="atelier-invite-email-cell">
+                            <div class="atelier-project-ref">
+                                <strong class="atelier-invite-email">{{ inv.email }}</strong>
+                                <small>{{ inv.get_role_assigned_display }}</small>
+                            </div>
+                        </td>
+
+                        <td class="atelier-mono-cell">{{ inv.username }}</td>
+                        <td>{{ inv.project.name|default:"Site-wide access" }}</td>
+
+                        <td>
+                            {% if inv.used %}
+                                <span class="atelier-status-pill atelier-status-pill--done">Used</span>
+                            {% else %}
+                                <span class="atelier-status-pill atelier-status-pill--planned">Pending</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="max-width: 0;">
+                            {% if not inv.used %}
+                                <div style="display:flex; align-items:center; gap:8px; width:100%; min-width:0;">
+                                    <input
+                                        id="invite-link-{{ inv.id }}"
+                                        type="text"
+                                        readonly
+                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'register' %}?token={{ inv.token }}"
+                                        style="
+                                            flex:1;
+                                            min-width:0;
+                                            width:100%;
+                                            background:#10233f;
+                                            border:none;
+                                            border-radius:999px;
+                                            padding:10px 14px;
+                                            color:#cfd8e3;
+                                            font-family:monospace;
+                                            font-size:13px;
+                                            overflow:hidden;
+                                            text-overflow:ellipsis;
+                                            white-space:nowrap;
+                                        "
+                                    >
+
+                                    <button
+                                        type="button"
+                                        onclick="copyInviteLink('invite-link-{{ inv.id }}', this)"
+                                        title="Copy invitation link"
+                                        style="
+                                            flex:0 0 auto;
+                                            width:38px;
+                                            height:38px;
+                                            border-radius:12px;
+                                            border:1px solid rgba(255,255,255,0.18);
+                                            background:transparent;
+                                            color:#dbe4ef;
+                                            display:inline-flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            cursor:pointer;
+                                        "
+                                    >
+                                        <span class="material-symbols-outlined" style="font-size:18px; line-height:1;">content_copy</span>
+                                    </button>
+                                </div>
+                            {% else %}
+                                <span class="atelier-badge atelier-badge--muted">Unavailable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="atelier-empty-state atelier-empty-state--table">
+                                <span class="material-symbols-outlined atelier-empty-state__icon">mail_off</span>
+                                <h3 class="atelier-empty-state__title">No invitations yet</h3>
+                                <p class="atelier-empty-state__copy">Create an invitation to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<style>
+.atelier-table--invite .atelier-project-ref {
+    min-width: 0;
+}
+
+.atelier-table--invite .atelier-invite-email {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.atelier-table--invite .atelier-invite-email-cell {
+    min-width: 0;
+}
+</style>
+
+<script>
+async function copyInviteLink(id, button) {
+    const input = document.getElementById(id);
+    const text = input.value;
+
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (err) {
+        input.select();
+        input.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+    }
+
+    const originalBg = button.style.background;
+    const originalBorder = button.style.borderColor;
+    const originalTitle = button.title;
+
+    button.style.background = "rgba(76, 175, 80, 0.18)";
+    button.style.borderColor = "rgba(76, 175, 80, 0.45)";
+    button.title = "Copied!";
+
+    setTimeout(() => {
+        button.style.background = originalBg;
+        button.style.borderColor = originalBorder;
+        button.title = originalTitle;
+    }, 1200);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+/* Git Accordion Info Section */
+
+.git-accordion-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--git-spacing-lg);
+}
+
+.git-accordion-info__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--git-spacing-md);
+}
+
+.git-accordion-info__provider-badge {
+  display: inline-block;
+  padding: var(--git-spacing-xs) var(--git-spacing-md);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.git-provider-github {
+  background-color: var(--git-color-github);
+}
+
+.git-provider-gitlab {
+  background-color: var(--git-color-gitlab);
+}
+
+.git-provider-gitea {
+  background-color: var(--git-color-gitea);
+}
+
+.git-provider-git {
+  background-color: var(--git-color-git);
+}
+
+.git-accordion-info__external-link {
+  color: var(--git-color-github);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color var(--git-duration-fast);
+}
+
+.git-accordion-info__external-link:hover {
+  color: var(--git-color-gitlab);
+  text-decoration: underline;
+}
+
+.git-accordion-info__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--git-spacing-sm);
+}
+
+.git-accordion-info__label {
+  font-size: 0.85rem;
+  color: var(--git-color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.git-accordion-info__value-with-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--git-spacing-sm);
+}
+
+.git-accordion-info__monospace {
+  flex: 1;
+  padding: var(--git-spacing-sm) var(--git-spacing-md);
+  background-color: var(--git-color-hover);
+  border-radius: var(--git-radius);
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  color: var(--git-color-text);
+  word-break: break-all;
+}
+
+.git-accordion-info__description {
+  color: var(--git-color-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.git-accordion-info__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--git-spacing-sm);
+}
+
+.git-accordion-info__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--git-spacing-xs);
+  padding: var(--git-spacing-xs) var(--git-spacing-md);
+  background-color: var(--git-color-hover);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: var(--git-color-text);
+}
+
+.git-accordion-info__badge-icon {
+  font-size: 0.9rem;
+}
+
+.git-accordion-info__badge-value {
+  font-weight: 500;
+}
+
+.git-accordion-info__timestamp {
+  color: var(--git-color-text-muted);
+  font-size: 0.8rem;
+  margin-top: var(--git-spacing-sm);
+}

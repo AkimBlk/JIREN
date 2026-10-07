@@ -1,0 +1,12 @@
+<div class="git-accordion-error">
+  <div class="git-accordion-error__icon">⚠️</div>
+  <h3 class="git-accordion-error__title">Failed to Load Git Information</h3>
+  <p class="git-accordion-error__message">
+    {{ error|default:"Unable to fetch repository information. Please check your token and try again." }}
+  </p>
+  <button
+    class="git-accordion-error__retry"
+    onclick="window.location.reload()">
+    Retry
+  </button>
+</div>

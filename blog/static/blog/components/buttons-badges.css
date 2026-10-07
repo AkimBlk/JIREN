@@ -1,0 +1,205 @@
+/* ============================================================
+   Buttons & Badges - HELB Pill Style
+   ============================================================ */
+
+/* ============================================================
+   Buttons (HELB Pill Style)
+   ============================================================ */
+
+.btn {
+  border-radius: var(--helb-radius-full);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  border: none;
+  padding: 0.5rem 1.25rem;
+}
+
+/* Primary CTA — Orange */
+.btn-primary,
+.helb-btn-primary {
+  background: var(--helb-on-primary-container);
+  color: var(--helb-surface-container-lowest);
+  border: none;
+  box-shadow: 0 4px 12px rgba(230, 154, 0, 0.2);
+}
+
+.btn-primary:hover,
+.helb-btn-primary:hover {
+  background: var(--helb-on-primary-fixed-variant);
+  color: var(--helb-surface-container-lowest);
+  transform: scale(0.97);
+  box-shadow: 0 8px 20px rgba(230, 154, 0, 0.3);
+}
+
+.btn-primary:focus,
+.btn-primary.focus {
+  box-shadow: 0 0 0 3px rgba(230, 154, 0, 0.4);
+  background: var(--helb-on-primary-container);
+}
+
+/* Secondary — Blue */
+.btn-info,
+.btn-outline-info {
+  background: var(--helb-secondary);
+  color: var(--helb-on-secondary);
+  border: none;
+}
+
+.btn-info:hover,
+.btn-outline-info:hover {
+  background: var(--helb-on-secondary-fixed-variant);
+  color: white;
+  transform: scale(0.97);
+}
+
+/* Outline Primary */
+.btn-outline-primary {
+  background: transparent;
+  color: var(--helb-on-primary-container);
+  border: 2px solid var(--helb-on-primary-container);
+}
+
+.btn-outline-primary:hover {
+  background: var(--helb-on-primary-container);
+  color: white;
+}
+
+/* Outline Secondary */
+.btn-outline-secondary {
+  background: transparent;
+  color: var(--helb-on-surface-variant);
+  border: 2px solid var(--helb-outline-variant);
+}
+
+.btn-outline-secondary:hover {
+  background: var(--helb-surface-container-high);
+  color: var(--helb-on-surface);
+  border-color: var(--helb-outline-variant);
+}
+
+/* Success */
+.btn-success {
+  background: var(--helb-on-tertiary-container);
+  color: white;
+  border: none;
+}
+
+.btn-success:hover {
+  background: var(--helb-on-tertiary-fixed-variant);
+  color: white;
+}
+
+/* Warning */
+.btn-warning {
+  background: var(--helb-primary-fixed-dim);
+  color: var(--helb-on-primary-fixed);
+  border: none;
+}
+
+.btn-warning:hover {
+  background: var(--helb-on-primary-container);
+  color: white;
+}
+
+/* Danger */
+.btn-danger,
+.btn-outline-danger {
+  background: var(--helb-error);
+  color: var(--helb-on-error);
+  border: none;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  color: var(--helb-error);
+  border: 2px solid var(--helb-error);
+}
+
+.btn-outline-danger:hover {
+  background: var(--helb-error);
+  color: white;
+}
+
+/* Ghost button */
+.btn-secondary,
+.btn-link {
+  background: var(--helb-surface-container-highest);
+  color: var(--helb-on-surface);
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: var(--helb-surface-variant);
+}
+
+.btn-link {
+  background: none;
+  color: var(--helb-secondary);
+}
+
+/* Small buttons */
+.btn-sm {
+  padding: 0.375rem 1rem;
+  font-size: 0.8125rem;
+}
+
+
+
+/* ============================================================
+   Badges
+   ============================================================ */
+
+.badge {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.03em;
+  border-radius: var(--helb-radius-full);
+  padding: 0.3rem 0.65rem;
+}
+
+.badge-primary {
+  background: var(--helb-secondary) !important;
+  color: white;
+}
+
+.badge-success {
+  background: var(--helb-on-tertiary-container) !important;
+  color: white;
+}
+
+.badge-danger {
+  background: var(--helb-error) !important;
+  color: white;
+}
+
+.badge-warning {
+  background: var(--helb-primary-fixed-dim) !important;
+  color: var(--helb-on-primary-fixed);
+}
+
+.badge-info {
+  background: var(--helb-secondary-container) !important;
+  color: var(--helb-on-secondary-fixed) !important;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.badge-secondary {
+  background: var(--helb-surface-container-highest) !important;
+  color: var(--helb-on-surface-variant);
+}
+
+.badge-light {
+  background: var(--helb-surface-container-low) !important;
+  color: var(--helb-on-surface-variant);
+  border: 1px solid rgba(195, 198, 208, 0.15) !important;
+}
+
+.badge-dark {
+  background: var(--helb-inverse-surface) !important;
+  color: var(--helb-inverse-on-surface) !important;
+}
+

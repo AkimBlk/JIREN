@@ -1,0 +1,30 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="atelier-form-shell atelier-form-shell--narrow">
+    <section class="atelier-panel atelier-form-panel">
+        <span class="atelier-page-header__eyebrow">Admin action</span>
+        <h1 class="atelier-form-panel__title">Change Role</h1>
+        <p class="atelier-form-panel__copy">
+            Current role for <strong>{{ target.user.username }}</strong>:
+            {% if target.role == 'admin' %}
+                <span class="atelier-badge atelier-badge--admin">Admin</span>
+            {% else %}
+                <span class="atelier-badge atelier-badge--contributor">Contributor</span>
+            {% endif %}
+        </p>
+
+        <form method="POST" class="atelier-form-stack">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="atelier-form-actions">
+                <a href="{% url 'manage-roles' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size:16px;">save</span>
+                    Save
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

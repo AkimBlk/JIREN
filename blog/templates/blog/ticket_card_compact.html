@@ -1,0 +1,53 @@
+<div class="kanban-card kanban-card--{{ ticket.issue_type|lower }}{% if ticket.status == 'DONE' %} kanban-card--done{% endif %}"
+     data-ticket-id="{{ ticket.id }}"
+     draggable="true">
+
+  {# ── Row 1 : badge + priority / check ── #}
+  <div class="kanban-card__top">
+    <div class="kanban-card__badge-row">
+      <span class="kanban-card__badge kanban-card__badge--{{ ticket.issue_type|lower }}">
+        {{ ticket.get_issue_type_display }}
+      </span>
+      {% if ticket.status == 'DONE' %}
+        <span class="material-symbols-outlined kanban-card__check">check_circle</span>
+      {% endif %}
+    </div>
+    {% if ticket.status != 'DONE' %}
+      {% if ticket.priority == 'HIGH' %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--high">priority_high</span>
+      {% elif ticket.priority == 'MEDIUM' %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--medium">drag_handle</span>
+      {% else %}
+        <span class="material-symbols-outlined kanban-card__priority kanban-card__priority--low">low_priority</span>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {# ── Row 2 : title ── #}
+  <h4 class="kanban-card__title">
+    <a href="{% url 'ticket-detail' ticket.id %}">{{ ticket.title }}</a>
+  </h4>
+
+  {# ── Row 3 : tags ── #}
+  {% if ticket.tags.all %}
+  <div class="kanban-card__tags">
+    {% for tag in ticket.tags.all %}
+      <span class="kanban-card__tag">{{ tag.name }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Row 4 : assignee + ID ── #}
+  <div class="kanban-card__footer">
+    {% if ticket.assignee %}
+      <img class="kanban-card__avatar"
+           src="{{ ticket.assignee.profile.image.url }}"
+           title="{{ ticket.assignee.username }}"
+           alt="{{ ticket.assignee.username }}">
+    {% else %}
+      <div class="kanban-card__avatar kanban-card__avatar--empty" title="Unassigned">?</div>
+    {% endif %}
+    <span class="kanban-card__id">{{ ticket.project.code_prefix|default:"AT" }}-{{ ticket.id }}</span>
+  </div>
+
+</div>

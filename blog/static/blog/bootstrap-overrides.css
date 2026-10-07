@@ -1,0 +1,157 @@
+/* ============================================================
+   Bootstrap Overrides
+   
+   This file contains all overrides and customizations for
+   Bootstrap 4 components to match HELB design system.
+   ============================================================ */
+
+/* Override Bootstrap .card to match HELB */
+.card {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 92%, transparent);
+  border-radius: var(--helb-radius-md) !important;
+  border: none !important;
+  box-shadow: var(--helb-shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.card-header {
+  background: var(--helb-surface-container-low);
+  border-bottom: none;
+  border-radius: var(--helb-radius-md) var(--helb-radius-md) 0 0 !important;
+  font-weight: 700;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.content-section {
+  background: color-mix(in srgb, var(--helb-surface-container-lowest) 92%, transparent);
+  padding: 2rem;
+  border: none;
+  border-radius: var(--helb-radius-lg);
+  box-shadow: var(--helb-shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  margin-bottom: 1.5rem;
+}
+
+/* === TABLES === */
+.table {
+  color: var(--helb-on-surface);
+}
+
+.table thead th {
+  background: var(--helb-surface-container-low);
+  border-top: none;
+  border-bottom: none;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--helb-outline);
+  padding: 0.875rem 1rem;
+}
+
+.table td {
+  border-top: none;
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+}
+
+.table-bordered {
+  border: none;
+  border-radius: var(--helb-radius-md);
+  overflow: hidden;
+  box-shadow: var(--helb-shadow-sm);
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: none;
+  border-bottom: 1px solid rgba(195, 198, 208, 0.15);
+}
+
+.table-hover tbody tr:hover {
+  background: var(--helb-surface-container-low);
+}
+
+.thead-light th {
+  background: var(--helb-surface-container-low) !important;
+  border: none;
+}
+
+/* === ALERTS === */
+.alert {
+  border: none;
+  border-radius: var(--helb-radius-md);
+  font-size: 0.875rem;
+}
+
+.alert-info {
+  background: var(--helb-secondary-fixed);
+  color: var(--helb-on-secondary-fixed);
+}
+
+.alert-success {
+  background: rgba(109, 189, 58, 0.1);
+  color: var(--helb-on-tertiary-fixed-variant);
+}
+
+.alert-danger {
+  background: var(--helb-error-container);
+  color: var(--helb-on-error-container);
+}
+
+.alert-warning {
+  background: var(--helb-primary-fixed);
+  color: var(--helb-on-primary-fixed);
+}
+
+.alert-light {
+  background: var(--helb-surface-container-low);
+  color: var(--helb-on-surface-variant);
+}
+
+/* === LIST GROUPS === */
+.list-group {
+  border-radius: var(--helb-radius-md) !important;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid rgba(195, 198, 208, 0.1);
+  padding: 0.875rem 1.25rem;
+  background: var(--helb-surface-container-lowest);
+  transition: background 0.15s;
+}
+
+.list-group-item:hover {
+  background: var(--helb-surface-container-low);
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+/* === DROPDOWN === */
+.dropdown-menu {
+  border: none;
+  border-radius: var(--helb-radius-md);
+  box-shadow: var(--helb-shadow-lg);
+  background: var(--helb-surface-container-lowest);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  border-radius: var(--helb-radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+  background: var(--helb-surface-container-low);
+}

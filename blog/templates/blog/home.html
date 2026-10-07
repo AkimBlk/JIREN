@@ -1,0 +1,219 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<section class="atelier-page-header">
+    <div>
+        <h1 class="atelier-page-header__title">
+            {% if active_sprint and selected_project %}
+                {{ active_sprint.name }} - {{ selected_project.name }}
+            {% else %}
+                Active Sprint
+            {% endif %}
+        </h1>
+        <p class="atelier-page-header__subtitle">
+            {% if active_sprint %}
+                {{ active_sprint.start_date|date:"d/m/Y" }} -> {{ active_sprint.end_date|date:"d/m/Y" }}
+            {% else %}
+                Track the live delivery flow across the active sprint board.
+            {% endif %}
+        </p>
+        {% if projects %}
+        <form method="get" class="stitch-toolbar-form">
+            <select name="project" id="project" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
+                {% for project in projects %}
+                    <option value="{{ project.pk }}" {% if selected_project and project.pk == selected_project.pk %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+
+            {% if available_tags %}
+                <select name="tag" id="tag" class="form-control stitch-toolbar-select" onchange="this.form.submit()">
+                    <option value="">All tags</option>
+                    {% for tag in available_tags %}
+                        <option value="{{ tag.pk }}" {% if selected_tag and tag.pk == selected_tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+
+            {% if active_sprint and selected_project %}
+                <a href="{% url 'sprint-update' active_sprint.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-secondary">Edit sprint</a>
+                <a href="{% url 'ticket-create' %}?project={{ selected_project.pk }}" class="btn btn-primary stitch-btn-orange">Create ticket</a>
+            {% endif %}
+
+            {% if selected_tag and selected_project %}
+                <a href="?project={{ selected_project.pk }}" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
+            <noscript><button type="submit" class="btn btn-outline-secondary">Apply</button></noscript>
+        </form>
+        {% endif %}
+    </div>
+</section>
+
+{% if not selected_project %}
+    <div class="atelier-empty-state">
+        <span class="material-symbols-outlined atelier-empty-state__icon">folder_off</span>
+        <h3 class="atelier-empty-state__title">No project available</h3>
+        <p class="atelier-empty-state__copy">Join or create a project to unlock the sprint board.</p>
+    </div>
+{% elif not active_sprint %}
+    <section class="stitch-panel stitch-empty-panel">
+        <div>
+            <h2 class="stitch-section__title">No active sprint</h2>
+            <p class="stitch-muted-note">This board becomes available once a sprint is running for {{ selected_project.name }}.</p>
+        </div>
+        <a href="{% url 'project-backlog' selected_project.pk %}" class="btn btn-outline-primary">Open backlog</a>
+    </section>
+{% else %}
+    {% if selected_tag %}
+        <div class="atelier-inline-note mb-4">
+            <span class="material-symbols-outlined" style="font-size:16px;">filter_alt</span>
+            Viewing sprint tickets tagged <strong>#{{ selected_tag.name }}</strong>.
+        </div>
+    {% endif %}
+
+    <div class="kanban-board-grid" id="kanban-board">
+        <section class="kanban-column-shell">
+            <div class="kanban-column-shell__header">
+                <div class="kanban-column-shell__title">
+                    <h3>To Do</h3>
+                    <span class="kanban-count" id="count-TODO">{{ kanban_summary.todo }}</span>
+                </div>
+                <span class="material-symbols-outlined">more_horiz</span>
+            </div>
+            <div class="kanban-col" id="col-TODO" data-status="TODO">
+                {% for ticket in tickets %}
+                    {% if ticket.status == 'TODO' and ticket.issue_type != 'EPIC' %}
+                        {% include "blog/ticket_card.html" %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="kanban-column-shell">
+            <div class="kanban-column-shell__header">
+                <div class="kanban-column-shell__title">
+                    <h3>In Progress</h3>
+                    <span class="kanban-count kanban-count--progress" id="count-IN_PROGRESS">{{ kanban_summary.in_progress }}</span>
+                </div>
+                <span class="material-symbols-outlined">more_horiz</span>
+            </div>
+            <div class="kanban-col kanban-col--progress" id="col-IN_PROGRESS" data-status="IN_PROGRESS">
+                {% for ticket in tickets %}
+                    {% if ticket.status == 'IN_PROGRESS' and ticket.issue_type != 'EPIC' %}
+                        {% include "blog/ticket_card.html" %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="kanban-column-shell">
+            <div class="kanban-column-shell__header">
+                <div class="kanban-column-shell__title">
+                    <h3>Done</h3>
+                    <span class="kanban-count kanban-count--done" id="count-DONE">{{ kanban_summary.done }}</span>
+                </div>
+                <span class="material-symbols-outlined">more_horiz</span>
+            </div>
+            <div class="kanban-col" id="col-DONE" data-status="DONE">
+                {% for ticket in tickets %}
+                    {% if ticket.status == 'DONE' and ticket.issue_type != 'EPIC' %}
+                        {% include "blog/ticket_card.html" %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+{% endif %}
+
+<div id="kanban-toast" style="display:none;position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:.75rem 1rem;border-radius:.5rem;color:var(--helb-on-surface);box-shadow:var(--helb-shadow-md);"></div>
+<div id="kanban-meta" data-csrf-token="{{ csrf_token }}" aria-hidden="true"></div>
+
+<script>
+(function(){
+    const TRANSITIONS = {
+        "TODO": ["IN_PROGRESS"],
+        "IN_PROGRESS": ["TODO", "DONE"],
+        "DONE": ["IN_PROGRESS"]
+    };
+
+    const csrf = document.getElementById('kanban-meta').dataset.csrfToken;
+    let draggedCard = null;
+
+    function updateCounts(){
+        document.querySelectorAll('.kanban-col').forEach(col => {
+            const n = col.querySelectorAll('.kanban-card').length;
+            const b = document.getElementById('count-' + col.dataset.status);
+            if(b) b.textContent = n;
+        });
+    }
+
+    function toast(msg, ok){
+        const el = document.getElementById('kanban-toast');
+        el.textContent = msg;
+        el.style.backgroundColor = ok ? getComputedStyle(document.documentElement).getPropertyValue('--helb-tertiary-container').trim() || '#225100' : getComputedStyle(document.documentElement).getPropertyValue('--helb-error-container').trim() || '#93000a';
+        el.style.display = 'block';
+        clearTimeout(el._t);
+        el._t = setTimeout(() => { el.style.display = 'none'; }, 3000);
+    }
+
+    function initCards(){
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            card.setAttribute('draggable','true');
+            card.addEventListener('dragstart', e => {
+                draggedCard = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over','drop-forbidden'));
+                draggedCard = null;
+            });
+        });
+    }
+
+    function initCols(){
+        document.querySelectorAll('.kanban-col').forEach(col => {
+            const target = col.dataset.status;
+            col.addEventListener('dragover', e => {
+                if(!draggedCard) return;
+                const from = draggedCard.closest('.kanban-col').dataset.status;
+                if(from === target) return;
+                e.preventDefault();
+                col.classList.remove('drag-over','drop-forbidden');
+                col.classList.add((TRANSITIONS[from]||[]).includes(target) ? 'drag-over' : 'drop-forbidden');
+            });
+            col.addEventListener('dragleave', () => col.classList.remove('drag-over','drop-forbidden'));
+            col.addEventListener('drop', e => {
+                e.preventDefault();
+                col.classList.remove('drag-over','drop-forbidden');
+                if(!draggedCard) return;
+                const fromCol = draggedCard.closest('.kanban-col');
+                const from = fromCol.dataset.status;
+                if(from === target) return;
+                if(!(TRANSITIONS[from]||[]).includes(target)){
+                    toast('❌ Transition ' + from + ' → ' + target + ' not allowed.', false);
+                    return;
+                }
+                const id = draggedCard.dataset.ticketId;
+                col.appendChild(draggedCard);
+                updateCounts();
+                fetch('/ticket/' + id + '/status/', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json','X-CSRFToken':csrf},
+                    body: JSON.stringify({status: target}),
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.ok){ toast('✓ Moved to ' + target.replace('_',' ') + '.', true); }
+                    else { fromCol.appendChild(draggedCard); updateCounts(); toast('❌ ' + d.error, false); }
+                })
+                .catch(() => { fromCol.appendChild(draggedCard); updateCounts(); toast('❌ Network error.', false); });
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { initCards(); initCols(); updateCounts(); });
+})();
+</script>
+{% endblock content %}
+

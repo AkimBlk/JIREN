@@ -1,0 +1,33 @@
+/* Git Accordion CSS Variables & Theme */
+
+:root {
+  --git-color-github: #1f6feb;
+  --git-color-gitlab: #fc6d26;
+  --git-color-gitea: #609926;
+  --git-color-git: #f34f46;
+
+  --git-color-bg: #ffffff;
+  --git-color-border: #e5e7eb;
+  --git-color-text: #1f2937;
+  --git-color-text-muted: #6b7280;
+  --git-color-hover: #f3f4f6;
+
+  --git-spacing-xs: 4px;
+  --git-spacing-sm: 8px;
+  --git-spacing-md: 12px;
+  --git-spacing-lg: 16px;
+  --git-spacing-xl: 24px;
+
+  --git-duration-fast: 150ms;
+  --git-duration-normal: 300ms;
+  --git-radius: 6px;
+  --git-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme="dark"] {
+  --git-color-bg: #0E1C2F;
+  --git-color-border: rgba(67, 71, 79, 0.15);
+  --git-color-text: #D5E3FD;
+  --git-color-text-muted: #C3C6D0;
+  --git-color-hover: #12243D;
+}

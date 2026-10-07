@@ -1,0 +1,49 @@
+{% if git_info %}
+<div class="helb-card-sm mb-4">
+    <h5 class="mb-3" style="font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:20px; color:var(--helb-on-primary-container);">code</span>
+        Git Repository
+    </h5>
+
+    <div class="mb-3">
+        <p class="mb-2"><strong>Repository:</strong> <a href="{{ git_info.url }}" target="_blank" rel="noopener noreferrer">{{ git_info.clone_url_https }}</a></p>
+        
+        {% if git_info.description %}
+            <p class="mb-2"><strong>Description:</strong> {{ git_info.description }}</p>
+        {% endif %}
+
+        <p class="mb-2">
+            <strong>Visibility:</strong> 
+            <span class="badge {% if git_info.visibility == 'private' %}badge-danger{% else %}badge-success{% endif %}">
+                {{ git_info.visibility|title }}
+            </span>
+        </p>
+
+        {% if git_info.last_updated %}
+            <p class="mb-0 text-muted">
+                <small><strong>Last updated:</strong> {{ git_info.last_updated|date:"d M Y H:i" }}</small>
+            </p>
+        {% endif %}
+    </div>
+
+    {% if git_commits %}
+        <hr>
+        <h6 style="font-weight:700; margin-bottom:1rem;">Recent Commits</h6>
+        <div style="max-height:300px; overflow-y:auto;">
+            {% for commit in git_commits %}
+                <div class="mb-2 pb-2" style="border-bottom:1px solid var(--helb-outline-variant);">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <code style="color:var(--helb-primary); font-size:0.85rem;">{{ commit.hash }}</code>
+                        <small class="text-muted">{{ commit.timestamp|date:"d M Y" }}</small>
+                    </div>
+                    <p class="mb-1" style="font-size:0.9rem;">{{ commit.message }}</p>
+                    <small class="text-muted d-block">by {{ commit.author }}</small>
+                    <a href="{{ commit.url }}" target="_blank" rel="noopener noreferrer" class="small">View on repository →</a>
+                </div>
+            {% empty %}
+                <p class="text-muted mb-0"><small>No commits available.</small></p>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}

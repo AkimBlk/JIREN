@@ -1,0 +1,155 @@
+/* Git Accordion Activity/Commits Section */
+
+.git-accordion-activity__timeline {
+  position: relative;
+  margin-left: var(--git-spacing-lg);
+}
+
+.git-accordion-activity__timeline::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--git-color-border);
+}
+
+.git-accordion-activity__item {
+  position: relative;
+  margin-bottom: var(--git-spacing-lg);
+  display: flex;
+  gap: var(--git-spacing-md);
+}
+
+.git-accordion-activity__dot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--git-color-bg);
+  background-color: var(--git-color-github);
+  box-shadow: 0 0 0 2px var(--git-color-bg);
+}
+
+.git-accordion-activity__item.git-provider-github .git-accordion-activity__dot {
+  background-color: var(--git-color-github);
+}
+
+.git-accordion-activity__item.git-provider-gitlab .git-accordion-activity__dot {
+  background-color: var(--git-color-gitlab);
+}
+
+.git-accordion-activity__item.git-provider-gitea .git-accordion-activity__dot {
+  background-color: var(--git-color-gitea);
+}
+
+.git-accordion-activity__content {
+  flex: 1;
+  padding: var(--git-spacing-md);
+  background-color: var(--git-color-hover);
+  border-radius: var(--git-radius);
+  border-left: 2px solid var(--git-color-github);
+}
+
+.git-accordion-activity__message {
+  display: block;
+  color: var(--git-color-text);
+  text-decoration: none;
+  font-weight: 500;
+  word-break: break-word;
+  transition: color var(--git-duration-fast);
+  margin-bottom: var(--git-spacing-xs);
+}
+
+.git-accordion-activity__message:hover {
+  color: var(--git-color-github);
+  text-decoration: underline;
+}
+
+.git-accordion-activity__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--git-spacing-md);
+  font-size: 0.8rem;
+  color: var(--git-color-text-muted);
+}
+
+.git-accordion-activity__author {
+  font-weight: 500;
+}
+
+.git-accordion-activity__copy {
+  padding: 0;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.git-accordion-activity__time {
+  margin-left: auto;
+}
+
+.git-accordion-activity__footer {
+  text-align: center;
+  margin-top: var(--git-spacing-md);
+}
+
+.git-accordion-activity__linker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--git-spacing-sm);
+  margin-top: var(--git-spacing-sm);
+}
+
+.commit-link-ticket-select {
+  min-width: 220px;
+  flex: 1;
+}
+
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary {
+  background-color: var(--helb-surface-container-high) !important;
+  color: var(--helb-primary-container) !important;
+  border: 1px solid var(--helb-primary-container) !important;
+  white-space: nowrap;
+}
+
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:hover,
+.git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:focus {
+  background-color: var(--helb-primary-container) !important;
+  color: var(--helb-surface-container-lowest) !important;
+  border-color: var(--helb-primary-container) !important;
+}
+
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary {
+  background-color: var(--helb-surface-container-high) !important;
+  color: #ffffff !important;
+  border-color: var(--helb-outline) !important;
+}
+
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:hover,
+html[data-theme="dark"] .git-accordion-activity .commit-link-trigger.btn.btn-outline-primary:focus {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #ffffff !important;
+}
+
+.commit-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.commit-linked-badge--success {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.commit-linked-badge--error {
+  color: #842029;
+  background: #f8d7da;
+}

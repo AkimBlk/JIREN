@@ -1,0 +1,67 @@
+/* ============================================================
+   Alerts & List Groups - Bootstrap Customizations
+   ============================================================ */
+
+/* ============================================================
+   Alerts
+   ============================================================ */
+
+.alert {
+  border: none;
+  border-radius: var(--helb-radius-md);
+  font-size: 0.875rem;
+}
+
+.alert-info {
+  background: var(--helb-secondary-fixed);
+  color: var(--helb-on-secondary-fixed);
+}
+
+.alert-success {
+  background: rgba(109, 189, 58, 0.1);
+  color: var(--helb-on-tertiary-fixed-variant);
+}
+
+.alert-danger {
+  background: var(--helb-error-container);
+  color: var(--helb-on-error-container);
+}
+
+.alert-warning {
+  background: var(--helb-primary-fixed);
+  color: var(--helb-on-primary-fixed);
+}
+
+.alert-light {
+  background: var(--helb-surface-container-low);
+  color: var(--helb-on-surface-variant);
+}
+
+
+
+/* ============================================================
+   List Groups
+   ============================================================ */
+
+.list-group {
+  border-radius: var(--helb-radius-md) !important;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid rgba(195, 198, 208, 0.1);
+  padding: 0.875rem 1.25rem;
+  background: var(--helb-surface-container-lowest);
+  transition: background 0.15s;
+}
+
+.list-group-item:hover {
+  background: var(--helb-surface-container-low);
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+

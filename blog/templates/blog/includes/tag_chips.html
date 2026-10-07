@@ -1,0 +1,11 @@
+{% if ticket.tags.all or show_empty %}
+  <div class="{{ container_class|default:'atelier-tag-list' }}">
+    {% for tag in ticket.tags.all %}
+      <span class="atelier-tag-chip">{{ tag.name }}</span>
+    {% empty %}
+      {% if show_empty %}
+        <span class="atelier-empty-chip">No tags</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

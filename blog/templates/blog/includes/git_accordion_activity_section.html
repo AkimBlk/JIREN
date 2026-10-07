@@ -1,0 +1,60 @@
+<div class="git-accordion-activity">
+  {% if git_commits %}
+    <div class="git-accordion-activity__timeline">
+      {% for commit in git_commits|slice:":5" %}
+      <div class="git-accordion-activity__item git-provider-{{ git_extended_data.icon }}">
+        <div class="git-accordion-activity__dot"></div>
+        <div class="git-accordion-activity__content">
+          <a href="{{ commit.url }}" target="_blank" rel="noopener" class="git-accordion-activity__message">
+            {{ commit.message }}
+          </a>
+          <div class="git-accordion-activity__meta">
+            <span class="git-accordion-activity__author">{{ commit.author }}</span>
+            <button
+              class="copy-btn git-accordion-activity__copy"
+              data-clipboard="{{ commit.hash }}"
+              aria-label="Copy commit SHA">
+              Copy {{ commit.hash }}
+            </button>
+            <time class="git-accordion-activity__time" data-timestamp="{{ commit.timestamp }}">
+              {{ commit.timestamp }}
+            </time>
+          </div>
+          {% if commit_link_tickets %}
+          <div class="git-accordion-activity__linker">
+            <select class="form-control form-control-sm commit-link-ticket-select" aria-label="Select ticket">
+              <option value="">Select ticket</option>
+              {% for ticket in commit_link_tickets %}
+                <option value="{{ ticket.pk }}">#{{ ticket.pk }} - {{ ticket.title }}</option>
+              {% endfor %}
+            </select>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary commit-link-trigger"
+              data-link-url-template="{% url 'ticket-link-commit' 0 %}"
+              data-commit-sha="{{ commit.hash }}"
+              data-commit-message="{{ commit.message }}"
+              data-commit-url="{{ commit.url }}">
+              Link to ticket
+            </button>
+            <span class="commit-linked-badge d-none" aria-live="polite"></span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if git_commits|length > 5 %}
+    <div class="git-accordion-activity__footer">
+      <a href="{{ git_info.url }}/commits" target="_blank" rel="noopener" class="git-accordion-link">
+        View all commits
+      </a>
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="git-accordion-empty-state">
+      <p>No commits found</p>
+    </div>
+  {% endif %}
+</div>

@@ -1,0 +1,71 @@
+{% extends "users/auth_base.html" %}
+
+{% block title_text %}Sign In{% endblock %}
+
+{% block content %}
+<section class="helb-auth-shell helb-auth-shell--center">
+    <div class="helb-auth-card helb-auth-card--compact helb-auth-card--login">
+        <div class="helb-auth-brand">
+            <div class="helb-auth-brand__mark">
+                <span class="material-symbols-outlined">school</span>
+            </div>
+            <div class="helb-auth-brand__copy">
+                <strong>JIREN</strong>
+                <span>Academic Atelier</span>
+            </div>
+        </div>
+
+        <div class="helb-auth-heading">
+            <h1>Sign In</h1>
+            <p>Access your Atelier workspace.</p>
+        </div>
+
+        <form method="post" class="helb-auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="helb-auth-field">
+                <label for="{{ form.email.id_for_label }}">Email or username</label>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">mail</span>
+                    {{ form.email }}
+                </div>
+                {% for error in form.email.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <div class="helb-auth-field">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="{{ form.password.id_for_label }}" class="mb-0">Password</label>
+                    <span class="helb-auth-inline-link">Secure access</span>
+                </div>
+                <div class="helb-auth-input">
+                    <span class="material-symbols-outlined">lock</span>
+                    {{ form.password }}
+                </div>
+                {% for error in form.password.errors %}
+                    <small class="text-danger d-block mt-2">{{ error }}</small>
+                {% endfor %}
+            </div>
+
+            <button class="btn btn-primary btn-block helb-auth-submit" type="submit">
+                Sign in
+            </button>
+        </form>
+
+    </div>
+
+    <footer class="helb-auth-support">
+        <p>Need access? Contact your platform administrator.</p>
+        
+    </footer>
+</section>
+{% endblock content %}
